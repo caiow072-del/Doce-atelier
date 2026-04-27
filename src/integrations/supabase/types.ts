@@ -94,6 +94,7 @@ export type Database = {
           created_at: string
           icon: string | null
           id: string
+          kind: string
           name: string
           shop_id: string
         }
@@ -102,6 +103,7 @@ export type Database = {
           created_at?: string
           icon?: string | null
           id?: string
+          kind?: string
           name: string
           shop_id: string
         }
@@ -110,6 +112,7 @@ export type Database = {
           created_at?: string
           icon?: string | null
           id?: string
+          kind?: string
           name?: string
           shop_id?: string
         }
@@ -118,35 +121,53 @@ export type Database = {
       events: {
         Row: {
           created_at: string
+          customer_name: string | null
           date: string
           event_type_id: string | null
+          fee: number
+          guests: number | null
           id: string
           location: string | null
+          main_flavor: string | null
           name: string
           notes: string | null
+          opening_cash: number
           shop_id: string
+          start_time: string | null
           updated_at: string
         }
         Insert: {
           created_at?: string
+          customer_name?: string | null
           date: string
           event_type_id?: string | null
+          fee?: number
+          guests?: number | null
           id?: string
           location?: string | null
+          main_flavor?: string | null
           name: string
           notes?: string | null
+          opening_cash?: number
           shop_id: string
+          start_time?: string | null
           updated_at?: string
         }
         Update: {
           created_at?: string
+          customer_name?: string | null
           date?: string
           event_type_id?: string | null
+          fee?: number
+          guests?: number | null
           id?: string
           location?: string | null
+          main_flavor?: string | null
           name?: string
           notes?: string | null
+          opening_cash?: number
           shop_id?: string
+          start_time?: string | null
           updated_at?: string
         }
         Relationships: [
