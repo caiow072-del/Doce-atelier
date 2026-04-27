@@ -183,80 +183,104 @@ function RecipesPage() {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {filtered.map((r) => {
             const cost = fullCost(r, ingredients);
-            const negativeProfit = cost.suggestedPrice <= cost.perSlice;
             const realPrice = r.public_price ?? 0;
             const hasReal = realPrice > 0;
             const realProfitSlice = hasReal ? realPrice - cost.perSlice : 0;
             const realProfitTotal = realProfitSlice * (r.servings || 0);
-            const totalCost = cost.totalRecipe + (r.packaging_cost ?? 0) * (r.servings || 0);
             const profitNegative = hasReal && realProfitSlice <= 0;
+            const ingCostSlice = r.servings > 0 ? cost.ingredientsCost / r.servings : 0;
+            const ingProfitSlice = hasReal ? realPrice - ingCostSlice : 0;
+            const ingProfitTotal = ingProfitSlice * (r.servings || 0);
             return (
-              <div key={r.id} className="card-soft p-4 sm:p-5 flex flex-col gap-3">
+              <button
+                key={r.id}
+                type="button"
+                onClick={() => setViewing(r)}
+                className="card-soft p-4 sm:p-5 flex flex-col gap-3 text-left transition hover:shadow-md hover:-translate-y-0.5 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose"
+              >
                 <div className="flex items-start justify-between gap-2">
-                  <button onClick={() => setViewing(r)} className="min-w-0 flex-1 text-left">
+                  <div className="min-w-0 flex-1">
                     <p className="font-display text-xl italic text-mauve truncate">{r.name}</p>
                     <p className="mt-0.5 text-xs text-muted-foreground">
                       {r.servings} fatias · {(r.target_margin * 100).toFixed(0)}% lucro desejado
                     </p>
-                  </button>
+                  </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    <button
-                      onClick={() => setEditing(r)}
-                      className="rounded-lg bg-blush/40 p-2 text-mauve hover:bg-blush/60"
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      onClick={(e) => { e.stopPropagation(); setEditing(r); }}
+                      onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); setEditing(r); } }}
+                      className="rounded-lg bg-blush/40 p-2 text-mauve hover:bg-blush/60 cursor-pointer"
                       aria-label="Editar"
                     >
                       <Pencil className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => remove(r)}
-                      className="rounded-lg bg-destructive/10 p-2 text-destructive hover:bg-destructive/20"
+                    </span>
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      onClick={(e) => { e.stopPropagation(); remove(r); }}
+                      onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); remove(r); } }}
+                      className="rounded-lg bg-destructive/10 p-2 text-destructive hover:bg-destructive/20 cursor-pointer"
                       aria-label="Excluir"
                     >
                       <Trash2 className="h-4 w-4" />
-                    </button>
+                    </span>
                   </div>
                 </div>
 
-                <button
-                  onClick={() => setViewing(r)}
-                  className="grid grid-cols-2 gap-2 text-left"
-                >
+                <div className="grid grid-cols-2 gap-2">
                   <div className="rounded-xl bg-blush/30 px-3 py-2">
                     <p className="text-[10px] uppercase tracking-widest text-rose">Preço real</p>
                     <p className="font-display text-lg italic text-mauve leading-tight">
                       {hasReal ? formatBRL(realPrice) : "—"}
                     </p>
                   </div>
-                  <div className="rounded-xl bg-blush/30 px-3 py-2">
-                    <p className="text-[10px] uppercase tracking-widest text-rose">Sugerido</p>
-                    <p className={`font-display text-lg italic leading-tight ${negativeProfit ? "text-destructive" : "text-mauve"}`}>
-                      {formatBRL(cost.suggestedPrice)}
-                    </p>
-                  </div>
-                  <div className="rounded-xl bg-card/70 px-3 py-2">
-                    <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Custo/fatia</p>
-                    <p className="font-display text-base italic text-mauve leading-tight">
-                      {formatBRL(cost.perSlice)}
-                    </p>
-                  </div>
-                  <div className="rounded-xl bg-card/70 px-3 py-2">
-                    <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Custo total</p>
-                    <p className="font-display text-base italic text-mauve leading-tight">
-                      {formatBRL(totalCost)}
-                    </p>
-                  </div>
-                  <div className={`col-span-2 rounded-xl px-3 py-2 ${profitNegative ? "bg-destructive/10" : "bg-mauve/5"}`}>
-                    <p className="text-[10px] uppercase tracking-widest text-rose">Lucro real (total · fatia)</p>
+                  <div className={`rounded-xl px-3 py-2 ${profitNegative ? "bg-destructive/10" : "bg-blush/30"}`}>
+                    <p className="text-[10px] uppercase tracking-widest text-rose">Lucro real total</p>
                     {hasReal ? (
-                      <p className={`font-display text-base italic leading-tight ${profitNegative ? "text-destructive" : "text-mauve"}`}>
-                        {formatBRL(realProfitTotal)} <span className="text-mauve/60">·</span> {formatBRL(realProfitSlice)}/fatia
+                      <p className={`font-display text-lg italic leading-tight ${profitNegative ? "text-destructive" : "text-mauve"}`}>
+                        {formatBRL(realProfitTotal)}
                       </p>
                     ) : (
-                      <p className="text-xs text-muted-foreground italic">Defina o preço real para ver seu lucro.</p>
+                      <p className="text-xs text-muted-foreground italic">Defina o preço real</p>
                     )}
                   </div>
-                </button>
-              </div>
+                </div>
+
+                {hasReal && (
+                  <div className="rounded-xl bg-card/70 p-3">
+                    <p className="text-center text-[10px] uppercase tracking-widest text-rose">
+                      Considerando apenas os insumos
+                    </p>
+                    <div className="mt-1 grid grid-cols-3 gap-2 text-center">
+                      <div>
+                        <p className="text-[10px] text-muted-foreground">Custo/fatia</p>
+                        <p className="font-display text-base italic text-mauve leading-tight">
+                          {formatBRL(ingCostSlice)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-muted-foreground">Lucro/fatia</p>
+                        <p className={`font-display text-base italic leading-tight ${ingProfitSlice <= 0 ? "text-destructive" : "text-mauve"}`}>
+                          {formatBRL(ingProfitSlice)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-muted-foreground">Lucro total</p>
+                        <p className={`font-display text-base italic leading-tight ${ingProfitTotal <= 0 ? "text-destructive" : "text-mauve"}`}>
+                          {formatBRL(ingProfitTotal)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-end gap-1 text-[11px] text-rose">
+                  <span>Ver ficha completa</span>
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </div>
+              </button>
             );
           })}
         </div>
