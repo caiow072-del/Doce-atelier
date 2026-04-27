@@ -16,6 +16,19 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { z } from "zod";
+
+const checkoutSchema = z.object({
+  name: z.string().trim().min(2, "Informe seu nome").max(80),
+  phone: z
+    .string()
+    .trim()
+    .min(8, "WhatsApp inválido")
+    .max(20)
+    .regex(/^[\d\s()+\-]+$/, "Apenas números e símbolos"),
+  address: z.string().trim().max(200).optional(),
+  notes: z.string().trim().max(500).optional(),
+});
 
 export const Route = createFileRoute("/loja/$slug")({
   head: ({ params }) => ({
