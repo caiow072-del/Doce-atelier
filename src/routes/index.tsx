@@ -153,6 +153,27 @@ function Dashboard() {
         />
       </section>
 
+      {/* ============ Vitrine: pedidos pendentes ============ */}
+      {storefrontPending > 0 && (
+        <Link
+          to="/encomendas"
+          className="flex items-center justify-between gap-3 rounded-2xl border border-rose/40 bg-gradient-to-r from-blush/60 to-rose/30 p-4 transition hover:from-blush hover:to-rose/50"
+        >
+          <div className="flex items-center gap-3">
+            <div className="grid h-10 w-10 place-items-center rounded-xl bg-cream text-mauve">
+              <ShoppingBag className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-widest text-rose">Vitrine pública</p>
+              <p className="text-sm font-medium text-mauve">
+                {storefrontPending} {storefrontPending === 1 ? "pedido novo aguardando" : "pedidos novos aguardando"} sua confirmação
+              </p>
+            </div>
+          </div>
+          <span className="text-xs font-medium text-mauve">Ver →</span>
+        </Link>
+      )}
+
       {/* ============ Eventos: próximo + último fechado ============ */}
       {(nextEvent || lastClosed) && (
         <section className="grid gap-4 md:grid-cols-2">
