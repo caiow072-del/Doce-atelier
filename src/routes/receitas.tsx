@@ -995,22 +995,28 @@ function RecipeForm({
                 <p className="text-center text-[10px] uppercase tracking-widest text-rose">
                   Lucro considerando apenas os insumos
                 </p>
-                <div className="mt-1 grid grid-cols-2 gap-2 text-center">
+                <div className="mt-1 grid grid-cols-3 gap-2 text-center">
                   <div>
-                    <p className="text-[10px] text-muted-foreground">Por fatia</p>
+                    <p className="text-[10px] text-muted-foreground">Custo/fatia</p>
+                    <p className="font-display text-lg italic text-mauve">
+                      {formatBRL(ingredientCostPerSlice)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-muted-foreground">Lucro/fatia</p>
                     <p className={`font-display text-lg italic ${profitPerSliceIngredients <= 0 ? "text-destructive" : "text-mauve"}`}>
                       {formatBRL(profitPerSliceIngredients)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-[10px] text-muted-foreground">Total ({servingsNum} fatias)</p>
+                    <p className="text-[10px] text-muted-foreground">Lucro total ({servingsNum}×)</p>
                     <p className={`font-display text-lg italic ${profitTotalIngredients <= 0 ? "text-destructive" : "text-mauve"}`}>
                       {formatBRL(profitTotalIngredients)}
                     </p>
                   </div>
                 </div>
                 <p className="mt-1 text-center text-[10px] text-muted-foreground">
-                  Custo de insumos por fatia: {formatBRL(ingredientCostPerSlice)} · ignora produção, embalagem e perda
+                  Ignora produção, embalagem e perda
                 </p>
               </div>
             )}
