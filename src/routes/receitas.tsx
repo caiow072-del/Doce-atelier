@@ -356,6 +356,7 @@ function RecipeDetail({
             );
           })}
         </ul>
+       </div>
       </div>
     </div>
   );
