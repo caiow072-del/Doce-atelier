@@ -201,6 +201,6 @@ function Metric({
       </div>
       <p className={`mt-2 font-display text-2xl italic sm:text-3xl ${toneCls}`}>{value}</p>
       {hint && <p className="mt-1 text-[11px] text-muted-foreground">{hint}</p>}
-    </motion.div>
+    </div>
   );
 }
