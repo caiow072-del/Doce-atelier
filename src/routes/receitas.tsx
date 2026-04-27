@@ -96,6 +96,7 @@ const PRESETS: Preset[] = [
 ];
 
 
+function RecipesPage() {
   const { currentShop } = useAuth();
   const shopId = currentShop?.shop_id;
 
