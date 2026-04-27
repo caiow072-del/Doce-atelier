@@ -62,7 +62,7 @@ function AuthGate() {
       <div className="floral-bg flex min-h-screen items-center justify-center">
         <div className="flex flex-col items-center gap-3 text-mauve">
           <Loader2 className="h-7 w-7 animate-spin" />
-          <p className="font-display text-lg italic">Carregando atelier...</p>
+          <p className="font-display text-lg italic">Abrindo seu atelier...</p>
         </div>
       </div>
     );
