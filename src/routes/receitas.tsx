@@ -849,3 +849,17 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
     </div>
   );
 }
+
+function SectionTitle({ index, title, subtitle }: { index: number; title: string; subtitle?: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-mauve text-[11px] font-semibold text-cream">
+        {index}
+      </span>
+      <div>
+        <p className="font-display text-base italic text-mauve leading-tight">{title}</p>
+        {subtitle && <p className="text-[10px] uppercase tracking-widest text-rose">{subtitle}</p>}
+      </div>
+    </div>
+  );
+}
