@@ -1,11 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Package, Plus, Pencil, Trash2, Save, X, Loader2, Search } from "lucide-react";
+import { Package, Plus, Pencil, Trash2, Save, X, Loader2, Search, Sparkles, Check } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
 import { formatBRL } from "@/lib/store";
+import { SUGGESTED_INGREDIENTS, type SuggestedIngredient } from "@/lib/suggestions";
 
 export const Route = createFileRoute("/insumos")({
   head: () => ({
