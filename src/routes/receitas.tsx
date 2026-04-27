@@ -605,21 +605,55 @@ function RecipeForm({
                 </button>
               </div>
 
-              {pickerOpen && available.length > 0 && (
-                <div className="mt-2 max-h-48 overflow-y-auto rounded-xl border border-border bg-card">
-                  {available.map((ing) => (
+              {pickerOpen && (
+                <div className="mt-2 rounded-xl border border-border bg-card">
+                  <div className="flex items-center gap-2 border-b border-border px-3 py-2">
+                    <Search className="h-3.5 w-3.5 text-muted-foreground" />
+                    <input
+                      autoFocus
+                      value={pickerSearch}
+                      onChange={(e) => setPickerSearch(e.target.value)}
+                      placeholder="Buscar insumo..."
+                      className="flex-1 bg-transparent text-sm text-mauve outline-none"
+                    />
                     <button
-                      key={ing.id}
                       type="button"
                       onClick={() => {
-                        addItem(ing.id);
                         setPickerOpen(false);
+                        setPickerSearch("");
                       }}
-                      className="block w-full px-3 py-2 text-left text-sm text-mauve hover:bg-blush/50"
+                      className="rounded-md p-1 text-muted-foreground hover:bg-blush/40"
+                      aria-label="Fechar"
                     >
-                      {ing.name} <span className="text-xs text-muted-foreground">({ing.unit})</span>
+                      <X className="h-3.5 w-3.5" />
                     </button>
-                  ))}
+                  </div>
+                  <div className="max-h-56 overflow-y-auto">
+                    {available.length === 0 ? (
+                      <p className="px-3 py-3 text-xs text-muted-foreground">
+                        Todos os insumos já foram adicionados.
+                      </p>
+                    ) : (
+                      available
+                        .filter((ing) =>
+                          ing.name.toLowerCase().includes(pickerSearch.toLowerCase())
+                        )
+                        .map((ing) => (
+                          <button
+                            key={ing.id}
+                            type="button"
+                            onClick={() => {
+                              addItem(ing.id);
+                              setPickerSearch("");
+                            }}
+                            className="block w-full px-3 py-2 text-left text-sm text-mauve hover:bg-blush/50"
+                          >
+                            {ing.name}{" "}
+                            <span className="text-xs text-muted-foreground">({ing.unit})</span>
+                          </button>
+                        ))
+                    )}
+                  </div>
                 </div>
               )}
 
