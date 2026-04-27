@@ -798,43 +798,43 @@ function RecipeForm({
           <section className="space-y-3">
             <SectionTitle index={4} title="Custos extras e lucro" />
 
-            <Field
-              label="Custo de Mão de Obra / Produção (R$)"
-              hint="Valor gasto para produzir especificamente esta receita (seu tempo, energia, gás)."
-            >
-              <input
-                type="number"
-                step="0.01"
-                inputMode="decimal"
-                value={laborCost}
-                onChange={(e) => setLaborCost(e.target.value)}
-                className="input-base"
-              />
-            </Field>
+            {/* Produção e Embalagem lado a lado */}
+            <div className="grid grid-cols-2 gap-3">
+              <Field
+                label="Produção (R$)"
+                hint="Seu trabalho/diária para fazer essa receita (tempo, energia, gás, ajudante)."
+              >
+                <input
+                  type="number"
+                  step="0.01"
+                  inputMode="decimal"
+                  value={laborCost}
+                  onChange={(e) => setLaborCost(e.target.value)}
+                  className="input-base"
+                />
+              </Field>
+              <Field
+                label="Embalagem / unid. (R$)"
+                hint="Caixa, papel, lacre, fita por cada fatia/unidade."
+              >
+                <input
+                  type="number"
+                  step="0.01"
+                  inputMode="decimal"
+                  value={packagingCost}
+                  onChange={(e) => setPackagingCost(e.target.value)}
+                  className="input-base"
+                />
+              </Field>
+            </div>
 
-            <Field
-              label="Embalagem por unidade (R$)"
-              hint="Custo da caixa, papel, lacre, fita por cada fatia/unidade vendida."
-            >
-              <input
-                type="number"
-                step="0.01"
-                inputMode="decimal"
-                value={packagingCost}
-                onChange={(e) => setPackagingCost(e.target.value)}
-                className="input-base"
-              />
-            </Field>
-
-            {/* Toggle de perda */}
-            <div className="rounded-2xl border border-border bg-background p-3">
-              <label className="flex cursor-pointer items-start justify-between gap-3">
+            {/* Card compacto: perda */}
+            <div className="rounded-xl border border-border bg-background px-3 py-2.5">
+              <div className="flex items-center justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="text-sm text-mauve">
-                    Incluir margem de perda / quebra de ingredientes
-                  </p>
-                  <p className="mt-0.5 text-[11px] text-muted-foreground">
-                    Adiciona uma % em cima do custo dos insumos para cobrir cascas, sobras e erros. Recomendado: 10%.
+                  <p className="text-xs font-medium text-mauve">Margem de perda</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    Cobre cascas, sobras e erros (recomendado 10%)
                   </p>
                 </div>
                 <button
@@ -842,51 +842,76 @@ function RecipeForm({
                   role="switch"
                   aria-checked={includeWaste}
                   onClick={() => setIncludeWaste((v) => !v)}
-                  className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${includeWaste ? "bg-mauve" : "bg-border"}`}
+                  className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${includeWaste ? "bg-mauve" : "bg-border"}`}
                 >
                   <span
-                    className={`absolute top-0.5 h-5 w-5 rounded-full bg-cream shadow transition-transform ${includeWaste ? "translate-x-5" : "translate-x-0.5"}`}
+                    className={`absolute top-0.5 h-4 w-4 rounded-full bg-cream shadow transition-transform ${includeWaste ? "translate-x-[18px]" : "translate-x-0.5"}`}
                   />
                 </button>
-              </label>
+              </div>
               {includeWaste && (
-                <div className="mt-3 flex items-center gap-2">
+                <div className="mt-2 flex items-center gap-2">
                   <input
                     type="number"
-                    step="0.1"
+                    step="0.5"
                     inputMode="decimal"
                     value={wastePct}
                     onChange={(e) => setWastePct(e.target.value)}
-                    className="w-24 rounded-lg border border-border bg-card px-2 py-1.5 text-center text-sm text-mauve outline-none focus:border-rose"
+                    className="w-16 rounded-lg border border-border bg-card px-2 py-1 text-center text-xs text-mauve outline-none focus:border-rose"
                   />
-                  <span className="text-xs text-muted-foreground">% sobre o custo dos insumos</span>
+                  <span className="text-[11px] text-muted-foreground">% sobre os insumos</span>
                 </div>
               )}
             </div>
 
-            {/* Lucro desejado com sugestão rápida */}
-            <Field
-              label="Lucro desejado (%)"
-              hint="Quanto você quer ganhar ALÉM do custo total. Esse é o lucro real do seu negócio."
-            >
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  step="0.1"
-                  inputMode="decimal"
-                  value={targetMargin}
-                  onChange={(e) => setTargetMargin(e.target.value)}
-                  className="input-base flex-1"
-                />
+            {/* Lucro desejado — slider */}
+            <div className="rounded-2xl border border-border bg-background p-3">
+              <div className="flex items-baseline justify-between">
+                <label className="text-[10px] uppercase tracking-widest text-rose">
+                  Lucro desejado
+                </label>
+                <span className="font-display text-2xl italic text-mauve">
+                  {Math.round(Number(targetMargin) || 0)}%
+                </span>
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={1}
+                value={Number(targetMargin) || 0}
+                onChange={(e) => setTargetMargin(e.target.value)}
+                className="profit-slider mt-1 w-full accent-mauve"
+              />
+              <div className="mt-1 flex justify-between text-[10px] text-muted-foreground">
+                <span>0%</span>
+                <button
+                  type="button"
+                  onClick={() => setTargetMargin("30")}
+                  className="rounded-full px-2 py-0.5 text-mauve hover:bg-blush/40"
+                >
+                  30%
+                </button>
                 <button
                   type="button"
                   onClick={() => setTargetMargin("50")}
-                  className="shrink-0 rounded-full border border-rose/50 bg-blush/40 px-3 py-1.5 text-[11px] text-mauve hover:bg-blush/60"
+                  className="rounded-full px-2 py-0.5 text-mauve hover:bg-blush/40"
                 >
-                  Sugestão: 50%
+                  Sugestão 50%
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setTargetMargin("80")}
+                  className="rounded-full px-2 py-0.5 text-mauve hover:bg-blush/40"
+                >
+                  80%
+                </button>
+                <span>100%</span>
               </div>
-            </Field>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Quanto você quer ganhar além do custo total.
+              </p>
+            </div>
           </section>
 
           {/* ───── Rodapé: resumo financeiro ───── */}
