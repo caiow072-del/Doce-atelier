@@ -240,26 +240,197 @@ function InsumosPage() {
           }}
         />
       )}
+
+      {showSuggestions && shopId && (
+        <SuggestionsModal
+          shopId={shopId}
+          existingNames={items.map((i) => i.name.toLowerCase())}
+          onClose={() => setShowSuggestions(false)}
+          onImported={async () => {
+            setShowSuggestions(false);
+            await load();
+          }}
+        />
+      )}
     </div>
   );
 }
 
-function EmptyState({ onCreate }: { onCreate: () => void }) {
+function EmptyState({
+  onCreate,
+  onShowSuggestions,
+}: {
+  onCreate: () => void;
+  onShowSuggestions: () => void;
+}) {
   return (
-    <div className="grid place-items-center rounded-3xl border-2 border-dashed border-border bg-card/40 p-16 text-center">
+    <div className="grid place-items-center rounded-3xl border-2 border-dashed border-border bg-card/40 p-12 text-center">
       <div className="grid h-16 w-16 place-items-center rounded-2xl bg-blush/60">
         <Package className="h-7 w-7 text-mauve" strokeWidth={1.4} />
       </div>
       <h2 className="mt-4 font-display text-2xl italic text-mauve">Nenhum insumo ainda</h2>
       <p className="mt-2 max-w-md text-sm text-muted-foreground">
-        Comece adicionando seus ingredientes (leite condensado, farinha, bombom...) com o preço pago.
+        Comece com nossas sugestões prontas (massa, ovos, leite, açúcar...) ou cadastre o seu.
       </p>
-      <button
-        onClick={onCreate}
-        className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-mauve px-5 py-2.5 text-sm font-medium text-cream hover:opacity-90"
+      <div className="mt-5 flex flex-wrap justify-center gap-2">
+        <button
+          onClick={onShowSuggestions}
+          className="inline-flex items-center gap-2 rounded-2xl border border-rose/50 bg-blush/40 px-5 py-2.5 text-sm font-medium text-mauve hover:bg-blush/60"
+        >
+          <Sparkles className="h-4 w-4" /> Ver sugestões prontas
+        </button>
+        <button
+          onClick={onCreate}
+          className="inline-flex items-center gap-2 rounded-2xl bg-mauve px-5 py-2.5 text-sm font-medium text-cream hover:opacity-90"
+        >
+          <Plus className="h-4 w-4" /> Cadastrar do zero
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function SuggestionsModal({
+  shopId,
+  existingNames,
+  onClose,
+  onImported,
+}: {
+  shopId: string;
+  existingNames: string[];
+  onClose: () => void;
+  onImported: () => void;
+}) {
+  const initialSelected = SUGGESTED_INGREDIENTS.filter(
+    (s) => !existingNames.includes(s.name.toLowerCase())
+  ).map((s) => s.key);
+  const [selected, setSelected] = useState<string[]>(initialSelected);
+  const [overrides, setOverrides] = useState<Record<string, { price: string; package: string }>>(
+    Object.fromEntries(
+      SUGGESTED_INGREDIENTS.map((s) => [
+        s.key,
+        { price: s.price_paid.toString(), package: s.package_qty.toString() },
+      ])
+    )
+  );
+  const [saving, setSaving] = useState(false);
+
+  const toggle = (k: string) =>
+    setSelected((s) => (s.includes(k) ? s.filter((x) => x !== k) : [...s, k]));
+
+  const importSelected = async () => {
+    if (selected.length === 0) {
+      toast.error("Selecione pelo menos uma sugestão");
+      return;
+    }
+    setSaving(true);
+    const rows = SUGGESTED_INGREDIENTS.filter((s) => selected.includes(s.key)).map((s) => ({
+      shop_id: shopId,
+      name: s.name,
+      unit: s.unit,
+      package_qty: Number(overrides[s.key]?.package) || s.package_qty,
+      price_paid: Number(overrides[s.key]?.price) || s.price_paid,
+      stock_qty: 0,
+    }));
+    const { error } = await supabase.from("ingredients").insert(rows);
+    setSaving(false);
+    if (error) {
+      toast.error("Erro ao importar: " + error.message);
+      return;
+    }
+    toast.success(`${rows.length} insumo(s) adicionado(s)`);
+    onImported();
+  };
+
+  return (
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-end justify-center bg-mauve/30 backdrop-blur-sm sm:items-center"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-t-3xl bg-card p-6 pb-10 sm:rounded-3xl"
       >
-        <Plus className="h-4 w-4" /> Cadastrar primeiro insumo
-      </button>
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <p className="text-[11px] uppercase tracking-widest text-rose">Para começar rápido</p>
+            <h2 className="font-display text-2xl italic text-mauve">Sugestões de insumos</h2>
+          </div>
+          <button onClick={onClose} className="rounded-full p-2 text-muted-foreground" aria-label="Fechar">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <p className="mb-3 text-xs text-muted-foreground">
+          Marque o que você usa, ajuste o preço se necessário, e adicione ao seu estoque.
+        </p>
+
+        <ul className="space-y-2">
+          {SUGGESTED_INGREDIENTS.map((s) => {
+            const checked = selected.includes(s.key);
+            const ov = overrides[s.key];
+            return (
+              <li
+                key={s.key}
+                className={`rounded-2xl border p-3 transition-colors ${checked ? "border-rose/60 bg-blush/30" : "border-border bg-background"}`}
+              >
+                <label className="flex cursor-pointer items-start gap-3">
+                  <button
+                    type="button"
+                    onClick={() => toggle(s.key)}
+                    className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-md border ${checked ? "border-mauve bg-mauve text-cream" : "border-border bg-card"}`}
+                  >
+                    {checked && <Check className="h-3 w-3" />}
+                  </button>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-mauve">{s.name}</p>
+                    {s.hint && <p className="text-[11px] text-muted-foreground">{s.hint}</p>}
+                  </div>
+                </label>
+                {checked && (
+                  <div className="mt-2 grid grid-cols-2 gap-2 pl-8">
+                    <div>
+                      <label className="text-[10px] uppercase tracking-widest text-rose">Preço (R$)</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={ov.price}
+                        onChange={(e) =>
+                          setOverrides((o) => ({ ...o, [s.key]: { ...o[s.key], price: e.target.value } }))
+                        }
+                        className="mt-1 w-full rounded-lg border border-border bg-card px-2 py-1.5 text-sm text-mauve outline-none focus:border-rose"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] uppercase tracking-widest text-rose">
+                        Embalagem ({s.unit})
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={ov.package}
+                        onChange={(e) =>
+                          setOverrides((o) => ({ ...o, [s.key]: { ...o[s.key], package: e.target.value } }))
+                        }
+                        className="mt-1 w-full rounded-lg border border-border bg-card px-2 py-1.5 text-sm text-mauve outline-none focus:border-rose"
+                      />
+                    </div>
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+
+        <button
+          onClick={importSelected}
+          disabled={saving || selected.length === 0}
+          className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-mauve py-3.5 text-sm font-semibold text-cream disabled:opacity-50"
+        >
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+          Adicionar {selected.length} insumo(s)
+        </button>
+      </div>
     </div>
   );
 }
