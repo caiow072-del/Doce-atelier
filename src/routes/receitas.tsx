@@ -293,7 +293,7 @@ function RecipeDetail({
     <div onClick={onClose} className="fixed inset-0 z-50 flex items-end justify-center bg-mauve/30 backdrop-blur-sm sm:items-center">
       <div
         onClick={(e) => e.stopPropagation()}
-        className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-t-3xl bg-card p-6 pb-10 sm:rounded-3xl"
+        className="max-h-[90vh] w-full max-w-2xl overflow-x-hidden overflow-y-auto overscroll-contain rounded-t-3xl bg-card p-6 pb-10 [scrollbar-gutter:stable] sm:rounded-3xl"
       >
         <div className="flex items-start justify-between">
           <div>
