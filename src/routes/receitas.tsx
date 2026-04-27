@@ -301,9 +301,17 @@ function RecipeDetail({
         </div>
 
         <div className="mt-5 space-y-2">
-          <Row label="Ingredientes" value={formatBRL(cost.ingredientsCost)} />
-          <Row label={`Perda (${(recipe.waste_pct * 100).toFixed(0)}%)`} value={formatBRL(cost.wasteCost)} />
-          <Row label="Mão de obra" value={formatBRL(recipe.labor_cost)} />
+          <Row label="Custo dos ingredientes" value={formatBRL(cost.ingredientsCost)} />
+          <Row
+            label={`Sobra/desperdício (${(recipe.waste_pct * 100).toFixed(0)}%)`}
+            value={formatBRL(cost.wasteCost)}
+            hint="Cascas, sobras de massa, erros — quanto se perde no processo."
+          />
+          <Row
+            label="Seu trabalho"
+            value={formatBRL(recipe.labor_cost)}
+            hint="Quanto você quer ganhar pelo tempo gasto fazendo essa receita."
+          />
           <Row label={`Total da receita (÷ ${recipe.servings} fatias)`} value={formatBRL(cost.totalRecipe)} bold />
           <Row label="Embalagem por fatia" value={formatBRL(recipe.packaging_cost)} />
           <Row label="Custo final por fatia" value={formatBRL(cost.perSlice)} bold danger={negative} />
