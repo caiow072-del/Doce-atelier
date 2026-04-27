@@ -813,7 +813,7 @@ function RecipeForm({
             <div className="grid grid-cols-2 gap-3">
               <Field
                 label="Produção (R$)"
-                hint="Seu trabalho/diária para fazer essa receita (tempo, energia, gás, ajudante)."
+                hint="Valor do seu tempo gasto apenas para fazer esta receita. Entra no custo da fatia. (Ajudante e frete ficam no módulo de Eventos.)"
               >
                 <input
                   type="number"
