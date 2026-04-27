@@ -199,7 +199,9 @@ function Metric({
         {icon}
         <span className="text-[11px] uppercase tracking-widest">{label}</span>
       </div>
-      <p className={`mt-2 font-display text-2xl italic sm:text-3xl ${toneCls}`}>{value}</p>
+      <p className={`mt-2 font-display text-2xl italic sm:text-3xl ${toneCls}`}>
+        {value}
+      </p>
       {hint && <p className="mt-1 text-[11px] text-muted-foreground">{hint}</p>}
     </div>
   );
