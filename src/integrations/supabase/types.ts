@@ -24,6 +24,7 @@ export type Database = {
           notes: string | null
           phone: string
           shop_id: string
+          source: string
           updated_at: string
           user_id: string | null
         }
@@ -36,6 +37,7 @@ export type Database = {
           notes?: string | null
           phone: string
           shop_id: string
+          source?: string
           updated_at?: string
           user_id?: string | null
         }
@@ -48,6 +50,7 @@ export type Database = {
           notes?: string | null
           phone?: string
           shop_id?: string
+          source?: string
           updated_at?: string
           user_id?: string | null
         }
@@ -328,13 +331,16 @@ export type Database = {
           customer_phone: string | null
           delivery_address: string | null
           delivery_at: string
+          delivery_method: string
           deposit_paid: number
           description: string
           id: string
+          items: Json | null
           notes: string | null
           recipe_id: string | null
           servings: number | null
           shop_id: string
+          source: string
           status: Database["public"]["Enums"]["order_status"]
           total_price: number
           updated_at: string
@@ -346,13 +352,16 @@ export type Database = {
           customer_phone?: string | null
           delivery_address?: string | null
           delivery_at: string
+          delivery_method?: string
           deposit_paid?: number
           description: string
           id?: string
+          items?: Json | null
           notes?: string | null
           recipe_id?: string | null
           servings?: number | null
           shop_id: string
+          source?: string
           status?: Database["public"]["Enums"]["order_status"]
           total_price?: number
           updated_at?: string
@@ -364,13 +373,16 @@ export type Database = {
           customer_phone?: string | null
           delivery_address?: string | null
           delivery_at?: string
+          delivery_method?: string
           deposit_paid?: number
           description?: string
           id?: string
+          items?: Json | null
           notes?: string | null
           recipe_id?: string | null
           servings?: number | null
           shop_id?: string
+          source?: string
           status?: Database["public"]["Enums"]["order_status"]
           total_price?: number
           updated_at?: string
