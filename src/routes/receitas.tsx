@@ -526,24 +526,64 @@ function RecipeForm({
             />
           </Field>
 
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Field label="Fatias">
+          {/* Presets — sugestões prontas */}
+          <div className="rounded-2xl border border-border bg-background p-3">
+            <div className="mb-2 flex items-center gap-1.5">
+              <Wand2 className="h-3.5 w-3.5 text-rose" />
+              <p className="text-[10px] uppercase tracking-widest text-rose">Sugestões prontas</p>
+            </div>
+            <p className="mb-2 text-[11px] text-muted-foreground">
+              Toque em um tipo para preencher valores recomendados — depois é só ajustar.
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {PRESETS.map((p) => (
+                <button
+                  key={p.key}
+                  type="button"
+                  onClick={() => applyPreset(p)}
+                  title={p.hint}
+                  className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2.5 py-1 text-[11px] text-mauve hover:border-rose/60 hover:bg-blush/40"
+                >
+                  <span>{p.emoji}</span> {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Field
+              label="Quantas fatias / unidades?"
+              hint="Em quantos pedaços você divide essa receita pronta. Ex: 12 fatias, 100 brigadeiros."
+            >
               <input type="number" inputMode="numeric" value={servings} onChange={(e) => setServings(e.target.value)} className="input-base" />
             </Field>
-            <Field label="Mão obra (R$)">
+            <Field
+              label="Seu trabalho (R$)"
+              hint="Quanto VOCÊ quer ganhar pelo tempo gasto fazendo essa receita inteira (mão de obra). Ex: levou 2h e seu valor é R$ 25/h → R$ 50."
+            >
               <input type="number" step="0.01" inputMode="decimal" value={laborCost} onChange={(e) => setLaborCost(e.target.value)} className="input-base" />
             </Field>
-            <Field label="Embalagem/fatia">
+            <Field
+              label="Embalagem por unidade (R$)"
+              hint="Custo da caixa, papel, lacre, fita por cada fatia/unidade vendida."
+            >
               <input type="number" step="0.01" inputMode="decimal" value={packagingCost} onChange={(e) => setPackagingCost(e.target.value)} className="input-base" />
             </Field>
-            <Field label="Perda (%)">
+            <Field
+              label="Sobra/desperdício (%)"
+              hint="Quanto se perde em cascas, sobras, erros. Iniciantes: ~10%. Profissionais: ~5%."
+            >
               <input type="number" step="0.1" inputMode="decimal" value={wastePct} onChange={(e) => setWastePct(e.target.value)} className="input-base" />
             </Field>
           </div>
 
-          <Field label="Margem alvo (%)">
+          <Field
+            label="Lucro desejado (%)"
+            hint="Quanto você quer ganhar ALÉM do custo total. Ex: 30% iniciante, 50% experiente, 60%+ produtos especiais. Esse é o lucro real do negócio."
+          >
             <input type="number" step="0.1" inputMode="decimal" value={targetMargin} onChange={(e) => setTargetMargin(e.target.value)} className="input-base" />
           </Field>
+
 
           <div className="rounded-2xl bg-blush/30 p-3">
             <div className="flex items-center justify-between">
