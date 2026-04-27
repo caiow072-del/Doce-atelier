@@ -494,6 +494,7 @@ function RecipeForm({
       packaging_cost: Number(packagingCost),
       waste_pct: includeWaste ? Number(wastePct) / 100 : 0,
       target_margin: Number(targetMargin) / 100,
+      public_price: realPrice ? Number(realPrice) : null,
     };
 
     let recipeId = initial?.id;
