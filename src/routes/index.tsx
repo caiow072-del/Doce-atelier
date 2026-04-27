@@ -150,6 +150,14 @@ function Dashboard() {
         />
       </section>
 
+      {/* ============ Eventos: próximo + último fechado ============ */}
+      {(nextEvent || lastClosed) && (
+        <section className="grid gap-4 md:grid-cols-2">
+          {nextEvent && <NextEventCard ev={nextEvent} />}
+          {lastClosed && <LastClosedCard ev={lastClosed} />}
+        </section>
+      )}
+
       {/* ============ Two-column main ============ */}
       <section className="grid gap-6 lg:grid-cols-3">
         {/* Catalog */}
