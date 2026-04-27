@@ -10,8 +10,8 @@ import {
   LogOut,
   ChevronDown,
   Sparkles,
+  X,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 
@@ -67,7 +67,7 @@ export function AppShell() {
           <div className="mt-6 px-4">
             <button
               onClick={() => setShopMenuOpen((v) => !v)}
-              className="flex w-full items-center justify-between rounded-2xl border border-border/70 bg-background/60 px-3 py-2.5 text-left transition hover:border-rose/50"
+              className="flex w-full items-center justify-between rounded-2xl border border-border/70 bg-background/60 px-3 py-2.5 text-left transition-colors hover:border-rose/50"
             >
               <div className="flex items-center gap-2 min-w-0">
                 <Store className="h-4 w-4 shrink-0 text-rose" strokeWidth={1.6} />
@@ -76,31 +76,24 @@ export function AppShell() {
                   <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{currentShop?.role}</p>
                 </div>
               </div>
-              <ChevronDown className={`h-4 w-4 text-muted-foreground transition ${shopMenuOpen ? "rotate-180" : ""}`} />
+              <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${shopMenuOpen ? "rotate-180" : ""}`} />
             </button>
-            <AnimatePresence>
-              {shopMenuOpen && shops.length > 1 && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="mt-1 overflow-hidden rounded-xl border border-border/60 bg-card"
-                >
-                  {shops.map((s) => (
-                    <button
-                      key={s.shop_id}
-                      onClick={() => {
-                        setCurrentShopId(s.shop_id);
-                        setShopMenuOpen(false);
-                      }}
-                      className="block w-full px-3 py-2 text-left text-sm text-mauve hover:bg-blush/40"
-                    >
-                      {s.shops.name}
-                    </button>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {shopMenuOpen && shops.length > 1 && (
+              <div className="mt-1 overflow-hidden rounded-xl border border-border/60 bg-card">
+                {shops.map((s) => (
+                  <button
+                    key={s.shop_id}
+                    onClick={() => {
+                      setCurrentShopId(s.shop_id);
+                      setShopMenuOpen(false);
+                    }}
+                    className="block w-full px-3 py-2 text-left text-sm text-mauve hover:bg-blush/40"
+                  >
+                    {s.shops.name}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Nav */}
@@ -112,17 +105,14 @@ export function AppShell() {
                 <Link
                   key={item.to}
                   to={item.to}
-                  className="group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition hover:text-mauve"
+                  className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+                    active
+                      ? "bg-gradient-to-r from-blush/80 to-rose/30 text-mauve"
+                      : "text-muted-foreground hover:bg-blush/30 hover:text-mauve"
+                  }`}
                 >
-                  {active && (
-                    <motion.span
-                      layoutId="sidebar-pill"
-                      className="absolute inset-0 rounded-xl bg-gradient-to-r from-blush/80 to-rose/30"
-                      transition={{ type: "spring", stiffness: 400, damping: 32 }}
-                    />
-                  )}
-                  <Icon className={`relative z-10 h-4 w-4 ${active ? "text-mauve" : ""}`} strokeWidth={1.7} />
-                  <span className={`relative z-10 ${active ? "text-mauve" : ""}`}>{item.label}</span>
+                  <Icon className="h-4 w-4" strokeWidth={1.7} />
+                  <span>{item.label}</span>
                 </Link>
               );
             })}
@@ -143,7 +133,7 @@ export function AppShell() {
                   await signOut();
                   navigate({ to: "/login" });
                 }}
-                className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-blush/60 hover:text-mauve"
+                className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-blush/60 hover:text-mauve"
                 aria-label="Sair"
               >
                 <LogOut className="h-4 w-4" />
@@ -188,88 +178,78 @@ export function AppShell() {
               <Link
                 key={t.to}
                 to={t.to}
-                className="relative flex flex-1 flex-col items-center gap-1 rounded-2xl px-3 py-2 text-[11px] font-medium text-muted-foreground"
-                data-active={active}
+                className={`flex flex-1 flex-col items-center gap-1 rounded-2xl px-3 py-2 text-[11px] font-medium transition-colors ${
+                  active ? "bg-blush/70 text-mauve" : "text-muted-foreground"
+                }`}
               >
-                {active && (
-                  <motion.span
-                    layoutId="mobile-pill"
-                    className="absolute inset-0 -z-0 rounded-2xl bg-blush/70"
-                    transition={{ type: "spring", stiffness: 400, damping: 32 }}
-                  />
-                )}
-                <Icon className={`relative z-10 h-5 w-5 ${active ? "text-mauve" : ""}`} strokeWidth={1.6} />
-                <span className={`relative z-10 ${active ? "text-mauve" : ""}`}>{t.label}</span>
+                <Icon className="h-5 w-5" strokeWidth={1.6} />
+                <span>{t.label}</span>
               </Link>
             );
           })}
         </div>
       </nav>
 
-      {/* ============ Mobile drawer ============ */}
-      <AnimatePresence>
-        {mobileOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-mauve/30 backdrop-blur-sm lg:hidden"
-            onClick={() => setMobileOpen(false)}
+      {/* ============ Mobile drawer (CSS only, instant) ============ */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-mauve/30 backdrop-blur-sm lg:hidden"
+          onClick={() => setMobileOpen(false)}
+        >
+          <aside
+            onClick={(e) => e.stopPropagation()}
+            className="flex h-full w-72 flex-col bg-card p-5 shadow-petal"
           >
-            <motion.aside
-              initial={{ x: "-100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "-100%" }}
-              transition={{ type: "spring", damping: 28 }}
-              onClick={(e) => e.stopPropagation()}
-              className="flex h-full w-72 flex-col bg-card p-5"
-            >
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-blush to-rose">
                   <Sparkles className="h-5 w-5 text-mauve" strokeWidth={1.6} />
                 </div>
                 <p className="font-display text-xl italic text-mauve">Cakes Manager</p>
               </div>
-
-              <div className="mt-6 rounded-xl bg-blush/40 p-3">
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Loja atual</p>
-                <p className="text-sm font-medium text-mauve">{currentShop?.shops.name}</p>
-              </div>
-
-              <nav className="mt-6 space-y-1">
-                {nav.map((item) => {
-                  const Icon = item.icon;
-                  const active = isActive(item.to, item.end);
-                  return (
-                    <Link
-                      key={item.to}
-                      to={item.to}
-                      onClick={() => setMobileOpen(false)}
-                      className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium ${
-                        active ? "bg-blush/70 text-mauve" : "text-muted-foreground"
-                      }`}
-                    >
-                      <Icon className="h-4 w-4" strokeWidth={1.7} />
-                      {item.label}
-                    </Link>
-                  );
-                })}
-              </nav>
-
-              <button
-                onClick={async () => {
-                  setMobileOpen(false);
-                  await signOut();
-                  navigate({ to: "/login" });
-                }}
-                className="mt-auto flex items-center justify-center gap-2 rounded-xl bg-blush/60 px-4 py-3 text-sm text-mauve"
-              >
-                <LogOut className="h-4 w-4" /> Sair
+              <button onClick={() => setMobileOpen(false)} className="rounded-lg p-2 text-muted-foreground" aria-label="Fechar">
+                <X className="h-5 w-5" />
               </button>
-            </motion.aside>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </div>
+
+            <div className="mt-6 rounded-xl bg-blush/40 p-3">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Loja atual</p>
+              <p className="text-sm font-medium text-mauve">{currentShop?.shops.name}</p>
+            </div>
+
+            <nav className="mt-6 space-y-1">
+              {nav.map((item) => {
+                const Icon = item.icon;
+                const active = isActive(item.to, item.end);
+                return (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    onClick={() => setMobileOpen(false)}
+                    className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+                      active ? "bg-blush/70 text-mauve" : "text-muted-foreground"
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" strokeWidth={1.7} />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </nav>
+
+            <button
+              onClick={async () => {
+                setMobileOpen(false);
+                await signOut();
+                navigate({ to: "/login" });
+              }}
+              className="mt-auto flex items-center justify-center gap-2 rounded-xl bg-blush/60 px-4 py-3 text-sm text-mauve"
+            >
+              <LogOut className="h-4 w-4" /> Sair
+            </button>
+          </aside>
+        </div>
+      )}
     </div>
   );
 }
