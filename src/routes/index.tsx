@@ -40,24 +40,31 @@ function Dashboard() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [ingredientsCount, setIngredientsCount] = useState(0);
   const [pendingOrders, setPendingOrders] = useState(0);
+  const [nextEvent, setNextEvent] = useState<{ id: string; name: string; date: string } | null>(null);
+  const [lastClosed, setLastClosed] = useState<{ id: string; name: string; closed_at: string; payment_summary: any } | null>(null);
 
   useEffect(() => {
     if (!shopId) return;
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
+    const today = new Date().toISOString();
     Promise.all([
       supabase.from("sales").select("price").eq("shop_id", shopId).gte("sold_at", startOfMonth.toISOString()),
       supabase.from("recipes").select("id, name, servings").eq("shop_id", shopId).order("name").limit(6),
       supabase.from("ingredients").select("id", { count: "exact", head: true }).eq("shop_id", shopId),
       supabase.from("orders").select("id", { count: "exact", head: true }).eq("shop_id", shopId).in("status", ["orcamento", "confirmado", "produzindo", "pronto"]),
-    ]).then(([s, r, i, o]) => {
+      supabase.from("events").select("id, name, date").eq("shop_id", shopId).is("closed_at", null).gte("date", today).order("date").limit(1).maybeSingle(),
+      supabase.from("events").select("id, name, closed_at, payment_summary").eq("shop_id", shopId).not("closed_at", "is", null).order("closed_at", { ascending: false }).limit(1).maybeSingle(),
+    ]).then(([s, r, i, o, ne, lc]) => {
       const sales = (s.data ?? []) as { price: number }[];
       setRevenue(sales.reduce((sum, x) => sum + Number(x.price), 0));
       setSalesCount(sales.length);
       setRecipes((r.data ?? []) as Recipe[]);
       setIngredientsCount(i.count ?? 0);
       setPendingOrders(o.count ?? 0);
+      setNextEvent(ne.data as any);
+      setLastClosed(lc.data as any);
     });
   }, [shopId]);
 
