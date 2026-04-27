@@ -13,6 +13,7 @@ import { Route as ReceitasRouteImport } from './routes/receitas'
 import { Route as PdvRouteImport } from './routes/pdv'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as InsumosRouteImport } from './routes/insumos'
+import { Route as FestivalRouteImport } from './routes/festival'
 import { Route as EventosRouteImport } from './routes/eventos'
 import { Route as EncomendasRouteImport } from './routes/encomendas'
 import { Route as CatalogoRouteImport } from './routes/catalogo'
@@ -37,6 +38,11 @@ const LoginRoute = LoginRouteImport.update({
 const InsumosRoute = InsumosRouteImport.update({
   id: '/insumos',
   path: '/insumos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FestivalRoute = FestivalRouteImport.update({
+  id: '/festival',
+  path: '/festival',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EventosRoute = EventosRouteImport.update({
@@ -71,6 +77,7 @@ export interface FileRoutesByFullPath {
   '/catalogo': typeof CatalogoRoute
   '/encomendas': typeof EncomendasRoute
   '/eventos': typeof EventosRoute
+  '/festival': typeof FestivalRoute
   '/insumos': typeof InsumosRoute
   '/login': typeof LoginRoute
   '/pdv': typeof PdvRoute
@@ -82,6 +89,7 @@ export interface FileRoutesByTo {
   '/catalogo': typeof CatalogoRoute
   '/encomendas': typeof EncomendasRoute
   '/eventos': typeof EventosRoute
+  '/festival': typeof FestivalRoute
   '/insumos': typeof InsumosRoute
   '/login': typeof LoginRoute
   '/pdv': typeof PdvRoute
@@ -94,6 +102,7 @@ export interface FileRoutesById {
   '/catalogo': typeof CatalogoRoute
   '/encomendas': typeof EncomendasRoute
   '/eventos': typeof EventosRoute
+  '/festival': typeof FestivalRoute
   '/insumos': typeof InsumosRoute
   '/login': typeof LoginRoute
   '/pdv': typeof PdvRoute
@@ -107,6 +116,7 @@ export interface FileRouteTypes {
     | '/catalogo'
     | '/encomendas'
     | '/eventos'
+    | '/festival'
     | '/insumos'
     | '/login'
     | '/pdv'
@@ -118,6 +128,7 @@ export interface FileRouteTypes {
     | '/catalogo'
     | '/encomendas'
     | '/eventos'
+    | '/festival'
     | '/insumos'
     | '/login'
     | '/pdv'
@@ -129,6 +140,7 @@ export interface FileRouteTypes {
     | '/catalogo'
     | '/encomendas'
     | '/eventos'
+    | '/festival'
     | '/insumos'
     | '/login'
     | '/pdv'
@@ -141,6 +153,7 @@ export interface RootRouteChildren {
   CatalogoRoute: typeof CatalogoRoute
   EncomendasRoute: typeof EncomendasRoute
   EventosRoute: typeof EventosRoute
+  FestivalRoute: typeof FestivalRoute
   InsumosRoute: typeof InsumosRoute
   LoginRoute: typeof LoginRoute
   PdvRoute: typeof PdvRoute
@@ -175,6 +188,13 @@ declare module '@tanstack/react-router' {
       path: '/insumos'
       fullPath: '/insumos'
       preLoaderRoute: typeof InsumosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/festival': {
+      id: '/festival'
+      path: '/festival'
+      fullPath: '/festival'
+      preLoaderRoute: typeof FestivalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/eventos': {
@@ -221,6 +241,7 @@ const rootRouteChildren: RootRouteChildren = {
   CatalogoRoute: CatalogoRoute,
   EncomendasRoute: EncomendasRoute,
   EventosRoute: EventosRoute,
+  FestivalRoute: FestivalRoute,
   InsumosRoute: InsumosRoute,
   LoginRoute: LoginRoute,
   PdvRoute: PdvRoute,
