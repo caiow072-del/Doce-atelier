@@ -21,6 +21,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
 import { formatBRL } from "@/lib/store";
+import {
+  SUGGESTED_RECIPES,
+  SUGGESTED_INGREDIENTS,
+  MEASURES,
+  compatibleMeasures,
+  convertToBaseUnit,
+  type MeasureKey,
+  type SuggestedRecipe,
+} from "@/lib/suggestions";
 
 export const Route = createFileRoute("/receitas")({
   head: () => ({
@@ -74,26 +83,7 @@ function fullCost(r: Recipe, allIng: Ingredient[]) {
   return { ingredientsCost, wasteCost, totalRecipe, perSlice, suggestedPrice };
 }
 
-type Preset = {
-  key: string;
-  label: string;
-  emoji: string;
-  servings: number;
-  labor: number;
-  packaging: number;
-  waste: number; // %
-  margin: number; // %
-  hint: string;
-};
-
-const PRESETS: Preset[] = [
-  { key: "bolo-simples", emoji: "🎂", label: "Bolo simples", servings: 12, labor: 25, packaging: 1.5, waste: 8, margin: 30, hint: "Bolo caseiro de aniversário, recheado simples." },
-  { key: "bolo-decorado", emoji: "🍰", label: "Bolo decorado", servings: 20, labor: 80, packaging: 4, waste: 12, margin: 50, hint: "Bolo com pasta americana, chantilly trabalhado." },
-  { key: "torta-doce", emoji: "🥧", label: "Torta doce", servings: 10, labor: 30, packaging: 2, waste: 10, margin: 40, hint: "Torta de morango, limão, holandesa..." },
-  { key: "doces-finos", emoji: "🍬", label: "Doces finos (cento)", servings: 100, labor: 60, packaging: 0.3, waste: 8, margin: 60, hint: "Brigadeiros gourmet, beijinhos, casadinhos." },
-  { key: "cupcake", emoji: "🧁", label: "Cupcake (dúzia)", servings: 12, labor: 20, packaging: 1, waste: 8, margin: 50, hint: "Cupcakes decorados ou simples." },
-  { key: "salgados", emoji: "🥟", label: "Salgados (cento)", servings: 100, labor: 40, packaging: 0.2, waste: 5, margin: 35, hint: "Coxinha, esfirra, kibe, empada." },
-];
+// (Sugestões prontas agora vêm de SUGGESTED_RECIPES — receitas reais como "Bolo de Ninho".)
 
 
 function RecipesPage() {
@@ -264,13 +254,17 @@ function RecipesPage() {
 
 function EmptyState({ onCreate }: { onCreate: () => void }) {
   return (
-    <div className="grid place-items-center rounded-3xl border-2 border-dashed border-border bg-card/40 p-16 text-center">
+    <div className="grid place-items-center rounded-3xl border-2 border-dashed border-border bg-card/40 p-12 text-center">
       <div className="grid h-16 w-16 place-items-center rounded-2xl bg-blush/60">
         <BookOpen className="h-7 w-7 text-mauve" strokeWidth={1.4} />
       </div>
       <h2 className="mt-4 font-display text-2xl italic text-mauve">Nenhuma receita ainda</h2>
       <p className="mt-2 max-w-md text-sm text-muted-foreground">
-        Crie sua primeira ficha técnica escolhendo os insumos cadastrados.
+        Comece criando sua primeira ficha — ou abra a Nova receita e clique em
+        <span className="mx-1 inline-flex items-center gap-1 rounded-full border border-rose/40 bg-blush/30 px-2 py-0.5 text-[11px] text-mauve">
+          <Sparkles className="h-3 w-3" /> Bolo de Ninho (3kg)
+        </span>
+        para ver um exemplo pronto.
       </p>
       <button
         onClick={onCreate}
@@ -403,16 +397,47 @@ function RecipeForm({
   const [targetMargin, setTargetMargin] = useState(((initial?.target_margin ?? 0.3) * 100).toString());
   const [items, setItems] = useState<RecipeIngredient[]>(initial?.ingredients ?? []);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerSearch, setPickerSearch] = useState("");
+  // Por item, qual unidade está sendo usada para entrada (xícara/colher/native).
+  const [measureByItem, setMeasureByItem] = useState<Record<string, MeasureKey>>({});
+  // Quantidade exibida no input (na unidade escolhida) — convertida para a base ao salvar.
+  const [displayQty, setDisplayQty] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
-  const applyPreset = (p: Preset) => {
-    setServings(p.servings.toString());
-    setLaborCost(p.labor.toString());
-    setPackagingCost(p.packaging.toString());
-    setIncludeWaste(p.waste > 0);
-    setWastePct((p.waste > 0 ? p.waste : 10).toString());
-    setTargetMargin(p.margin.toString());
-    toast.success(`Valores sugeridos para "${p.label}" aplicados`);
+  const applySuggestedRecipe = (s: SuggestedRecipe) => {
+    if (!name) setName(s.name);
+    if (!description) setDescription(s.description);
+    setServings(s.servings.toString());
+    setTotalWeight(s.totalWeightG.toString());
+    setLaborCost(s.laborCost.toString());
+    setPackagingCost(s.packagingCost.toFixed(2));
+    setIncludeWaste(s.wastePct > 0);
+    setWastePct((s.wastePct > 0 ? s.wastePct : 10).toString());
+    setTargetMargin(s.margin.toString());
+
+    // Casa por nome (case-insensitive) com insumos já cadastrados.
+    const matched: RecipeIngredient[] = [];
+    const missing: string[] = [];
+    for (const it of s.items) {
+      const sug = SUGGESTED_INGREDIENTS.find((x) => x.key === it.ingredientKey);
+      if (!sug) continue;
+      const ing = ingredients.find((i) => i.name.toLowerCase() === sug.name.toLowerCase());
+      if (ing) {
+        matched.push({ ingredient_id: ing.id, quantity: it.quantity });
+      } else {
+        missing.push(sug.name);
+      }
+    }
+    setItems(matched);
+
+    if (missing.length > 0) {
+      toast.warning(
+        `Sugestão aplicada. Cadastre estes insumos para o cálculo ficar completo: ${missing.join(", ")}`,
+        { duration: 6000 }
+      );
+    } else {
+      toast.success(`Sugestão "${s.name}" aplicada — ajuste o que precisar`);
+    }
   };
 
   const previewRecipe: Recipe = {
@@ -545,21 +570,21 @@ function RecipeForm({
             <div className="rounded-2xl border border-border bg-background p-3">
               <div className="mb-2 flex items-center gap-1.5">
                 <Wand2 className="h-3.5 w-3.5 text-rose" />
-                <p className="text-[10px] uppercase tracking-widest text-rose">Sugestões prontas</p>
+                <p className="text-[10px] uppercase tracking-widest text-rose">Receitas-exemplo</p>
               </div>
               <p className="mb-2 text-[11px] text-muted-foreground">
-                Toque em um tipo para preencher valores recomendados — depois é só ajustar.
+                Toque para preencher tudo (ingredientes, rendimento, custos) com uma receita real.
               </p>
               <div className="flex flex-wrap gap-1.5">
-                {PRESETS.map((p) => (
+                {SUGGESTED_RECIPES.map((s) => (
                   <button
-                    key={p.key}
+                    key={s.key}
                     type="button"
-                    onClick={() => applyPreset(p)}
-                    title={p.hint}
-                    className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2.5 py-1 text-[11px] text-mauve hover:border-rose/60 hover:bg-blush/40"
+                    onClick={() => applySuggestedRecipe(s)}
+                    title={s.description}
+                    className="inline-flex items-center gap-1 rounded-full border border-rose/40 bg-blush/40 px-3 py-1 text-[11px] text-mauve hover:bg-blush/60"
                   >
-                    <span>{p.emoji}</span> {p.label}
+                    <Sparkles className="h-3 w-3" /> {s.name}
                   </button>
                 ))}
               </div>
@@ -577,28 +602,61 @@ function RecipeForm({
                 <button
                   type="button"
                   onClick={() => setPickerOpen((v) => !v)}
-                  disabled={available.length === 0}
-                  className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-mauve px-3 py-1.5 text-xs font-medium text-cream disabled:opacity-50"
+                  className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-mauve px-3 py-1.5 text-xs font-medium text-cream"
                 >
-                  <Plus className="h-3 w-3" /> Adicionar insumo
+                  <Plus className="h-3 w-3" /> {pickerOpen ? "Fechar" : "Adicionar insumo"}
                 </button>
               </div>
 
-              {pickerOpen && available.length > 0 && (
-                <div className="mt-2 max-h-48 overflow-y-auto rounded-xl border border-border bg-card">
-                  {available.map((ing) => (
+              {pickerOpen && (
+                <div className="mt-2 rounded-xl border border-border bg-card">
+                  <div className="flex items-center gap-2 border-b border-border px-3 py-2">
+                    <Search className="h-3.5 w-3.5 text-muted-foreground" />
+                    <input
+                      autoFocus
+                      value={pickerSearch}
+                      onChange={(e) => setPickerSearch(e.target.value)}
+                      placeholder="Buscar insumo..."
+                      className="flex-1 bg-transparent text-sm text-mauve outline-none"
+                    />
                     <button
-                      key={ing.id}
                       type="button"
                       onClick={() => {
-                        addItem(ing.id);
                         setPickerOpen(false);
+                        setPickerSearch("");
                       }}
-                      className="block w-full px-3 py-2 text-left text-sm text-mauve hover:bg-blush/50"
+                      className="rounded-md p-1 text-muted-foreground hover:bg-blush/40"
+                      aria-label="Fechar"
                     >
-                      {ing.name} <span className="text-xs text-muted-foreground">({ing.unit})</span>
+                      <X className="h-3.5 w-3.5" />
                     </button>
-                  ))}
+                  </div>
+                  <div className="max-h-56 overflow-y-auto">
+                    {available.length === 0 ? (
+                      <p className="px-3 py-3 text-xs text-muted-foreground">
+                        Todos os insumos já foram adicionados.
+                      </p>
+                    ) : (
+                      available
+                        .filter((ing) =>
+                          ing.name.toLowerCase().includes(pickerSearch.toLowerCase())
+                        )
+                        .map((ing) => (
+                          <button
+                            key={ing.id}
+                            type="button"
+                            onClick={() => {
+                              addItem(ing.id);
+                              setPickerSearch("");
+                            }}
+                            className="block w-full px-3 py-2 text-left text-sm text-mauve hover:bg-blush/50"
+                          >
+                            {ing.name}{" "}
+                            <span className="text-xs text-muted-foreground">({ing.unit})</span>
+                          </button>
+                        ))
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -613,45 +671,81 @@ function RecipeForm({
                     if (!ing) return null;
                     const lineCost =
                       ing.package_qty > 0 ? (ing.price_paid / ing.package_qty) * it.quantity : 0;
+                    const measureKey: MeasureKey = measureByItem[it.ingredient_id] ?? "native";
+                    const compat = compatibleMeasures(ing.unit);
+                    const display =
+                      displayQty[it.ingredient_id] ??
+                      (measureKey === "native" ? it.quantity.toString() : "");
+                    const onChangeQty = (raw: string) => {
+                      setDisplayQty((d) => ({ ...d, [it.ingredient_id]: raw }));
+                      const n = Number(raw);
+                      if (!isFinite(n)) return;
+                      const base = convertToBaseUnit(n, measureKey, ing.unit);
+                      if (base !== null) setQty(it.ingredient_id, base);
+                    };
+                    const onChangeMeasure = (k: MeasureKey) => {
+                      setMeasureByItem((m) => ({ ...m, [it.ingredient_id]: k }));
+                      // recalcula display preservando a quantidade base
+                      if (k === "native") {
+                        setDisplayQty((d) => ({ ...d, [it.ingredient_id]: it.quantity.toString() }));
+                      } else {
+                        const m = MEASURES.find((x) => x.key === k);
+                        if (m) {
+                          const baseInRefUnit =
+                            ing.unit.toLowerCase() === "l" || ing.unit.toLowerCase() === "kg"
+                              ? it.quantity * 1000
+                              : it.quantity;
+                          const inMeasure = baseInRefUnit / m.factor;
+                          setDisplayQty((d) => ({
+                            ...d,
+                            [it.ingredient_id]: inMeasure.toFixed(2),
+                          }));
+                        }
+                      }
+                    };
                     return (
-                      <li key={it.ingredient_id} className="flex items-center gap-2 rounded-xl bg-card px-3 py-2">
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm text-mauve">{ing.name}</p>
-                          <p className="text-[11px] text-muted-foreground">{formatBRL(lineCost)}</p>
+                      <li
+                        key={it.ingredient_id}
+                        className="rounded-xl bg-card px-3 py-2.5"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium text-mauve">{ing.name}</p>
+                            <p className="text-[11px] text-muted-foreground">
+                              {it.quantity.toFixed(2)} {ing.unit} · {formatBRL(lineCost)}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeItem(it.ingredient_id)}
+                            className="rounded-lg p-1 text-destructive hover:bg-destructive/10"
+                            aria-label="Remover"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => setQty(it.ingredient_id, it.quantity - 1)}
-                          className="rounded-lg bg-blush/50 p-1 text-mauve"
-                          aria-label="Diminuir"
-                        >
-                          <Minus className="h-3 w-3" />
-                        </button>
-                        <input
-                          type="number"
-                          step="0.01"
-                          inputMode="decimal"
-                          value={it.quantity}
-                          onChange={(e) => setQty(it.ingredient_id, Number(e.target.value))}
-                          className="w-20 rounded-lg border border-border bg-background px-2 py-1 text-center text-sm text-mauve outline-none focus:border-rose"
-                        />
-                        <span className="w-8 text-xs text-muted-foreground">{ing.unit}</span>
-                        <button
-                          type="button"
-                          onClick={() => setQty(it.ingredient_id, it.quantity + 1)}
-                          className="rounded-lg bg-blush/50 p-1 text-mauve"
-                          aria-label="Aumentar"
-                        >
-                          <Plus className="h-3 w-3" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => removeItem(it.ingredient_id)}
-                          className="rounded-lg p-1 text-destructive"
-                          aria-label="Remover"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </button>
+                        <div className="mt-2 flex items-center gap-1.5">
+                          <input
+                            type="number"
+                            step="0.01"
+                            inputMode="decimal"
+                            value={display}
+                            onChange={(e) => onChangeQty(e.target.value)}
+                            className="w-20 rounded-lg border border-border bg-background px-2 py-1.5 text-center text-sm text-mauve outline-none focus:border-rose"
+                          />
+                          <select
+                            value={measureKey}
+                            onChange={(e) => onChangeMeasure(e.target.value as MeasureKey)}
+                            className="flex-1 rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-mauve outline-none focus:border-rose"
+                          >
+                            <option value="native">{ing.unit} (padrão)</option>
+                            {compat.map((m) => (
+                              <option key={m.key} value={m.key}>
+                                {m.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
                       </li>
                     );
                   })}
@@ -708,43 +802,43 @@ function RecipeForm({
           <section className="space-y-3">
             <SectionTitle index={4} title="Custos extras e lucro" />
 
-            <Field
-              label="Custo de Mão de Obra / Produção (R$)"
-              hint="Valor gasto para produzir especificamente esta receita (seu tempo, energia, gás)."
-            >
-              <input
-                type="number"
-                step="0.01"
-                inputMode="decimal"
-                value={laborCost}
-                onChange={(e) => setLaborCost(e.target.value)}
-                className="input-base"
-              />
-            </Field>
+            {/* Produção e Embalagem lado a lado */}
+            <div className="grid grid-cols-2 gap-3">
+              <Field
+                label="Produção (R$)"
+                hint="Seu trabalho/diária para fazer essa receita (tempo, energia, gás, ajudante)."
+              >
+                <input
+                  type="number"
+                  step="0.01"
+                  inputMode="decimal"
+                  value={laborCost}
+                  onChange={(e) => setLaborCost(e.target.value)}
+                  className="input-base"
+                />
+              </Field>
+              <Field
+                label="Embalagem / unid. (R$)"
+                hint="Caixa, papel, lacre, fita por cada fatia/unidade."
+              >
+                <input
+                  type="number"
+                  step="0.01"
+                  inputMode="decimal"
+                  value={packagingCost}
+                  onChange={(e) => setPackagingCost(e.target.value)}
+                  className="input-base"
+                />
+              </Field>
+            </div>
 
-            <Field
-              label="Embalagem por unidade (R$)"
-              hint="Custo da caixa, papel, lacre, fita por cada fatia/unidade vendida."
-            >
-              <input
-                type="number"
-                step="0.01"
-                inputMode="decimal"
-                value={packagingCost}
-                onChange={(e) => setPackagingCost(e.target.value)}
-                className="input-base"
-              />
-            </Field>
-
-            {/* Toggle de perda */}
-            <div className="rounded-2xl border border-border bg-background p-3">
-              <label className="flex cursor-pointer items-start justify-between gap-3">
+            {/* Card compacto: perda */}
+            <div className="rounded-xl border border-border bg-background px-3 py-2.5">
+              <div className="flex items-center justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="text-sm text-mauve">
-                    Incluir margem de perda / quebra de ingredientes
-                  </p>
-                  <p className="mt-0.5 text-[11px] text-muted-foreground">
-                    Adiciona uma % em cima do custo dos insumos para cobrir cascas, sobras e erros. Recomendado: 10%.
+                  <p className="text-xs font-medium text-mauve">Margem de perda</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    Cobre cascas, sobras e erros (recomendado 10%)
                   </p>
                 </div>
                 <button
@@ -752,51 +846,76 @@ function RecipeForm({
                   role="switch"
                   aria-checked={includeWaste}
                   onClick={() => setIncludeWaste((v) => !v)}
-                  className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${includeWaste ? "bg-mauve" : "bg-border"}`}
+                  className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${includeWaste ? "bg-mauve" : "bg-border"}`}
                 >
                   <span
-                    className={`absolute top-0.5 h-5 w-5 rounded-full bg-cream shadow transition-transform ${includeWaste ? "translate-x-5" : "translate-x-0.5"}`}
+                    className={`absolute top-0.5 h-4 w-4 rounded-full bg-cream shadow transition-transform ${includeWaste ? "translate-x-[18px]" : "translate-x-0.5"}`}
                   />
                 </button>
-              </label>
+              </div>
               {includeWaste && (
-                <div className="mt-3 flex items-center gap-2">
+                <div className="mt-2 flex items-center gap-2">
                   <input
                     type="number"
-                    step="0.1"
+                    step="0.5"
                     inputMode="decimal"
                     value={wastePct}
                     onChange={(e) => setWastePct(e.target.value)}
-                    className="w-24 rounded-lg border border-border bg-card px-2 py-1.5 text-center text-sm text-mauve outline-none focus:border-rose"
+                    className="w-16 rounded-lg border border-border bg-card px-2 py-1 text-center text-xs text-mauve outline-none focus:border-rose"
                   />
-                  <span className="text-xs text-muted-foreground">% sobre o custo dos insumos</span>
+                  <span className="text-[11px] text-muted-foreground">% sobre os insumos</span>
                 </div>
               )}
             </div>
 
-            {/* Lucro desejado com sugestão rápida */}
-            <Field
-              label="Lucro desejado (%)"
-              hint="Quanto você quer ganhar ALÉM do custo total. Esse é o lucro real do seu negócio."
-            >
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  step="0.1"
-                  inputMode="decimal"
-                  value={targetMargin}
-                  onChange={(e) => setTargetMargin(e.target.value)}
-                  className="input-base flex-1"
-                />
+            {/* Lucro desejado — slider */}
+            <div className="rounded-2xl border border-border bg-background p-3">
+              <div className="flex items-baseline justify-between">
+                <label className="text-[10px] uppercase tracking-widest text-rose">
+                  Lucro desejado
+                </label>
+                <span className="font-display text-2xl italic text-mauve">
+                  {Math.round(Number(targetMargin) || 0)}%
+                </span>
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={1}
+                value={Number(targetMargin) || 0}
+                onChange={(e) => setTargetMargin(e.target.value)}
+                className="profit-slider mt-1 w-full accent-mauve"
+              />
+              <div className="mt-1 flex justify-between text-[10px] text-muted-foreground">
+                <span>0%</span>
+                <button
+                  type="button"
+                  onClick={() => setTargetMargin("30")}
+                  className="rounded-full px-2 py-0.5 text-mauve hover:bg-blush/40"
+                >
+                  30%
+                </button>
                 <button
                   type="button"
                   onClick={() => setTargetMargin("50")}
-                  className="shrink-0 rounded-full border border-rose/50 bg-blush/40 px-3 py-1.5 text-[11px] text-mauve hover:bg-blush/60"
+                  className="rounded-full px-2 py-0.5 text-mauve hover:bg-blush/40"
                 >
-                  Sugestão: 50%
+                  Sugestão 50%
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setTargetMargin("80")}
+                  className="rounded-full px-2 py-0.5 text-mauve hover:bg-blush/40"
+                >
+                  80%
+                </button>
+                <span>100%</span>
               </div>
-            </Field>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Quanto você quer ganhar além do custo total.
+              </p>
+            </div>
           </section>
 
           {/* ───── Rodapé: resumo financeiro ───── */}
