@@ -452,9 +452,14 @@ function RecipeForm({
     packaging_cost: Number(packagingCost) || 0,
     waste_pct: includeWaste ? (Number(wastePct) || 0) / 100 : 0,
     target_margin: (Number(targetMargin) || 0) / 100,
+    public_price: realPrice ? Number(realPrice) : null,
     ingredients: items,
   };
   const cost = fullCost(previewRecipe, ingredients);
+  const realPriceNum = Number(realPrice) || 0;
+  const realProfit = realPriceNum > 0 ? realPriceNum - cost.perSlice : 0;
+  const realMarginPct =
+    realPriceNum > 0 && cost.perSlice > 0 ? ((realPriceNum - cost.perSlice) / realPriceNum) * 100 : 0;
   const extraCosts =
     (previewRecipe.labor_cost ?? 0) +
     (previewRecipe.packaging_cost ?? 0) * (previewRecipe.servings || 0) +
