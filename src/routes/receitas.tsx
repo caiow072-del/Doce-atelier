@@ -64,6 +64,7 @@ type Recipe = {
   packaging_cost: number;
   waste_pct: number;
   target_margin: number;
+  public_price: number | null;
   shop_id: string;
   ingredients?: RecipeIngredient[];
 };
