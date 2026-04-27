@@ -79,14 +79,14 @@ function Dashboard() {
         animate={{ opacity: 1, y: 0 }}
         className="relative overflow-hidden rounded-3xl border border-border/60 bg-gradient-to-br from-blush/70 via-card to-cream p-6 shadow-soft sm:p-10"
       >
-        <div className="pointer-events-none absolute -right-12 -top-10 h-64 w-64 opacity-90 sm:h-72 sm:w-72">
+        <div className="pointer-events-none absolute -right-8 -top-6 h-28 w-28 opacity-30 sm:-right-12 sm:-top-10 sm:h-72 sm:w-72 sm:opacity-90">
           <img src={heroCake} alt="" className="h-full w-full object-contain" />
         </div>
         <div className="relative max-w-2xl">
           <div className="inline-flex items-center gap-2 rounded-full bg-card/70 px-3 py-1 text-[11px] uppercase tracking-widest text-rose">
             <Sparkles className="h-3 w-3" /> {currentShop?.shops.name ?? "Sua confeitaria"}
           </div>
-          <h1 className="mt-4 font-display text-4xl italic leading-tight text-mauve sm:text-6xl">
+          <h1 className="mt-4 font-display text-3xl italic leading-tight text-mauve sm:text-6xl">
             Bom dia, <span className="text-rose">{firstName}</span>.
           </h1>
           <p className="mt-3 max-w-md text-sm text-mauve/80 sm:text-base">
