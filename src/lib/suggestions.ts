@@ -111,7 +111,7 @@ export const SUGGESTED_RECIPES: SuggestedRecipe[] = [
       "Bolo decorado de ninho — receita-base de exemplo com custos detalhados. Fatias grandes (~250g).",
     servings: 12,
     totalWeightG: 3000,
-    laborCost: 80, // diária ajudante (editável)
+    laborCost: 25, // valor do tempo da confeiteira nesta receita (editável)
     packagingCost: 13 / 12, // cakeboard + caixa rateado por fatia (~R$1,08)
     wastePct: 10,
     margin: 65, // resulta em preço sugerido próximo de R$ 17/fatia

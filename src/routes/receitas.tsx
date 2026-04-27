@@ -64,6 +64,7 @@ type Recipe = {
   packaging_cost: number;
   waste_pct: number;
   target_margin: number;
+  public_price: number | null;
   shop_id: string;
   ingredients?: RecipeIngredient[];
 };
@@ -324,9 +325,9 @@ function RecipeDetail({
             hint="Cascas, sobras de massa, erros — quanto se perde no processo."
           />
           <Row
-            label="Seu trabalho"
+            label="Sua produção"
             value={formatBRL(recipe.labor_cost)}
-            hint="Quanto você quer ganhar pelo tempo gasto fazendo essa receita."
+            hint="Valor do seu tempo gasto apenas para fazer esta receita."
           />
           <Row label={`Total da receita (÷ ${recipe.servings} fatias)`} value={formatBRL(cost.totalRecipe)} bold />
           <Row label="Embalagem por fatia" value={formatBRL(recipe.packaging_cost)} />
@@ -395,6 +396,7 @@ function RecipeForm({
   const [includeWaste, setIncludeWaste] = useState(initialWaste > 0);
   const [wastePct, setWastePct] = useState((initialWaste > 0 ? initialWaste : 10).toString());
   const [targetMargin, setTargetMargin] = useState(((initial?.target_margin ?? 0.3) * 100).toString());
+  const [realPrice, setRealPrice] = useState(initial?.public_price?.toString() ?? "");
   const [items, setItems] = useState<RecipeIngredient[]>(initial?.ingredients ?? []);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerSearch, setPickerSearch] = useState("");
@@ -450,9 +452,14 @@ function RecipeForm({
     packaging_cost: Number(packagingCost) || 0,
     waste_pct: includeWaste ? (Number(wastePct) || 0) / 100 : 0,
     target_margin: (Number(targetMargin) || 0) / 100,
+    public_price: realPrice ? Number(realPrice) : null,
     ingredients: items,
   };
   const cost = fullCost(previewRecipe, ingredients);
+  const realPriceNum = Number(realPrice) || 0;
+  const realProfit = realPriceNum > 0 ? realPriceNum - cost.perSlice : 0;
+  const realMarginPct =
+    realPriceNum > 0 && cost.perSlice > 0 ? ((realPriceNum - cost.perSlice) / realPriceNum) * 100 : 0;
   const extraCosts =
     (previewRecipe.labor_cost ?? 0) +
     (previewRecipe.packaging_cost ?? 0) * (previewRecipe.servings || 0) +
@@ -487,6 +494,7 @@ function RecipeForm({
       packaging_cost: Number(packagingCost),
       waste_pct: includeWaste ? Number(wastePct) / 100 : 0,
       target_margin: Number(targetMargin) / 100,
+      public_price: realPrice ? Number(realPrice) : null,
     };
 
     let recipeId = initial?.id;
@@ -805,7 +813,7 @@ function RecipeForm({
             <div className="grid grid-cols-2 gap-3">
               <Field
                 label="Produção (R$)"
-                hint="Seu trabalho/diária para fazer essa receita (tempo, energia, gás, ajudante)."
+                hint="Valor do seu tempo gasto apenas para fazer esta receita. Entra no custo da fatia. (Ajudante e frete ficam no módulo de Eventos.)"
               >
                 <input
                   type="number"
@@ -917,9 +925,30 @@ function RecipeForm({
             </div>
           </section>
 
+          {/* ───── SEÇÃO 5: Preço Real Praticado ───── */}
+          <section className="space-y-2">
+            <SectionTitle index={5} title="Preço de venda real" subtitle="O que você cobra de verdade" />
+            <div className="rounded-2xl border-2 border-mauve/30 bg-card p-3">
+              <Field
+                label="Preço de venda real (R$ por fatia/unid.)"
+                hint="O preço que você realmente cobra. O slider acima é só sugestão — o lucro abaixo é calculado com este valor."
+              >
+                <input
+                  type="number"
+                  step="0.01"
+                  inputMode="decimal"
+                  value={realPrice}
+                  onChange={(e) => setRealPrice(e.target.value)}
+                  placeholder="Ex: 17.00"
+                  className="input-base"
+                />
+              </Field>
+            </div>
+          </section>
+
           {/* ───── Rodapé: resumo financeiro ───── */}
           <div className="rounded-2xl bg-gradient-to-br from-blush/60 to-rose/30 p-4">
-            <div className="grid grid-cols-3 gap-2 text-center">
+            <div className="grid grid-cols-2 gap-2 text-center sm:grid-cols-4">
               <div>
                 <p className="text-[10px] uppercase tracking-widest text-rose">Custo/fatia</p>
                 <p className="font-display text-lg italic text-mauve">{formatBRL(cost.perSlice)}</p>
@@ -931,14 +960,29 @@ function RecipeForm({
                 </p>
               </div>
               <div>
-                <p className="text-[10px] uppercase tracking-widest text-rose">Lucro/fatia</p>
-                <p className={`font-display text-lg italic ${cost.suggestedPrice - cost.perSlice <= 0 ? "text-destructive" : "text-mauve"}`}>
-                  {formatBRL(cost.suggestedPrice - cost.perSlice)}
+                <p className="text-[10px] uppercase tracking-widest text-rose">Preço real</p>
+                <p className="font-display text-lg italic text-mauve">
+                  {realPriceNum > 0 ? formatBRL(realPriceNum) : "—"}
                 </p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-widest text-rose">Lucro real</p>
+                {realPriceNum > 0 ? (
+                  <>
+                    <p className={`font-display text-lg italic ${realProfit <= 0 ? "text-destructive" : "text-mauve"}`}>
+                      {formatBRL(realProfit)}
+                    </p>
+                    <p className={`text-[10px] ${realProfit <= 0 ? "text-destructive" : "text-mauve/70"}`}>
+                      {realMarginPct.toFixed(0)}%
+                    </p>
+                  </>
+                ) : (
+                  <p className="font-display text-lg italic text-muted-foreground">—</p>
+                )}
               </div>
             </div>
             <p className="mt-2 text-center text-[11px] text-mauve/70">
-              (Custo dos Insumos: {formatBRL(cost.ingredientsCost)} · Custos Extras: {formatBRL(extraCosts)})
+              (Insumos: {formatBRL(cost.ingredientsCost)} · Extras: {formatBRL(extraCosts)})
             </p>
           </div>
         </div>
