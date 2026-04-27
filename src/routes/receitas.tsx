@@ -343,11 +343,14 @@ function RecipeDetail({
   );
 }
 
-function Row({ label, value, bold, danger }: { label: string; value: string; bold?: boolean; danger?: boolean }) {
+function Row({ label, value, bold, danger, hint }: { label: string; value: string; bold?: boolean; danger?: boolean; hint?: string }) {
   const color = danger ? "text-destructive" : "text-mauve";
   return (
     <div className={`flex items-center justify-between rounded-xl px-3 py-2 text-sm ${bold ? "bg-secondary font-semibold" : ""}`}>
-      <span className={bold ? color : "text-muted-foreground"}>{label}</span>
+      <span className={`inline-flex items-center gap-1.5 ${bold ? color : "text-muted-foreground"}`}>
+        {label}
+        {hint && <HelpCircle className="h-3 w-3 opacity-60" aria-label={hint}><title>{hint}</title></HelpCircle>}
+      </span>
       <span className={color}>{value}</span>
     </div>
   );
