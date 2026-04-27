@@ -395,7 +395,7 @@ function RecipeForm({
   const initialWaste = (initial?.waste_pct ?? 0.1) * 100;
   const [includeWaste, setIncludeWaste] = useState(initialWaste > 0);
   const [wastePct, setWastePct] = useState((initialWaste > 0 ? initialWaste : 10).toString());
-  const [targetMargin, setTargetMargin] = useState(((initial?.target_margin ?? 0.3) * 100).toString());
+  const [targetMargin, setTargetMargin] = useState(((initial?.target_margin ?? 0.5) * 100).toString());
   const [realPrice, setRealPrice] = useState(initial?.public_price?.toString() ?? "");
   const [items, setItems] = useState<RecipeIngredient[]>(initial?.ingredients ?? []);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -460,9 +460,14 @@ function RecipeForm({
   const realProfit = realPriceNum > 0 ? realPriceNum - cost.perSlice : 0;
   const realMarginPct =
     realPriceNum > 0 && cost.perSlice > 0 ? ((realPriceNum - cost.perSlice) / realPriceNum) * 100 : 0;
+  const servingsNum = previewRecipe.servings || 0;
+  const ingredientCostPerSlice = servingsNum > 0 ? cost.ingredientsCost / servingsNum : 0;
+  // Lucro considerando APENAS insumos (ignora produção, embalagem, perda)
+  const profitPerSliceIngredients = realPriceNum > 0 ? realPriceNum - ingredientCostPerSlice : 0;
+  const profitTotalIngredients = profitPerSliceIngredients * servingsNum;
   const extraCosts =
     (previewRecipe.labor_cost ?? 0) +
-    (previewRecipe.packaging_cost ?? 0) * (previewRecipe.servings || 0) +
+    (previewRecipe.packaging_cost ?? 0) * servingsNum +
     cost.wasteCost;
   const sliceWeight =
     Number(totalWeight) > 0 && Number(servings) > 0
@@ -984,6 +989,31 @@ function RecipeForm({
             <p className="mt-2 text-center text-[11px] text-mauve/70">
               (Insumos: {formatBRL(cost.ingredientsCost)} · Extras: {formatBRL(extraCosts)})
             </p>
+
+            {realPriceNum > 0 && (
+              <div className="mt-3 rounded-xl bg-card/70 p-3">
+                <p className="text-center text-[10px] uppercase tracking-widest text-rose">
+                  Lucro considerando apenas os insumos
+                </p>
+                <div className="mt-1 grid grid-cols-2 gap-2 text-center">
+                  <div>
+                    <p className="text-[10px] text-muted-foreground">Por fatia</p>
+                    <p className={`font-display text-lg italic ${profitPerSliceIngredients <= 0 ? "text-destructive" : "text-mauve"}`}>
+                      {formatBRL(profitPerSliceIngredients)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-muted-foreground">Total ({servingsNum} fatias)</p>
+                    <p className={`font-display text-lg italic ${profitTotalIngredients <= 0 ? "text-destructive" : "text-mauve"}`}>
+                      {formatBRL(profitTotalIngredients)}
+                    </p>
+                  </div>
+                </div>
+                <p className="mt-1 text-center text-[10px] text-muted-foreground">
+                  Custo de insumos por fatia: {formatBRL(ingredientCostPerSlice)} · ignora produção, embalagem e perda
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
