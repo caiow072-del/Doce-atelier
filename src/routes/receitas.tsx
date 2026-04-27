@@ -598,10 +598,9 @@ function RecipeForm({
                 <button
                   type="button"
                   onClick={() => setPickerOpen((v) => !v)}
-                  disabled={available.length === 0}
-                  className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-mauve px-3 py-1.5 text-xs font-medium text-cream disabled:opacity-50"
+                  className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-mauve px-3 py-1.5 text-xs font-medium text-cream"
                 >
-                  <Plus className="h-3 w-3" /> Adicionar insumo
+                  <Plus className="h-3 w-3" /> {pickerOpen ? "Fechar" : "Adicionar insumo"}
                 </button>
               </div>
 
