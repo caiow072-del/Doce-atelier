@@ -53,6 +53,48 @@ export type Database = {
         }
         Relationships: []
       }
+      event_products: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          image_url: string | null
+          name: string
+          planned_qty: number
+          position: number
+          recipe_id: string | null
+          sold_qty: number
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          image_url?: string | null
+          name: string
+          planned_qty?: number
+          position?: number
+          recipe_id?: string | null
+          sold_qty?: number
+          unit_price?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          image_url?: string | null
+          name?: string
+          planned_qty?: number
+          position?: number
+          recipe_id?: string | null
+          sold_qty?: number
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       event_recipes: {
         Row: {
           batches: number
@@ -159,6 +201,7 @@ export type Database = {
       }
       events: {
         Row: {
+          closed_at: string | null
           created_at: string
           customer_name: string | null
           date: string
@@ -171,11 +214,16 @@ export type Database = {
           name: string
           notes: string | null
           opening_cash: number
+          parent_event_id: string | null
+          payment_summary: Json | null
+          recurrence: string
+          recurrence_until: string | null
           shop_id: string
           start_time: string | null
           updated_at: string
         }
         Insert: {
+          closed_at?: string | null
           created_at?: string
           customer_name?: string | null
           date: string
@@ -188,11 +236,16 @@ export type Database = {
           name: string
           notes?: string | null
           opening_cash?: number
+          parent_event_id?: string | null
+          payment_summary?: Json | null
+          recurrence?: string
+          recurrence_until?: string | null
           shop_id: string
           start_time?: string | null
           updated_at?: string
         }
         Update: {
+          closed_at?: string | null
           created_at?: string
           customer_name?: string | null
           date?: string
@@ -205,6 +258,10 @@ export type Database = {
           name?: string
           notes?: string | null
           opening_cash?: number
+          parent_event_id?: string | null
+          payment_summary?: Json | null
+          recurrence?: string
+          recurrence_until?: string | null
           shop_id?: string
           start_time?: string | null
           updated_at?: string
@@ -492,9 +549,12 @@ export type Database = {
       }
       sales: {
         Row: {
+          cart_id: string | null
           created_by: string | null
+          event_id: string | null
           id: string
           item: string
+          payment_method: string
           price: number
           product_id: string | null
           qty: number
@@ -502,9 +562,12 @@ export type Database = {
           sold_at: string
         }
         Insert: {
+          cart_id?: string | null
           created_by?: string | null
+          event_id?: string | null
           id?: string
           item: string
+          payment_method?: string
           price: number
           product_id?: string | null
           qty?: number
@@ -512,9 +575,12 @@ export type Database = {
           sold_at?: string
         }
         Update: {
+          cart_id?: string | null
           created_by?: string | null
+          event_id?: string | null
           id?: string
           item?: string
+          payment_method?: string
           price?: number
           product_id?: string | null
           qty?: number
