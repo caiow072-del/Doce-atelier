@@ -12,6 +12,8 @@ import {
   Package,
   ChefHat,
   ClipboardList,
+  Lock,
+  Clock,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -148,6 +150,14 @@ function Dashboard() {
         />
       </section>
 
+      {/* ============ Eventos: próximo + último fechado ============ */}
+      {(nextEvent || lastClosed) && (
+        <section className="grid gap-4 md:grid-cols-2">
+          {nextEvent && <NextEventCard ev={nextEvent} />}
+          {lastClosed && <LastClosedCard ev={lastClosed} />}
+        </section>
+      )}
+
       {/* ============ Two-column main ============ */}
       <section className="grid gap-6 lg:grid-cols-3">
         {/* Catalog */}
@@ -247,5 +257,87 @@ function Metric({
       </p>
       {hint && <p className="mt-1 text-[11px] text-muted-foreground">{hint}</p>}
     </div>
+  );
+}
+
+function NextEventCard({ ev }: { ev: { id: string; name: string; date: string } }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(t);
+  }, []);
+  const target = new Date(ev.date).getTime();
+  const diff = target - now;
+  const past = diff < 0;
+  const abs = Math.abs(diff);
+  const days = Math.floor(abs / 86_400_000);
+  const hours = Math.floor((abs % 86_400_000) / 3_600_000);
+  const mins = Math.floor((abs % 3_600_000) / 60_000);
+  const label = past
+    ? "acontecendo / atrasado"
+    : days > 0
+      ? `em ${days}d ${hours}h`
+      : hours > 0
+        ? `em ${hours}h ${mins}m`
+        : `em ${mins} min`;
+  const dateStr = new Date(ev.date).toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "long",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  return (
+    <Link
+      to="/eventos"
+      className="card-soft group block p-6 transition hover:border-rose/40"
+    >
+      <div className="flex items-center gap-2 text-rose">
+        <Clock className="h-4 w-4" />
+        <p className="text-[11px] uppercase tracking-widest">Próximo evento</p>
+      </div>
+      <p className="mt-3 truncate font-display text-2xl italic text-mauve">{ev.name}</p>
+      <p className="text-xs text-muted-foreground">{dateStr}</p>
+      <div className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-blush/50 px-3 py-1 text-xs font-medium text-mauve">
+        <CalendarHeart className="h-3 w-3" /> {label}
+      </div>
+    </Link>
+  );
+}
+
+function LastClosedCard({
+  ev,
+}: {
+  ev: { id: string; name: string; closed_at: string; payment_summary: any };
+}) {
+  const ps = ev.payment_summary ?? {};
+  const total = Number(ps.total ?? 0);
+  const profit = Number(ps.profit ?? ps.net ?? total);
+  const closedStr = new Date(ev.closed_at).toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "short",
+  });
+  const profitTone = profit < 0 ? "text-destructive" : profit > 0 ? "text-success" : "text-mauve";
+  return (
+    <Link
+      to="/eventos"
+      className="card-soft group block p-6 transition hover:border-rose/40"
+    >
+      <div className="flex items-center gap-2 text-rose">
+        <Lock className="h-4 w-4" />
+        <p className="text-[11px] uppercase tracking-widest">Último fechamento</p>
+      </div>
+      <p className="mt-3 truncate font-display text-2xl italic text-mauve">{ev.name}</p>
+      <p className="text-xs text-muted-foreground">fechado em {closedStr}</p>
+      <div className="mt-4 grid grid-cols-2 gap-3">
+        <div>
+          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Vendido</p>
+          <p className="font-display text-lg italic text-mauve">{formatBRL(total)}</p>
+        </div>
+        <div>
+          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Lucro</p>
+          <p className={`font-display text-lg italic ${profitTone}`}>{formatBRL(profit)}</p>
+        </div>
+      </div>
+    </Link>
   );
 }
