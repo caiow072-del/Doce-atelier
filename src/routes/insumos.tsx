@@ -114,7 +114,10 @@ function InsumosPage() {
           <Loader2 className="h-6 w-6 animate-spin" />
         </div>
       ) : items.length === 0 ? (
-        <EmptyState onCreate={() => setCreating(true)} />
+        <EmptyState
+          onCreate={() => setCreating(true)}
+          onShowSuggestions={() => setShowSuggestions(true)}
+        />
       ) : (
         <>
           {/* Desktop table */}
