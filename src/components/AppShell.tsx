@@ -14,12 +14,13 @@ import {
   ClipboardList,
   CalendarDays,
   Globe,
+  Users,
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 
 type NavItem = {
-  to: "/" | "/insumos" | "/receitas" | "/eventos" | "/encomendas" | "/calendario" | "/catalogo" | "/pdv";
+  to: "/" | "/insumos" | "/receitas" | "/eventos" | "/encomendas" | "/calendario" | "/catalogo" | "/clientes" | "/pdv";
   label: string;
   icon: typeof LayoutDashboard;
   end?: boolean;
@@ -29,8 +30,9 @@ const nav: NavItem[] = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "/insumos", label: "Insumos", icon: Package },
   { to: "/receitas", label: "Receitas", icon: BookOpen },
-  { to: "/eventos", label: "Eventos", icon: CalendarHeart },
+  { to: "/clientes", label: "Clientes", icon: Users },
   { to: "/encomendas", label: "Encomendas", icon: ClipboardList },
+  { to: "/eventos", label: "Eventos", icon: CalendarHeart },
   { to: "/calendario", label: "Calendário", icon: CalendarDays },
   { to: "/catalogo", label: "Catálogo", icon: Globe },
   { to: "/pdv", label: "PDV", icon: ShoppingBag },
