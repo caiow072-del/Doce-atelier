@@ -325,9 +325,9 @@ function RecipeDetail({
             hint="Cascas, sobras de massa, erros — quanto se perde no processo."
           />
           <Row
-            label="Seu trabalho"
+            label="Sua produção"
             value={formatBRL(recipe.labor_cost)}
-            hint="Quanto você quer ganhar pelo tempo gasto fazendo essa receita."
+            hint="Valor do seu tempo gasto apenas para fazer esta receita."
           />
           <Row label={`Total da receita (÷ ${recipe.servings} fatias)`} value={formatBRL(cost.totalRecipe)} bold />
           <Row label="Embalagem por fatia" value={formatBRL(recipe.packaging_cost)} />
