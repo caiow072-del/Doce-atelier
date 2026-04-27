@@ -561,21 +561,21 @@ function RecipeForm({
             <div className="rounded-2xl border border-border bg-background p-3">
               <div className="mb-2 flex items-center gap-1.5">
                 <Wand2 className="h-3.5 w-3.5 text-rose" />
-                <p className="text-[10px] uppercase tracking-widest text-rose">Sugestões prontas</p>
+                <p className="text-[10px] uppercase tracking-widest text-rose">Receitas-exemplo</p>
               </div>
               <p className="mb-2 text-[11px] text-muted-foreground">
-                Toque em um tipo para preencher valores recomendados — depois é só ajustar.
+                Toque para preencher tudo (ingredientes, rendimento, custos) com uma receita real.
               </p>
               <div className="flex flex-wrap gap-1.5">
-                {PRESETS.map((p) => (
+                {SUGGESTED_RECIPES.map((s) => (
                   <button
-                    key={p.key}
+                    key={s.key}
                     type="button"
-                    onClick={() => applyPreset(p)}
-                    title={p.hint}
-                    className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2.5 py-1 text-[11px] text-mauve hover:border-rose/60 hover:bg-blush/40"
+                    onClick={() => applySuggestedRecipe(s)}
+                    title={s.description}
+                    className="inline-flex items-center gap-1 rounded-full border border-rose/40 bg-blush/40 px-3 py-1 text-[11px] text-mauve hover:bg-blush/60"
                   >
-                    <span>{p.emoji}</span> {p.label}
+                    <Sparkles className="h-3 w-3" /> {s.name}
                   </button>
                 ))}
               </div>
