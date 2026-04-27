@@ -1033,6 +1033,7 @@ function RecipeForm({
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           {initial ? "Salvar alterações" : "Criar receita"}
         </button>
+       </div>
       </form>
     </div>
   );
