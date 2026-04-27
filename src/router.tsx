@@ -59,7 +59,11 @@ export const getRouter = () => {
     routeTree,
     context: {},
     scrollRestoration: true,
-    defaultPreload: "intent",
+    // NOTE: preload "intent" estava disparando um bug do router-core
+    // ("Cannot read properties of undefined (reading '_nonReactive')") ao
+    // passar o mouse sobre links — isso travava a navegação e deixava a
+    // tela em "Abrindo seu atelier...". Desligamos o preload por enquanto.
+    defaultPreload: false,
     defaultPreloadStaleTime: 0,
     defaultErrorComponent: DefaultErrorComponent,
   });
