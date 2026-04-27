@@ -13,11 +13,11 @@ export type SuggestedIngredient = {
 export const SUGGESTED_INGREDIENTS: SuggestedIngredient[] = [
   {
     key: "massa-pronta",
-    name: "Massa Pronta (pacote)",
-    unit: "un",
-    package_qty: 1,
+    name: "Massa Pronta para Bolo (450g)",
+    unit: "g",
+    package_qty: 450,
     price_paid: 7,
-    hint: "1 pacote = 1 unidade",
+    hint: "Pacote de ~450g",
   },
   {
     key: "ovos",
@@ -44,16 +44,18 @@ export const SUGGESTED_INGREDIENTS: SuggestedIngredient[] = [
   {
     key: "leite-condensado",
     name: "Leite Condensado (395g)",
-    unit: "un",
-    package_qty: 1,
+    unit: "g",
+    package_qty: 395,
     price_paid: 5.9,
+    hint: "1 lata = 395g",
   },
   {
     key: "creme-de-leite",
     name: "Creme de Leite (200g)",
-    unit: "un",
-    package_qty: 1,
+    unit: "g",
+    package_qty: 200,
     price_paid: 3,
+    hint: "1 caixinha = 200g",
   },
   {
     key: "leite-em-po",
