@@ -13,6 +13,9 @@ import { Route as ReceitasRouteImport } from './routes/receitas'
 import { Route as PdvRouteImport } from './routes/pdv'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as InsumosRouteImport } from './routes/insumos'
+import { Route as EncomendasRouteImport } from './routes/encomendas'
+import { Route as CatalogoRouteImport } from './routes/catalogo'
+import { Route as CalendarioRouteImport } from './routes/calendario'
 import { Route as IndexRouteImport } from './routes/index'
 
 const ReceitasRoute = ReceitasRouteImport.update({
@@ -35,6 +38,21 @@ const InsumosRoute = InsumosRouteImport.update({
   path: '/insumos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EncomendasRoute = EncomendasRouteImport.update({
+  id: '/encomendas',
+  path: '/encomendas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CatalogoRoute = CatalogoRouteImport.update({
+  id: '/catalogo',
+  path: '/catalogo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CalendarioRoute = CalendarioRouteImport.update({
+  id: '/calendario',
+  path: '/calendario',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -43,6 +61,9 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/calendario': typeof CalendarioRoute
+  '/catalogo': typeof CatalogoRoute
+  '/encomendas': typeof EncomendasRoute
   '/insumos': typeof InsumosRoute
   '/login': typeof LoginRoute
   '/pdv': typeof PdvRoute
@@ -50,6 +71,9 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/calendario': typeof CalendarioRoute
+  '/catalogo': typeof CatalogoRoute
+  '/encomendas': typeof EncomendasRoute
   '/insumos': typeof InsumosRoute
   '/login': typeof LoginRoute
   '/pdv': typeof PdvRoute
@@ -58,6 +82,9 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/calendario': typeof CalendarioRoute
+  '/catalogo': typeof CatalogoRoute
+  '/encomendas': typeof EncomendasRoute
   '/insumos': typeof InsumosRoute
   '/login': typeof LoginRoute
   '/pdv': typeof PdvRoute
@@ -65,14 +92,42 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/insumos' | '/login' | '/pdv' | '/receitas'
+  fullPaths:
+    | '/'
+    | '/calendario'
+    | '/catalogo'
+    | '/encomendas'
+    | '/insumos'
+    | '/login'
+    | '/pdv'
+    | '/receitas'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/insumos' | '/login' | '/pdv' | '/receitas'
-  id: '__root__' | '/' | '/insumos' | '/login' | '/pdv' | '/receitas'
+  to:
+    | '/'
+    | '/calendario'
+    | '/catalogo'
+    | '/encomendas'
+    | '/insumos'
+    | '/login'
+    | '/pdv'
+    | '/receitas'
+  id:
+    | '__root__'
+    | '/'
+    | '/calendario'
+    | '/catalogo'
+    | '/encomendas'
+    | '/insumos'
+    | '/login'
+    | '/pdv'
+    | '/receitas'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CalendarioRoute: typeof CalendarioRoute
+  CatalogoRoute: typeof CatalogoRoute
+  EncomendasRoute: typeof EncomendasRoute
   InsumosRoute: typeof InsumosRoute
   LoginRoute: typeof LoginRoute
   PdvRoute: typeof PdvRoute
@@ -109,6 +164,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InsumosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/encomendas': {
+      id: '/encomendas'
+      path: '/encomendas'
+      fullPath: '/encomendas'
+      preLoaderRoute: typeof EncomendasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/catalogo': {
+      id: '/catalogo'
+      path: '/catalogo'
+      fullPath: '/catalogo'
+      preLoaderRoute: typeof CatalogoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/calendario': {
+      id: '/calendario'
+      path: '/calendario'
+      fullPath: '/calendario'
+      preLoaderRoute: typeof CalendarioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -121,6 +197,9 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CalendarioRoute: CalendarioRoute,
+  CatalogoRoute: CatalogoRoute,
+  EncomendasRoute: EncomendasRoute,
   InsumosRoute: InsumosRoute,
   LoginRoute: LoginRoute,
   PdvRoute: PdvRoute,
