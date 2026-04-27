@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ReceitasRouteImport } from './routes/receitas'
 import { Route as PdvRouteImport } from './routes/pdv'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as FestivalRouteImport } from './routes/festival'
 import { Route as IndexRouteImport } from './routes/index'
 
@@ -22,6 +23,11 @@ const ReceitasRoute = ReceitasRouteImport.update({
 const PdvRoute = PdvRouteImport.update({
   id: '/pdv',
   path: '/pdv',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FestivalRoute = FestivalRouteImport.update({
@@ -38,12 +44,14 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/festival': typeof FestivalRoute
+  '/login': typeof LoginRoute
   '/pdv': typeof PdvRoute
   '/receitas': typeof ReceitasRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/festival': typeof FestivalRoute
+  '/login': typeof LoginRoute
   '/pdv': typeof PdvRoute
   '/receitas': typeof ReceitasRoute
 }
@@ -51,20 +59,22 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/festival': typeof FestivalRoute
+  '/login': typeof LoginRoute
   '/pdv': typeof PdvRoute
   '/receitas': typeof ReceitasRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/festival' | '/pdv' | '/receitas'
+  fullPaths: '/' | '/festival' | '/login' | '/pdv' | '/receitas'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/festival' | '/pdv' | '/receitas'
-  id: '__root__' | '/' | '/festival' | '/pdv' | '/receitas'
+  to: '/' | '/festival' | '/login' | '/pdv' | '/receitas'
+  id: '__root__' | '/' | '/festival' | '/login' | '/pdv' | '/receitas'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   FestivalRoute: typeof FestivalRoute
+  LoginRoute: typeof LoginRoute
   PdvRoute: typeof PdvRoute
   ReceitasRoute: typeof ReceitasRoute
 }
@@ -83,6 +93,13 @@ declare module '@tanstack/react-router' {
       path: '/pdv'
       fullPath: '/pdv'
       preLoaderRoute: typeof PdvRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/festival': {
@@ -105,9 +122,19 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   FestivalRoute: FestivalRoute,
+  LoginRoute: LoginRoute,
   PdvRoute: PdvRoute,
   ReceitasRoute: ReceitasRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
