@@ -115,7 +115,7 @@ function Dashboard() {
           icon={<TrendingUp className="h-4 w-4" />}
           label="Faturamento"
           value={formatBRL(revenue)}
-          hint={`${sales.length} vendas`}
+          hint={`${salesCount} vendas neste mês`}
           tone="rose"
         />
         <Metric
@@ -178,7 +178,7 @@ function Dashboard() {
               <Package className="h-4 w-4" />
               <p className="text-[11px] uppercase tracking-widest">Estoque</p>
             </div>
-            <p className="mt-2 font-display text-4xl italic text-mauve">{ingredients.length}</p>
+            <p className="mt-2 font-display text-4xl italic text-mauve">{ingredientsCount}</p>
             <p className="text-xs text-muted-foreground">insumos cadastrados</p>
             <Link
               to="/insumos"
