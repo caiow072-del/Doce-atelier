@@ -423,11 +423,19 @@ function RecipeForm({
     servings: Number(servings) || 1,
     labor_cost: Number(laborCost) || 0,
     packaging_cost: Number(packagingCost) || 0,
-    waste_pct: (Number(wastePct) || 0) / 100,
+    waste_pct: includeWaste ? (Number(wastePct) || 0) / 100 : 0,
     target_margin: (Number(targetMargin) || 0) / 100,
     ingredients: items,
   };
   const cost = fullCost(previewRecipe, ingredients);
+  const extraCosts =
+    (previewRecipe.labor_cost ?? 0) +
+    (previewRecipe.packaging_cost ?? 0) * (previewRecipe.servings || 0) +
+    cost.wasteCost;
+  const sliceWeight =
+    Number(totalWeight) > 0 && Number(servings) > 0
+      ? Math.round(Number(totalWeight) / Number(servings))
+      : 0;
 
   const setQty = (ingredient_id: string, q: number) =>
     setItems((s) => s.map((it) => (it.ingredient_id === ingredient_id ? { ...it, quantity: Math.max(0, q) } : it)));
