@@ -347,9 +347,9 @@ function Row({ label, value, bold, danger, hint }: { label: string; value: strin
   const color = danger ? "text-destructive" : "text-mauve";
   return (
     <div className={`flex items-center justify-between rounded-xl px-3 py-2 text-sm ${bold ? "bg-secondary font-semibold" : ""}`}>
-      <span className={`inline-flex items-center gap-1.5 ${bold ? color : "text-muted-foreground"}`}>
+      <span className={`inline-flex items-center gap-1.5 ${bold ? color : "text-muted-foreground"}`} title={hint}>
         {label}
-        {hint && <HelpCircle className="h-3 w-3 opacity-60" aria-label={hint}><title>{hint}</title></HelpCircle>}
+        {hint && <HelpCircle className="h-3 w-3 opacity-60" />}
       </span>
       <span className={color}>{value}</span>
     </div>
