@@ -174,7 +174,7 @@ function InsumosPage() {
                             <Pencil className="h-4 w-4" />
                           </button>
                           <button
-                            onClick={() => remove(i.id, i.name)}
+                            onClick={() => setToDelete(i)}
                             className="rounded-lg p-1.5 text-destructive hover:bg-destructive/10"
                             aria-label="Excluir"
                           >
@@ -211,7 +211,7 @@ function InsumosPage() {
                         <Pencil className="h-4 w-4" />
                       </button>
                       <button
-                        onClick={() => remove(i.id, i.name)}
+                        onClick={() => setToDelete(i)}
                         className="rounded-lg bg-destructive/10 p-2 text-destructive"
                         aria-label="Excluir"
                       >
