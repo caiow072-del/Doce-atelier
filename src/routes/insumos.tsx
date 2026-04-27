@@ -135,50 +135,51 @@ function InsumosPage() {
         />
       ) : (
         <>
-          {/* Desktop table */}
+          {/* Desktop table — compact */}
           <div className="card-soft hidden overflow-hidden lg:block">
-            <table className="w-full text-sm">
-              <thead className="bg-blush/30 text-left text-[11px] uppercase tracking-widest text-mauve">
+            <table className="w-full text-[13px]">
+              <thead className="bg-blush/30 text-left text-[10px] uppercase tracking-widest text-mauve">
                 <tr>
-                  <th className="px-5 py-3">Nome</th>
-                  <th className="px-5 py-3">Embalagem</th>
-                  <th className="px-5 py-3">Preço pago</th>
-                  <th className="px-5 py-3">Custo / unidade</th>
-                  <th className="px-5 py-3">Estoque</th>
-                  <th className="px-5 py-3 text-right">Ações</th>
+                  <th className="px-3 py-2">Nome</th>
+                  <th className="px-3 py-2">Embalagem</th>
+                  <th className="px-3 py-2">Preço</th>
+                  <th className="px-3 py-2">Custo / un.</th>
+                  <th className="px-3 py-2">Estoque</th>
+                  <th className="px-3 py-2 text-right">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
                 {filtered.map((i) => {
                   const unitCost = i.package_qty > 0 ? i.price_paid / i.package_qty : 0;
+                  const low = i.stock_qty <= 0;
                   return (
-                    <tr key={i.id} className="text-mauve">
-                      <td className="px-5 py-3 font-medium">{i.name}</td>
-                      <td className="px-5 py-3 text-muted-foreground">
+                    <tr key={i.id} className="text-mauve hover:bg-blush/15">
+                      <td className="px-3 py-1.5 font-medium">{i.name}</td>
+                      <td className="px-3 py-1.5 text-muted-foreground tabular-nums">
                         {i.package_qty} {i.unit}
                       </td>
-                      <td className="px-5 py-3">{formatBRL(i.price_paid)}</td>
-                      <td className="px-5 py-3 text-muted-foreground">
+                      <td className="px-3 py-1.5 tabular-nums">{formatBRL(i.price_paid)}</td>
+                      <td className="px-3 py-1.5 text-muted-foreground tabular-nums">
                         {formatBRL(unitCost)}/{i.unit}
                       </td>
-                      <td className="px-5 py-3 text-muted-foreground">
+                      <td className={`px-3 py-1.5 tabular-nums ${low ? "text-destructive" : "text-muted-foreground"}`}>
                         {i.stock_qty} {i.unit}
                       </td>
-                      <td className="px-5 py-3">
-                        <div className="flex justify-end gap-1">
+                      <td className="px-3 py-1.5">
+                        <div className="flex justify-end gap-0.5">
                           <button
                             onClick={() => setEditing(i)}
-                            className="rounded-lg p-1.5 text-mauve hover:bg-blush/50"
+                            className="rounded-md p-1 text-mauve hover:bg-blush/50"
                             aria-label="Editar"
                           >
-                            <Pencil className="h-4 w-4" />
+                            <Pencil className="h-3.5 w-3.5" />
                           </button>
                           <button
                             onClick={() => setToDelete(i)}
-                            className="rounded-lg p-1.5 text-destructive hover:bg-destructive/10"
+                            className="rounded-md p-1 text-destructive hover:bg-destructive/10"
                             aria-label="Excluir"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-3.5 w-3.5" />
                           </button>
                         </div>
                       </td>
@@ -189,45 +190,37 @@ function InsumosPage() {
             </table>
           </div>
 
-          {/* Mobile cards */}
-          <div className="space-y-3 lg:hidden">
+          {/* Mobile / tablet — compact rows */}
+          <div className="card-soft divide-y divide-border/60 overflow-hidden lg:hidden">
             {filtered.map((i) => {
               const unitCost = i.package_qty > 0 ? i.price_paid / i.package_qty : 0;
+              const low = i.stock_qty <= 0;
               return (
-                <div key={i.id} className="card-soft p-4">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="font-medium text-mauve">{i.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {i.package_qty} {i.unit} · {formatBRL(i.price_paid)}
-                      </p>
-                    </div>
-                    <div className="flex shrink-0 gap-1">
-                      <button
-                        onClick={() => setEditing(i)}
-                        className="rounded-lg bg-blush/40 p-2 text-mauve"
-                        aria-label="Editar"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => setToDelete(i)}
-                        className="rounded-lg bg-destructive/10 p-2 text-destructive"
-                        aria-label="Excluir"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
+                <div key={i.id} className="flex items-center gap-3 px-3 py-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-mauve">{i.name}</p>
+                    <p className="truncate text-[11px] text-muted-foreground tabular-nums">
+                      {i.package_qty}{i.unit} · {formatBRL(i.price_paid)} · {formatBRL(unitCost)}/{i.unit}
+                    </p>
                   </div>
-                  <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
-                    <div className="rounded-lg bg-blush/30 px-2 py-1.5">
-                      <p className="text-[10px] uppercase tracking-wider text-rose">Custo unit.</p>
-                      <p className="text-mauve">{formatBRL(unitCost)}/{i.unit}</p>
-                    </div>
-                    <div className="rounded-lg bg-blush/30 px-2 py-1.5">
-                      <p className="text-[10px] uppercase tracking-wider text-rose">Estoque</p>
-                      <p className="text-mauve">{i.stock_qty} {i.unit}</p>
-                    </div>
+                  <span className={`shrink-0 rounded-md px-1.5 py-0.5 text-[11px] tabular-nums ${low ? "bg-destructive/10 text-destructive" : "bg-blush/40 text-mauve"}`}>
+                    {i.stock_qty}{i.unit}
+                  </span>
+                  <div className="flex shrink-0 gap-0.5">
+                    <button
+                      onClick={() => setEditing(i)}
+                      className="rounded-md p-1.5 text-mauve hover:bg-blush/50"
+                      aria-label="Editar"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() => setToDelete(i)}
+                      className="rounded-md p-1.5 text-destructive hover:bg-destructive/10"
+                      aria-label="Excluir"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
                   </div>
                 </div>
               );

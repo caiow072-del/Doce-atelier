@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Cake, Utensils, Sparkles, Settings2, Plus, Trash2, X, Minus, ShoppingCart, CalendarHeart, Store, Lock } from "lucide-react";
+import { Cake, Utensils, Sparkles, Settings2, Plus, Trash2, X, Minus, ShoppingCart, CalendarHeart, Store } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
@@ -216,14 +216,14 @@ function PDVPage() {
             Este evento não tem produtos. Adicione na aba Produtos do evento.
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {eventProducts.map((p) => {
               const left = Math.max(0, p.planned_qty - p.sold_qty);
               const sold_out = p.planned_qty > 0 && left === 0;
               return (
                 <motion.button
                   key={p.id}
-                  whileTap={{ scale: 0.94 }}
+                  whileTap={{ scale: 0.96 }}
                   disabled={sold_out}
                   onClick={() => addToCart({
                     id: `ep-${p.id}`,
@@ -233,18 +233,26 @@ function PDVPage() {
                     product_id: null,
                     event_product_id: p.id,
                   })}
-                  className={`card-soft flex aspect-square flex-col items-center justify-center gap-2 bg-gradient-to-br from-blush/60 to-card p-3 text-center disabled:opacity-50`}
+                  className="card-soft group flex flex-col overflow-hidden text-left disabled:opacity-50"
                 >
-                  <div className="grid h-12 w-12 place-items-center rounded-2xl bg-card/70">
-                    <Cake className="h-6 w-6 text-mauve" strokeWidth={1.4} />
+                  <div className="relative aspect-[4/3] w-full overflow-hidden bg-gradient-to-br from-blush/60 to-card">
+                    {p.image_url ? (
+                      <img src={p.image_url} alt={p.name} className="h-full w-full object-cover transition-transform group-hover:scale-105" loading="lazy" />
+                    ) : (
+                      <div className="grid h-full w-full place-items-center">
+                        <Cake className="h-9 w-9 text-mauve/60" strokeWidth={1.4} />
+                      </div>
+                    )}
+                    {p.planned_qty > 0 && (
+                      <span className={`absolute right-1.5 top-1.5 rounded-full px-1.5 py-0.5 text-[10px] tabular-nums backdrop-blur ${sold_out ? "bg-destructive/80 text-white" : "bg-card/85 text-mauve"}`}>
+                        {sold_out ? "Esgotado" : `${left} restam`}
+                      </span>
+                    )}
                   </div>
-                  <p className="font-display text-base italic leading-tight text-mauve line-clamp-2">{p.name}</p>
-                  <p className="text-sm font-semibold text-mauve">{fmtBRL(Number(p.unit_price))}</p>
-                  {p.planned_qty > 0 && (
-                    <p className={`text-[10px] ${sold_out ? "text-destructive" : "text-muted-foreground"}`}>
-                      {sold_out ? "Esgotado" : `${left} restantes`}
-                    </p>
-                  )}
+                  <div className="flex flex-1 flex-col justify-between gap-1 px-2.5 py-2">
+                    <p className="line-clamp-2 text-xs font-medium leading-tight text-mauve">{p.name}</p>
+                    <p className="text-sm font-semibold text-mauve">{fmtBRL(Number(p.unit_price))}</p>
+                  </div>
                 </motion.button>
               );
             })}
@@ -262,14 +270,14 @@ function PDVPage() {
               <Settings2 className="h-3.5 w-3.5" /> Gerenciar
             </button>
           </div>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {products.map((p) => {
               const Icon = iconMap[p.icon] ?? Cake;
               const bg = toneMap[p.tone] ?? toneMap.rose;
               return (
                 <motion.button
                   key={p.id}
-                  whileTap={{ scale: 0.94 }}
+                  whileTap={{ scale: 0.96 }}
                   onClick={() => addToCart({
                     id: `pdv-${p.id}`,
                     name: p.label,
@@ -278,12 +286,12 @@ function PDVPage() {
                     product_id: p.id,
                     event_product_id: null,
                   })}
-                  className={`card-soft flex aspect-square flex-col items-center justify-center gap-3 bg-gradient-to-br ${bg} p-4 text-center`}
+                  className={`card-soft flex flex-col items-center justify-center gap-1.5 bg-gradient-to-br ${bg} px-3 py-3 text-center min-h-[110px]`}
                 >
-                  <div className="grid h-14 w-14 place-items-center rounded-2xl bg-card/70">
-                    <Icon className="h-7 w-7 text-mauve" strokeWidth={1.4} />
+                  <div className="grid h-9 w-9 place-items-center rounded-xl bg-card/70">
+                    <Icon className="h-5 w-5 text-mauve" strokeWidth={1.4} />
                   </div>
-                  <p className="font-display text-lg italic leading-tight text-mauve">{p.label}</p>
+                  <p className="line-clamp-2 text-xs font-medium leading-tight text-mauve">{p.label}</p>
                   <p className="text-sm font-semibold text-mauve">{fmtBRL(Number(p.price))}</p>
                 </motion.button>
               );
