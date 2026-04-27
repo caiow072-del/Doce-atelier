@@ -4,6 +4,7 @@ import { Loader2 } from "lucide-react";
 import appCss from "../styles.css?url";
 import { AppShell } from "@/components/AppShell";
 import { AuthProvider, useAuth } from "@/lib/auth";
+import { Toaster } from "@/components/ui/sonner";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -31,6 +32,7 @@ function RootComponent() {
   return (
     <AuthProvider>
       <AuthGate />
+      <Toaster richColors position="top-center" />
     </AuthProvider>
   );
 }
