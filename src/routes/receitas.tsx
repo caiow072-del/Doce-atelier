@@ -991,7 +991,16 @@ function RecipeForm({
               </div>
             </div>
             <p className="mt-2 text-center text-[11px] text-mauve/70">
-              (Insumos: {formatBRL(cost.ingredientsCost)} · Extras: {formatBRL(extraCosts)})
+              (Insumos: {formatBRL(cost.ingredientsCost)} · Extras: {formatBRL(extraCosts)}
+              {realPriceNum > 0 && (
+                <>
+                  {" · "}
+                  <span className={realProfit <= 0 ? "text-destructive font-medium" : "text-mauve font-medium"}>
+                    Lucro total: {formatBRL(realProfit * servingsNum)}
+                  </span>
+                </>
+              )}
+              )
             </p>
 
             {realPriceNum > 0 && (
