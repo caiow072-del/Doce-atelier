@@ -14,6 +14,10 @@ import {
   Users,
   MessageCircle,
   MapPin,
+  Globe,
+  Package,
+  Truck,
+  Check,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -52,6 +56,10 @@ type Order = {
   deposit_paid: number;
   status: OrderStatus;
   notes: string | null;
+  source: "manual" | "storefront" | null;
+  delivery_method: "pickup" | "delivery" | null;
+  items: Array<{ name: string; qty: number; price: number }> | null;
+  created_at: string;
 };
 
 const statusLabel: Record<OrderStatus, string> = {
@@ -84,7 +92,7 @@ function EncomendasPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNew, setShowNew] = useState(false);
-  const [filter, setFilter] = useState<"todos" | "ativos" | OrderStatus>("ativos");
+  const [filter, setFilter] = useState<"todos" | "ativos" | "vitrine" | OrderStatus>("ativos");
 
   const loadAll = async () => {
     if (!shopId) return;
@@ -116,8 +124,13 @@ function EncomendasPage() {
   const visible = orders.filter((o) => {
     if (filter === "todos") return true;
     if (filter === "ativos") return !["entregue", "cancelado"].includes(o.status);
+    if (filter === "vitrine") return o.source === "storefront";
     return o.status === filter;
   });
+
+  const pendingStorefront = orders.filter(
+    (o) => o.source === "storefront" && o.status === "orcamento",
+  ).length;
 
   const updateStatus = async (id: string, status: OrderStatus) => {
     const { error } = await supabase.from("orders").update({ status }).eq("id", id);
@@ -138,17 +151,26 @@ function EncomendasPage() {
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap gap-1.5">
-          {(["ativos", "orcamento", "confirmado", "produzindo", "pronto", "entregue", "todos"] as const).map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-                filter === f ? "bg-mauve text-cream" : "bg-card text-muted-foreground hover:bg-blush/40"
-              }`}
-            >
-              {f === "ativos" ? "Ativos" : f === "todos" ? "Todos" : statusLabel[f as OrderStatus]}
-            </button>
-          ))}
+          {(["ativos", "vitrine", "orcamento", "confirmado", "produzindo", "pronto", "entregue", "todos"] as const).map((f) => {
+            const isVitrine = f === "vitrine";
+            return (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`relative inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                  filter === f ? "bg-mauve text-cream" : "bg-card text-muted-foreground hover:bg-blush/40"
+                }`}
+              >
+                {isVitrine && <Globe className="h-3 w-3" />}
+                {f === "ativos" ? "Ativos" : f === "todos" ? "Todos" : isVitrine ? "Vitrine" : statusLabel[f as OrderStatus]}
+                {isVitrine && pendingStorefront > 0 && (
+                  <span className="ml-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-rose px-1 text-[10px] font-semibold text-mauve">
+                    {pendingStorefront}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
         <button
           onClick={() => setShowNew(true)}
@@ -180,11 +202,23 @@ function EncomendasPage() {
             const remaining = o.total_price - o.deposit_paid;
             const wa = o.customer_phone ? digits(o.customer_phone) : "";
             const waLink = wa ? `https://wa.me/${wa.startsWith("55") ? wa : "55" + wa}` : null;
+            const isStorefront = o.source === "storefront";
+            const needsApproval = isStorefront && o.status === "orcamento";
             return (
-              <div key={o.id} className="card-soft p-4">
+              <div
+                key={o.id}
+                className={`card-soft p-4 ${needsApproval ? "ring-2 ring-rose/60 ring-offset-2 ring-offset-cream" : ""}`}
+              >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="font-display text-lg italic text-mauve truncate">{o.customer_name}</p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="font-display text-lg italic text-mauve truncate">{o.customer_name}</p>
+                      {isStorefront && (
+                        <span className="inline-flex items-center gap-0.5 rounded-full bg-rose/40 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-mauve">
+                          <Globe className="h-2.5 w-2.5" /> Vitrine
+                        </span>
+                      )}
+                    </div>
                     {o.customer_phone && (
                       <p className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-muted-foreground">
                         <Phone className="h-3 w-3" /> {o.customer_phone}
@@ -196,9 +230,17 @@ function EncomendasPage() {
                   </span>
                 </div>
                 <p className="mt-2 text-sm text-mauve">{o.description}</p>
-                <p className="mt-1 inline-flex items-center gap-1 text-[11px] text-muted-foreground">
-                  <CalIcon className="h-3 w-3" /> Entrega: {fmtDate(o.delivery_at)}
-                </p>
+                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground">
+                  <span className="inline-flex items-center gap-1">
+                    <CalIcon className="h-3 w-3" /> {fmtDate(o.delivery_at)}
+                  </span>
+                  {o.delivery_method && (
+                    <span className="inline-flex items-center gap-1">
+                      {o.delivery_method === "delivery" ? <Truck className="h-3 w-3" /> : <Package className="h-3 w-3" />}
+                      {o.delivery_method === "delivery" ? "Entrega" : "Retirada"}
+                    </span>
+                  )}
+                </div>
                 {o.delivery_address && (
                   <p className="mt-0.5 inline-flex items-start gap-1 text-[11px] text-muted-foreground">
                     <MapPin className="mt-0.5 h-3 w-3" /> {o.delivery_address}
@@ -214,6 +256,14 @@ function EncomendasPage() {
                     )}
                   </div>
                   <div className="flex items-center gap-1">
+                    {needsApproval && (
+                      <button
+                        onClick={() => updateStatus(o.id, "confirmado")}
+                        className="inline-flex items-center gap-1 rounded-lg bg-success/15 px-2 py-1.5 text-xs font-medium text-success hover:bg-success/25"
+                      >
+                        <Check className="h-3.5 w-3.5" /> Aceitar
+                      </button>
+                    )}
                     {waLink && (
                       <a
                         href={waLink}

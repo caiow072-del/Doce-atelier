@@ -16,6 +16,19 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { z } from "zod";
+
+const checkoutSchema = z.object({
+  name: z.string().trim().min(2, "Informe seu nome").max(80),
+  phone: z
+    .string()
+    .trim()
+    .min(8, "WhatsApp inválido")
+    .max(20)
+    .regex(/^[\d\s()+\-]+$/, "Apenas números e símbolos"),
+  address: z.string().trim().max(200).optional(),
+  notes: z.string().trim().max(500).optional(),
+});
 
 export const Route = createFileRoute("/loja/$slug")({
   head: ({ params }) => ({
@@ -353,16 +366,26 @@ function CheckoutModal({
   const [submitting, setSubmitting] = useState(false);
 
   const submit = async () => {
-    if (!name.trim() || !phone.trim()) {
-      toast.error("Preencha nome e WhatsApp");
+    const parsed = checkoutSchema.safeParse({ name, phone, address, notes });
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]?.message ?? "Dados inválidos");
       return;
     }
-    if (method === "delivery" && !address.trim()) {
+    if (method === "delivery" && !parsed.data.address) {
       toast.error("Informe o endereço de entrega");
       return;
     }
     if (!deliveryAt) {
       toast.error("Escolha data e hora");
+      return;
+    }
+    if (cart.length === 0) {
+      toast.error("Carrinho vazio");
+      return;
+    }
+    const when = new Date(deliveryAt);
+    if (isNaN(when.getTime()) || when.getTime() < Date.now() - 60_000) {
+      toast.error("Escolha uma data futura");
       return;
     }
     setSubmitting(true);

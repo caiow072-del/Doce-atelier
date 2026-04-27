@@ -42,6 +42,7 @@ function Dashboard() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [ingredientsCount, setIngredientsCount] = useState(0);
   const [pendingOrders, setPendingOrders] = useState(0);
+  const [storefrontPending, setStorefrontPending] = useState(0);
   const [nextEvent, setNextEvent] = useState<{ id: string; name: string; date: string } | null>(null);
   const [lastClosed, setLastClosed] = useState<{ id: string; name: string; closed_at: string; payment_summary: any } | null>(null);
 
@@ -58,7 +59,8 @@ function Dashboard() {
       supabase.from("orders").select("id", { count: "exact", head: true }).eq("shop_id", shopId).in("status", ["orcamento", "confirmado", "produzindo", "pronto"]),
       supabase.from("events").select("id, name, date").eq("shop_id", shopId).is("closed_at", null).gte("date", today).order("date").limit(1).maybeSingle(),
       supabase.from("events").select("id, name, closed_at, payment_summary").eq("shop_id", shopId).not("closed_at", "is", null).order("closed_at", { ascending: false }).limit(1).maybeSingle(),
-    ]).then(([s, r, i, o, ne, lc]) => {
+      supabase.from("orders").select("id", { count: "exact", head: true }).eq("shop_id", shopId).eq("source", "storefront").eq("status", "orcamento"),
+    ]).then(([s, r, i, o, ne, lc, sp]) => {
       const sales = (s.data ?? []) as { price: number }[];
       setRevenue(sales.reduce((sum, x) => sum + Number(x.price), 0));
       setSalesCount(sales.length);
@@ -67,6 +69,7 @@ function Dashboard() {
       setPendingOrders(o.count ?? 0);
       setNextEvent(ne.data as any);
       setLastClosed(lc.data as any);
+      setStorefrontPending(sp.count ?? 0);
     });
   }, [shopId]);
 
@@ -149,6 +152,27 @@ function Dashboard() {
           tone={margin < 0 ? "danger" : margin >= 30 ? "sage" : "warn"}
         />
       </section>
+
+      {/* ============ Vitrine: pedidos pendentes ============ */}
+      {storefrontPending > 0 && (
+        <Link
+          to="/encomendas"
+          className="flex items-center justify-between gap-3 rounded-2xl border border-rose/40 bg-gradient-to-r from-blush/60 to-rose/30 p-4 transition hover:from-blush hover:to-rose/50"
+        >
+          <div className="flex items-center gap-3">
+            <div className="grid h-10 w-10 place-items-center rounded-xl bg-cream text-mauve">
+              <ShoppingBag className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-widest text-rose">Vitrine pública</p>
+              <p className="text-sm font-medium text-mauve">
+                {storefrontPending} {storefrontPending === 1 ? "pedido novo aguardando" : "pedidos novos aguardando"} sua confirmação
+              </p>
+            </div>
+          </div>
+          <span className="text-xs font-medium text-mauve">Ver →</span>
+        </Link>
+      )}
 
       {/* ============ Eventos: próximo + último fechado ============ */}
       {(nextEvent || lastClosed) && (
