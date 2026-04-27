@@ -319,7 +319,7 @@ function RecipeDetail({
           <p className={`mt-1 font-display text-5xl italic ${negative ? "text-destructive" : "text-mauve"}`}>
             {formatBRL(cost.suggestedPrice)}
           </p>
-          <p className="mt-1 text-xs text-mauve/80">Margem alvo de {(recipe.target_margin * 100).toFixed(0)}%</p>
+          <p className="mt-1 text-xs text-mauve/80">Lucro desejado de {(recipe.target_margin * 100).toFixed(0)}% sobre o custo</p>
         </div>
 
         <div className="mt-5 space-y-2">
