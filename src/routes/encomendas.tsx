@@ -1,6 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { ClipboardList, Plus, Phone, Calendar as CalIcon, Trash2, Save, X } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
+import {
+  ClipboardList,
+  Plus,
+  Phone,
+  Calendar as CalIcon,
+  Trash2,
+  Save,
+  X,
+  Search,
+  UserPlus,
+  Users,
+  MessageCircle,
+  MapPin,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
@@ -18,8 +32,16 @@ export const Route = createFileRoute("/encomendas")({
 
 type OrderStatus = "orcamento" | "confirmado" | "produzindo" | "pronto" | "entregue" | "cancelado";
 
+type Customer = {
+  id: string;
+  name: string;
+  phone: string;
+  address: string;
+};
+
 type Order = {
   id: string;
+  customer_id: string | null;
   customer_name: string;
   customer_phone: string | null;
   description: string;
@@ -53,28 +75,42 @@ const statusTone: Record<OrderStatus, string> = {
 const fmtBRL = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+const digits = (p: string) => p.replace(/\D/g, "");
 
 function EncomendasPage() {
   const { currentShop } = useAuth();
   const shopId = currentShop?.shop_id;
   const [orders, setOrders] = useState<Order[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNew, setShowNew] = useState(false);
   const [filter, setFilter] = useState<"todos" | "ativos" | OrderStatus>("ativos");
 
-  useEffect(() => {
+  const loadAll = async () => {
     if (!shopId) return;
     setLoading(true);
-    supabase
-      .from("orders")
-      .select("*")
-      .eq("shop_id", shopId)
-      .order("delivery_at", { ascending: true })
-      .then(({ data, error }) => {
-        if (error) toast.error("Erro ao carregar encomendas");
-        setOrders((data ?? []) as Order[]);
-        setLoading(false);
-      });
+    const [oRes, cRes] = await Promise.all([
+      supabase
+        .from("orders")
+        .select("*")
+        .eq("shop_id", shopId)
+        .order("delivery_at", { ascending: true }),
+      supabase
+        .from("customers")
+        .select("id, name, phone, address")
+        .eq("shop_id", shopId)
+        .order("name"),
+    ]);
+    if (oRes.error) toast.error("Erro ao carregar encomendas");
+    if (cRes.error) toast.error("Erro ao carregar clientes");
+    setOrders((oRes.data ?? []) as Order[]);
+    setCustomers((cRes.data ?? []) as Customer[]);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    loadAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shopId]);
 
   const visible = orders.filter((o) => {
@@ -128,11 +164,22 @@ function EncomendasPage() {
         <div className="card-soft p-10 text-center">
           <ClipboardList className="mx-auto h-10 w-10 text-rose" strokeWidth={1.4} />
           <p className="mt-3 text-sm text-muted-foreground">Nenhuma encomenda neste filtro.</p>
+          {customers.length === 0 && (
+            <p className="mt-3 text-xs text-muted-foreground">
+              Dica: cadastre seus clientes primeiro em{" "}
+              <Link to="/clientes" className="underline text-mauve">
+                Clientes
+              </Link>
+              .
+            </p>
+          )}
         </div>
       ) : (
         <div className="grid gap-3 md:grid-cols-2">
           {visible.map((o) => {
             const remaining = o.total_price - o.deposit_paid;
+            const wa = o.customer_phone ? digits(o.customer_phone) : "";
+            const waLink = wa ? `https://wa.me/${wa.startsWith("55") ? wa : "55" + wa}` : null;
             return (
               <div key={o.id} className="card-soft p-4">
                 <div className="flex items-start justify-between gap-2">
@@ -152,7 +199,12 @@ function EncomendasPage() {
                 <p className="mt-1 inline-flex items-center gap-1 text-[11px] text-muted-foreground">
                   <CalIcon className="h-3 w-3" /> Entrega: {fmtDate(o.delivery_at)}
                 </p>
-                <div className="mt-3 flex items-center justify-between text-sm">
+                {o.delivery_address && (
+                  <p className="mt-0.5 inline-flex items-start gap-1 text-[11px] text-muted-foreground">
+                    <MapPin className="mt-0.5 h-3 w-3" /> {o.delivery_address}
+                  </p>
+                )}
+                <div className="mt-3 flex items-center justify-between gap-2 text-sm">
                   <div>
                     <p className="text-mauve font-semibold">{fmtBRL(o.total_price)}</p>
                     {o.deposit_paid > 0 && (
@@ -161,24 +213,37 @@ function EncomendasPage() {
                       </p>
                     )}
                   </div>
-                  <select
-                    value={o.status}
-                    onChange={(e) => updateStatus(o.id, e.target.value as OrderStatus)}
-                    className="rounded-lg border border-border bg-background px-2 py-1 text-xs"
-                  >
-                    {(Object.keys(statusLabel) as OrderStatus[]).map((s) => (
-                      <option key={s} value={s}>
-                        {statusLabel[s]}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    onClick={() => remove(o.id)}
-                    className="rounded-lg p-1.5 text-destructive hover:bg-destructive/10"
-                    aria-label="Excluir"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                  <div className="flex items-center gap-1">
+                    {waLink && (
+                      <a
+                        href={waLink}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="rounded-lg bg-success/15 p-1.5 text-success hover:bg-success/25"
+                        aria-label="WhatsApp"
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                      </a>
+                    )}
+                    <select
+                      value={o.status}
+                      onChange={(e) => updateStatus(o.id, e.target.value as OrderStatus)}
+                      className="rounded-lg border border-border bg-background px-2 py-1 text-xs"
+                    >
+                      {(Object.keys(statusLabel) as OrderStatus[]).map((s) => (
+                        <option key={s} value={s}>
+                          {statusLabel[s]}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={() => remove(o.id)}
+                      className="rounded-lg p-1.5 text-destructive hover:bg-destructive/10"
+                      aria-label="Excluir"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
             );
@@ -189,7 +254,9 @@ function EncomendasPage() {
       {showNew && shopId && (
         <NewOrderSheet
           shopId={shopId}
+          customers={customers}
           onClose={() => setShowNew(false)}
+          onCustomerCreated={(c) => setCustomers((prev) => [...prev, c].sort((a, b) => a.name.localeCompare(b.name)))}
           onCreated={(o) => {
             setOrders((prev) => [...prev, o].sort((a, b) => a.delivery_at.localeCompare(b.delivery_at)));
             setShowNew(false);
@@ -202,50 +269,71 @@ function EncomendasPage() {
 
 function NewOrderSheet({
   shopId,
+  customers,
   onClose,
   onCreated,
+  onCustomerCreated,
 }: {
   shopId: string;
+  customers: Customer[];
   onClose: () => void;
   onCreated: (o: Order) => void;
+  onCustomerCreated: (c: Customer) => void;
 }) {
-  const [form, setForm] = useState({
-    customer_name: "",
-    customer_phone: "",
-    description: "",
-    servings: "",
-    delivery_at: "",
-    delivery_address: "",
-    total_price: "",
-    deposit_paid: "",
-    notes: "",
-  });
+  const [selected, setSelected] = useState<Customer | null>(null);
+  const [search, setSearch] = useState("");
+  const [showQuickNew, setShowQuickNew] = useState(false);
+
+  // dados do bolo / entrega
+  const [description, setDescription] = useState("");
+  const [servings, setServings] = useState("");
+  const [deliveryAt, setDeliveryAt] = useState("");
+  const [deliveryAddress, setDeliveryAddress] = useState("");
+  const [totalPrice, setTotalPrice] = useState("");
+  const [depositPaid, setDepositPaid] = useState("");
+  const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
+
+  const filteredCustomers = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return customers.slice(0, 8);
+    return customers
+      .filter((c) => c.name.toLowerCase().includes(q) || c.phone.toLowerCase().includes(q))
+      .slice(0, 8);
+  }, [customers, search]);
+
+  const pickCustomer = (c: Customer) => {
+    setSelected(c);
+    setSearch("");
+    if (!deliveryAddress) setDeliveryAddress(c.address);
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.customer_name || !form.description || !form.delivery_at) {
-      return toast.error("Preencha cliente, descrição e data de entrega");
-    }
+    if (!selected) return toast.error("Selecione ou cadastre um cliente");
+    if (!description.trim()) return toast.error("Descreva o bolo / pedido");
+    if (!deliveryAt) return toast.error("Informe a data de entrega");
+
     setSaving(true);
     const { data, error } = await supabase
       .from("orders")
       .insert({
         shop_id: shopId,
-        customer_name: form.customer_name,
-        customer_phone: form.customer_phone || null,
-        description: form.description,
-        servings: form.servings ? Number(form.servings) : null,
-        delivery_at: new Date(form.delivery_at).toISOString(),
-        delivery_address: form.delivery_address || null,
-        total_price: Number(form.total_price) || 0,
-        deposit_paid: Number(form.deposit_paid) || 0,
-        notes: form.notes || null,
+        customer_id: selected.id,
+        customer_name: selected.name,
+        customer_phone: selected.phone,
+        description: description.trim(),
+        servings: servings ? Number(servings) : null,
+        delivery_at: new Date(deliveryAt).toISOString(),
+        delivery_address: deliveryAddress.trim() || selected.address || null,
+        total_price: Number(totalPrice) || 0,
+        deposit_paid: Number(depositPaid) || 0,
+        notes: notes.trim() || null,
       })
       .select("*")
       .single();
     setSaving(false);
-    if (error) return toast.error("Erro ao criar encomenda");
+    if (error) return toast.error("Erro ao criar encomenda: " + error.message);
     toast.success("Encomenda criada");
     onCreated(data as Order);
   };
@@ -263,46 +351,282 @@ function NewOrderSheet({
             <X className="h-5 w-5" />
           </button>
         </div>
-        <div className="mt-4 space-y-3">
-          {[
-            { k: "customer_name", l: "Cliente *", t: "text" },
-            { k: "customer_phone", l: "WhatsApp / telefone", t: "tel" },
-            { k: "description", l: "Descrição do bolo *", t: "textarea" },
-            { k: "servings", l: "Fatias (opcional)", t: "number" },
-            { k: "delivery_at", l: "Data e hora de entrega *", t: "datetime-local" },
-            { k: "delivery_address", l: "Endereço de entrega", t: "text" },
-            { k: "total_price", l: "Valor total (R$)", t: "number" },
-            { k: "deposit_paid", l: "Sinal já pago (R$)", t: "number" },
-            { k: "notes", l: "Observações", t: "textarea" },
-          ].map((f) => (
-            <div key={f.k}>
-              <label className="text-[10px] uppercase tracking-widest text-rose">{f.l}</label>
-              {f.t === "textarea" ? (
-                <textarea
-                  value={(form as Record<string, string>)[f.k]}
-                  onChange={(e) => setForm({ ...form, [f.k]: e.target.value })}
-                  rows={2}
-                  className="input-base mt-1"
-                />
-              ) : (
-                <input
-                  type={f.t}
-                  value={(form as Record<string, string>)[f.k]}
-                  onChange={(e) => setForm({ ...form, [f.k]: e.target.value })}
-                  className="input-base mt-1"
-                />
-              )}
+
+        {/* SEÇÃO 1: Cliente */}
+        <section className="mt-5 space-y-2">
+          <p className="text-[10px] uppercase tracking-widest text-rose">Cliente *</p>
+
+          {selected ? (
+            <div className="flex items-start justify-between gap-2 rounded-xl bg-blush/40 p-3">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-mauve truncate">{selected.name}</p>
+                <p className="text-[11px] text-muted-foreground">{selected.phone}</p>
+                <p className="text-[11px] text-muted-foreground line-clamp-1">{selected.address}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelected(null)}
+                className="rounded-lg p-1 text-muted-foreground hover:bg-card"
+                aria-label="Trocar cliente"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
-          ))}
-        </div>
+          ) : (
+            <>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder={
+                    customers.length === 0
+                      ? "Nenhum cliente — cadastre abaixo ↓"
+                      : "Buscar cliente por nome ou telefone..."
+                  }
+                  className="w-full rounded-xl border border-border bg-background py-2 pl-9 pr-3 text-sm text-mauve outline-none focus:border-rose"
+                />
+              </div>
+              {filteredCustomers.length > 0 && (
+                <ul className="overflow-hidden rounded-xl border border-border bg-background">
+                  {filteredCustomers.map((c) => (
+                    <li key={c.id}>
+                      <button
+                        type="button"
+                        onClick={() => pickCustomer(c)}
+                        className="block w-full px-3 py-2 text-left text-sm text-mauve hover:bg-blush/40"
+                      >
+                        <span className="font-medium">{c.name}</span>{" "}
+                        <span className="text-[11px] text-muted-foreground">· {c.phone}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <button
+                type="button"
+                onClick={() => setShowQuickNew(true)}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-mauve/10 px-3 py-2 text-xs font-medium text-mauve hover:bg-mauve/20"
+              >
+                <UserPlus className="h-3.5 w-3.5" /> Cadastrar novo cliente
+              </button>
+              {customers.length > 0 && (
+                <Link
+                  to="/clientes"
+                  className="ml-2 inline-flex items-center gap-1 text-[11px] text-muted-foreground underline"
+                >
+                  <Users className="h-3 w-3" /> ver todos
+                </Link>
+              )}
+            </>
+          )}
+        </section>
+
+        {/* SEÇÃO 2: Pedido */}
+        <section className="mt-5 space-y-3">
+          <p className="text-[10px] uppercase tracking-widest text-rose">Pedido</p>
+          <div>
+            <label className="text-[10px] uppercase tracking-widest text-rose">Descrição do bolo *</label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={2}
+              maxLength={500}
+              className="input-base mt-1"
+              placeholder="Bolo de ninho 3kg, decorado com flores..."
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-[10px] uppercase tracking-widest text-rose">Fatias</label>
+              <input
+                type="number"
+                inputMode="numeric"
+                value={servings}
+                onChange={(e) => setServings(e.target.value)}
+                className="input-base mt-1"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] uppercase tracking-widest text-rose">Entrega *</label>
+              <input
+                type="datetime-local"
+                value={deliveryAt}
+                onChange={(e) => setDeliveryAt(e.target.value)}
+                className="input-base mt-1"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="text-[10px] uppercase tracking-widest text-rose">
+              Endereço de entrega
+            </label>
+            <textarea
+              value={deliveryAddress}
+              onChange={(e) => setDeliveryAddress(e.target.value)}
+              rows={2}
+              maxLength={255}
+              placeholder={selected ? "Padrão: endereço do cliente" : ""}
+              className="input-base mt-1 resize-none"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-[10px] uppercase tracking-widest text-rose">Valor total</label>
+              <input
+                type="number"
+                step="0.01"
+                inputMode="decimal"
+                value={totalPrice}
+                onChange={(e) => setTotalPrice(e.target.value)}
+                className="input-base mt-1"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] uppercase tracking-widest text-rose">Sinal pago</label>
+              <input
+                type="number"
+                step="0.01"
+                inputMode="decimal"
+                value={depositPaid}
+                onChange={(e) => setDepositPaid(e.target.value)}
+                className="input-base mt-1"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="text-[10px] uppercase tracking-widest text-rose">Observações</label>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={2}
+              maxLength={500}
+              className="input-base mt-1 resize-none"
+            />
+          </div>
+        </section>
+
         <button
           type="submit"
           disabled={saving}
-          className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-mauve px-4 py-3 text-sm font-medium text-cream hover:opacity-90 disabled:opacity-50"
+          className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-mauve px-4 py-3 text-sm font-medium text-cream hover:opacity-90 disabled:opacity-50"
         >
           <Save className="h-4 w-4" /> {saving ? "Salvando..." : "Salvar encomenda"}
         </button>
+
+        {showQuickNew && (
+          <QuickNewCustomer
+            shopId={shopId}
+            onClose={() => setShowQuickNew(false)}
+            onCreated={(c) => {
+              onCustomerCreated(c);
+              pickCustomer(c);
+              setShowQuickNew(false);
+            }}
+          />
+        )}
       </form>
+    </div>
+  );
+}
+
+function QuickNewCustomer({
+  shopId,
+  onClose,
+  onCreated,
+}: {
+  shopId: string;
+  onClose: () => void;
+  onCreated: (c: Customer) => void;
+}) {
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (name.trim().length < 2) return toast.error("Nome muito curto");
+    if (digits(phone).length < 8) return toast.error("Telefone inválido");
+    if (address.trim().length < 3) return toast.error("Endereço muito curto");
+    setSaving(true);
+    const { data, error } = await supabase
+      .from("customers")
+      .insert({
+        shop_id: shopId,
+        name: name.trim(),
+        phone: phone.trim(),
+        address: address.trim(),
+      })
+      .select("id, name, phone, address")
+      .single();
+    setSaving(false);
+    if (error) {
+      if (error.code === "23505") toast.error("Já existe um cliente com esse telefone");
+      else toast.error("Erro ao salvar: " + error.message);
+      return;
+    }
+    toast.success("Cliente cadastrado");
+    onCreated(data as Customer);
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-mauve/40 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-sm rounded-2xl bg-card p-5"
+      >
+        <div className="flex items-center justify-between">
+          <h3 className="font-display text-xl italic text-mauve">Novo cliente</h3>
+          <button onClick={onClose} className="rounded-full p-1 text-muted-foreground" aria-label="Fechar">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        <div className="mt-3 space-y-2">
+          <div>
+            <label className="text-[10px] uppercase tracking-widest text-rose">Nome</label>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              maxLength={100}
+              className="input-base mt-1"
+            />
+          </div>
+          <div>
+            <label className="text-[10px] uppercase tracking-widest text-rose">WhatsApp</label>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              maxLength={20}
+              placeholder="(00) 00000-0000"
+              className="input-base mt-1"
+            />
+          </div>
+          <div>
+            <label className="text-[10px] uppercase tracking-widest text-rose">Endereço</label>
+            <textarea
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              rows={2}
+              maxLength={255}
+              className="input-base mt-1 resize-none"
+            />
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={submit}
+          disabled={saving}
+          className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-mauve py-2.5 text-sm font-medium text-cream disabled:opacity-50"
+        >
+          <Save className="h-4 w-4" /> {saving ? "Salvando..." : "Cadastrar e usar"}
+        </button>
+      </div>
     </div>
   );
 }
