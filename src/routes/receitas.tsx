@@ -395,7 +395,7 @@ function RecipeForm({
   const initialWaste = (initial?.waste_pct ?? 0.1) * 100;
   const [includeWaste, setIncludeWaste] = useState(initialWaste > 0);
   const [wastePct, setWastePct] = useState((initialWaste > 0 ? initialWaste : 10).toString());
-  const [targetMargin, setTargetMargin] = useState(((initial?.target_margin ?? 0.3) * 100).toString());
+  const [targetMargin, setTargetMargin] = useState(((initial?.target_margin ?? 0.5) * 100).toString());
   const [realPrice, setRealPrice] = useState(initial?.public_price?.toString() ?? "");
   const [items, setItems] = useState<RecipeIngredient[]>(initial?.ingredients ?? []);
   const [pickerOpen, setPickerOpen] = useState(false);
