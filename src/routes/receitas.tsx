@@ -246,6 +246,22 @@ function RecipesPage() {
                       <p className="text-xs text-muted-foreground italic">Defina o preço real</p>
                     )}
                   </div>
+                  <div className="rounded-xl bg-card/70 px-3 py-2">
+                    <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Custo real/fatia</p>
+                    <p className="font-display text-base italic text-mauve leading-tight">
+                      {formatBRL(cost.perSlice)}
+                    </p>
+                  </div>
+                  <div className="rounded-xl bg-card/70 px-3 py-2">
+                    <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Lucro real/fatia</p>
+                    {hasReal ? (
+                      <p className={`font-display text-base italic leading-tight ${profitNegative ? "text-destructive" : "text-mauve"}`}>
+                        {formatBRL(realProfitSlice)}
+                      </p>
+                    ) : (
+                      <p className="font-display text-base italic text-muted-foreground leading-tight">—</p>
+                    )}
+                  </div>
                 </div>
 
                 {hasReal && (
