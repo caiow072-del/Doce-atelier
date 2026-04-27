@@ -548,7 +548,7 @@ function RecipeForm({
       <form
         onClick={(e) => e.stopPropagation()}
         onSubmit={submit}
-        className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-t-3xl bg-card p-6 pb-10 sm:rounded-3xl"
+        className="max-h-[92vh] w-full max-w-2xl overflow-x-hidden overflow-y-auto overscroll-contain rounded-t-3xl bg-card p-6 pb-10 [scrollbar-gutter:stable] sm:rounded-3xl"
       >
         <div className="mb-4 flex items-center justify-between">
           <h2 className="font-display text-2xl italic text-mauve">
