@@ -50,6 +50,8 @@ function InsumosPage() {
   const [editing, setEditing] = useState<Ingredient | null>(null);
   const [creating, setCreating] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [toDelete, setToDelete] = useState<Ingredient | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const load = async () => {
     if (!shopId) return;
