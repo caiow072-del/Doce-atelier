@@ -188,14 +188,19 @@ function Dashboard() {
             </Link>
           </div>
 
-          <div className="card-soft overflow-hidden p-0">
-            <div className="bg-gradient-to-br from-rose/40 to-blush/30 p-6">
-              <p className="text-[11px] uppercase tracking-widest text-mauve/70">Em breve</p>
-              <h3 className="mt-1 font-display text-xl italic text-mauve">Vitrine pública</h3>
-              <p className="mt-2 text-xs text-mauve/80">
-                Um link para enviar aos clientes no WhatsApp com o festival da semana e o cardápio de encomendas.
-              </p>
+          <div className="card-soft p-6">
+            <div className="flex items-center gap-2 text-rose">
+              <ClipboardList className="h-4 w-4" />
+              <p className="text-[11px] uppercase tracking-widest">Encomendas</p>
             </div>
+            <p className="mt-2 font-display text-4xl italic text-mauve">{pendingOrders}</p>
+            <p className="text-xs text-muted-foreground">pedidos em andamento</p>
+            <Link
+              to="/encomendas"
+              className="mt-4 inline-flex w-full items-center justify-center gap-1 rounded-xl bg-blush/40 py-2 text-xs font-medium text-mauve hover:bg-blush/70"
+            >
+              Ver encomendas <ArrowRight className="h-3 w-3" />
+            </Link>
           </div>
         </div>
       </section>
