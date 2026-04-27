@@ -74,7 +74,28 @@ function fullCost(r: Recipe, allIng: Ingredient[]) {
   return { ingredientsCost, wasteCost, totalRecipe, perSlice, suggestedPrice };
 }
 
-function RecipesPage() {
+type Preset = {
+  key: string;
+  label: string;
+  emoji: string;
+  servings: number;
+  labor: number;
+  packaging: number;
+  waste: number; // %
+  margin: number; // %
+  hint: string;
+};
+
+const PRESETS: Preset[] = [
+  { key: "bolo-simples", emoji: "🎂", label: "Bolo simples", servings: 12, labor: 25, packaging: 1.5, waste: 8, margin: 30, hint: "Bolo caseiro de aniversário, recheado simples." },
+  { key: "bolo-decorado", emoji: "🍰", label: "Bolo decorado", servings: 20, labor: 80, packaging: 4, waste: 12, margin: 50, hint: "Bolo com pasta americana, chantilly trabalhado." },
+  { key: "torta-doce", emoji: "🥧", label: "Torta doce", servings: 10, labor: 30, packaging: 2, waste: 10, margin: 40, hint: "Torta de morango, limão, holandesa..." },
+  { key: "doces-finos", emoji: "🍬", label: "Doces finos (cento)", servings: 100, labor: 60, packaging: 0.3, waste: 8, margin: 60, hint: "Brigadeiros gourmet, beijinhos, casadinhos." },
+  { key: "cupcake", emoji: "🧁", label: "Cupcake (dúzia)", servings: 12, labor: 20, packaging: 1, waste: 8, margin: 50, hint: "Cupcakes decorados ou simples." },
+  { key: "salgados", emoji: "🥟", label: "Salgados (cento)", servings: 100, labor: 40, packaging: 0.2, waste: 5, margin: 35, hint: "Coxinha, esfirra, kibe, empada." },
+];
+
+
   const { currentShop } = useAuth();
   const shopId = currentShop?.shop_id;
 
