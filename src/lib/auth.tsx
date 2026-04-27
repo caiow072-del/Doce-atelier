@@ -31,7 +31,10 @@ const AuthContext = createContext<AuthState | undefined>(undefined);
 const STORAGE_KEY = "jm_current_shop_id";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [loading, setLoading] = useState(true);
+  // On SSR we don't have access to the browser session — start as not-loading
+  // so the public shell can render. The client effect will flip it back on
+  // mount if needed and resolve the real session.
+  const [loading, setLoading] = useState(typeof window !== "undefined");
   const [session, setSession] = useState<Session | null>(null);
   const [shops, setShops] = useState<ShopMembership[]>([]);
   const [currentShopId, setCurrentShopIdState] = useState<string | null>(() => {
@@ -64,16 +67,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    let resolved = false;
+    const finish = () => {
+      if (!resolved) {
+        resolved = true;
+        setLoading(false);
+      }
+    };
+
+    // Safety net — never hang on the loader
+    const timeout = setTimeout(finish, 4000);
+
     // 1. Listener FIRST (sync only inside)
     const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
       setSession(newSession);
       if (newSession?.user) {
-        // defer to avoid deadlock
         setTimeout(() => {
-          loadShops(newSession.user.id);
+          loadShops(newSession.user.id).finally(finish);
         }, 0);
       } else {
         setShops([]);
+        finish();
       }
     });
 
@@ -81,13 +97,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(({ data: { session: existing } }) => {
       setSession(existing);
       if (existing?.user) {
-        loadShops(existing.user.id).finally(() => setLoading(false));
+        loadShops(existing.user.id).finally(finish);
       } else {
-        setLoading(false);
+        finish();
       }
-    });
+    }).catch(finish);
 
-    return () => sub.subscription.unsubscribe();
+    return () => {
+      clearTimeout(timeout);
+      sub.subscription.unsubscribe();
+    };
   }, []);
 
   const currentShop = shops.find((s) => s.shop_id === currentShopId) ?? shops[0] ?? null;
