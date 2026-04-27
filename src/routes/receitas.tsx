@@ -380,6 +380,14 @@ function RecipeForm({
   const [pickerOpen, setPickerOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  const applyPreset = (p: Preset) => {
+    setLaborCost(p.labor.toString());
+    setPackagingCost(p.packaging.toString());
+    setWastePct(p.waste.toString());
+    setTargetMargin(p.margin.toString());
+    toast.success(`Valores sugeridos para "${p.label}" aplicados`);
+  };
+
   const previewRecipe: Recipe = {
     id: "preview",
     name,
