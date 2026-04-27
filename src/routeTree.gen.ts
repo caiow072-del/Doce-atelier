@@ -16,6 +16,7 @@ import { Route as InsumosRouteImport } from './routes/insumos'
 import { Route as FestivalRouteImport } from './routes/festival'
 import { Route as EventosRouteImport } from './routes/eventos'
 import { Route as EncomendasRouteImport } from './routes/encomendas'
+import { Route as ClientesRouteImport } from './routes/clientes'
 import { Route as CatalogoRouteImport } from './routes/catalogo'
 import { Route as CalendarioRouteImport } from './routes/calendario'
 import { Route as IndexRouteImport } from './routes/index'
@@ -55,6 +56,11 @@ const EncomendasRoute = EncomendasRouteImport.update({
   path: '/encomendas',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ClientesRoute = ClientesRouteImport.update({
+  id: '/clientes',
+  path: '/clientes',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CatalogoRoute = CatalogoRouteImport.update({
   id: '/catalogo',
   path: '/catalogo',
@@ -75,6 +81,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/calendario': typeof CalendarioRoute
   '/catalogo': typeof CatalogoRoute
+  '/clientes': typeof ClientesRoute
   '/encomendas': typeof EncomendasRoute
   '/eventos': typeof EventosRoute
   '/festival': typeof FestivalRoute
@@ -87,6 +94,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/calendario': typeof CalendarioRoute
   '/catalogo': typeof CatalogoRoute
+  '/clientes': typeof ClientesRoute
   '/encomendas': typeof EncomendasRoute
   '/eventos': typeof EventosRoute
   '/festival': typeof FestivalRoute
@@ -100,6 +108,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/calendario': typeof CalendarioRoute
   '/catalogo': typeof CatalogoRoute
+  '/clientes': typeof ClientesRoute
   '/encomendas': typeof EncomendasRoute
   '/eventos': typeof EventosRoute
   '/festival': typeof FestivalRoute
@@ -114,6 +123,7 @@ export interface FileRouteTypes {
     | '/'
     | '/calendario'
     | '/catalogo'
+    | '/clientes'
     | '/encomendas'
     | '/eventos'
     | '/festival'
@@ -126,6 +136,7 @@ export interface FileRouteTypes {
     | '/'
     | '/calendario'
     | '/catalogo'
+    | '/clientes'
     | '/encomendas'
     | '/eventos'
     | '/festival'
@@ -138,6 +149,7 @@ export interface FileRouteTypes {
     | '/'
     | '/calendario'
     | '/catalogo'
+    | '/clientes'
     | '/encomendas'
     | '/eventos'
     | '/festival'
@@ -151,6 +163,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CalendarioRoute: typeof CalendarioRoute
   CatalogoRoute: typeof CatalogoRoute
+  ClientesRoute: typeof ClientesRoute
   EncomendasRoute: typeof EncomendasRoute
   EventosRoute: typeof EventosRoute
   FestivalRoute: typeof FestivalRoute
@@ -211,6 +224,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EncomendasRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/clientes': {
+      id: '/clientes'
+      path: '/clientes'
+      fullPath: '/clientes'
+      preLoaderRoute: typeof ClientesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/catalogo': {
       id: '/catalogo'
       path: '/catalogo'
@@ -239,6 +259,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CalendarioRoute: CalendarioRoute,
   CatalogoRoute: CatalogoRoute,
+  ClientesRoute: ClientesRoute,
   EncomendasRoute: EncomendasRoute,
   EventosRoute: EventosRoute,
   FestivalRoute: FestivalRoute,
