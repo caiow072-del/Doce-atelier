@@ -394,18 +394,23 @@ function RecipeForm({
   const [name, setName] = useState(initial?.name ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [servings, setServings] = useState(initial?.servings?.toString() ?? "12");
+  const [totalWeight, setTotalWeight] = useState(""); // gramas — informativo
   const [laborCost, setLaborCost] = useState(initial?.labor_cost?.toString() ?? "25");
   const [packagingCost, setPackagingCost] = useState(initial?.packaging_cost?.toString() ?? "1.5");
-  const [wastePct, setWastePct] = useState(((initial?.waste_pct ?? 0.1) * 100).toString());
+  const initialWaste = (initial?.waste_pct ?? 0.1) * 100;
+  const [includeWaste, setIncludeWaste] = useState(initialWaste > 0);
+  const [wastePct, setWastePct] = useState((initialWaste > 0 ? initialWaste : 10).toString());
   const [targetMargin, setTargetMargin] = useState(((initial?.target_margin ?? 0.3) * 100).toString());
   const [items, setItems] = useState<RecipeIngredient[]>(initial?.ingredients ?? []);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const applyPreset = (p: Preset) => {
+    setServings(p.servings.toString());
     setLaborCost(p.labor.toString());
     setPackagingCost(p.packaging.toString());
-    setWastePct(p.waste.toString());
+    setIncludeWaste(p.waste > 0);
+    setWastePct((p.waste > 0 ? p.waste : 10).toString());
     setTargetMargin(p.margin.toString());
     toast.success(`Valores sugeridos para "${p.label}" aplicados`);
   };
