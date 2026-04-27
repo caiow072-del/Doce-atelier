@@ -1,12 +1,22 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Package, Plus, Pencil, Trash2, Save, X, Loader2, Search, Sparkles, Check } from "lucide-react";
+import { Package, Plus, Pencil, Trash2, Save, X, Loader2, Search, Sparkles, Check, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
 import { formatBRL } from "@/lib/store";
 import { SUGGESTED_INGREDIENTS, type SuggestedIngredient } from "@/lib/suggestions";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/insumos")({
   head: () => ({
@@ -40,6 +50,8 @@ function InsumosPage() {
   const [editing, setEditing] = useState<Ingredient | null>(null);
   const [creating, setCreating] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [toDelete, setToDelete] = useState<Ingredient | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const load = async () => {
     if (!shopId) return;
@@ -64,14 +76,17 @@ function InsumosPage() {
 
   const filtered = items.filter((i) => i.name.toLowerCase().includes(search.toLowerCase()));
 
-  const remove = async (id: string, name: string) => {
-    if (!confirm(`Excluir "${name}"?`)) return;
-    const { error } = await supabase.from("ingredients").delete().eq("id", id);
+  const confirmDelete = async () => {
+    if (!toDelete) return;
+    setDeleting(true);
+    const { error } = await supabase.from("ingredients").delete().eq("id", toDelete.id);
+    setDeleting(false);
     if (error) {
       toast.error("Não foi possível excluir: " + error.message);
     } else {
       toast.success("Insumo excluído");
-      setItems((s) => s.filter((x) => x.id !== id));
+      setItems((s) => s.filter((x) => x.id !== toDelete.id));
+      setToDelete(null);
     }
   };
 
@@ -159,7 +174,7 @@ function InsumosPage() {
                             <Pencil className="h-4 w-4" />
                           </button>
                           <button
-                            onClick={() => remove(i.id, i.name)}
+                            onClick={() => setToDelete(i)}
                             className="rounded-lg p-1.5 text-destructive hover:bg-destructive/10"
                             aria-label="Excluir"
                           >
@@ -196,7 +211,7 @@ function InsumosPage() {
                         <Pencil className="h-4 w-4" />
                       </button>
                       <button
-                        onClick={() => remove(i.id, i.name)}
+                        onClick={() => setToDelete(i)}
                         className="rounded-lg bg-destructive/10 p-2 text-destructive"
                         aria-label="Excluir"
                       >
@@ -252,6 +267,36 @@ function InsumosPage() {
           }}
         />
       )}
+
+      <AlertDialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
+              <AlertTriangle className="h-6 w-6 text-destructive" />
+            </div>
+            <AlertDialogTitle className="text-center">Excluir insumo?</AlertDialogTitle>
+            <AlertDialogDescription className="text-center">
+              Tem certeza que deseja excluir{" "}
+              <span className="font-semibold text-foreground">{toDelete?.name}</span>?
+              <br />
+              Se ele estiver em alguma receita, será removido dela também. Essa ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                confirmDelete();
+              }}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
