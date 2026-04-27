@@ -63,10 +63,10 @@ function Dashboard() {
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link
-              to="/festival"
+              to="/eventos"
               className="inline-flex items-center gap-2 rounded-2xl bg-mauve px-5 py-3 text-sm font-medium text-cream shadow-soft transition hover:opacity-90"
             >
-              <CalendarHeart className="h-4 w-4" /> Novo festival
+              <CalendarHeart className="h-4 w-4" /> Novo evento
             </Link>
             <Link
               to="/pdv"
