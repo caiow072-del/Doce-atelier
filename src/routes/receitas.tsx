@@ -13,6 +13,8 @@ import {
   Sparkles,
   ChevronRight,
   Minus,
+  HelpCircle,
+  Wand2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -71,6 +73,28 @@ function fullCost(r: Recipe, allIng: Ingredient[]) {
   const suggestedPrice = margin < 1 ? perSlice / (1 - margin) : perSlice;
   return { ingredientsCost, wasteCost, totalRecipe, perSlice, suggestedPrice };
 }
+
+type Preset = {
+  key: string;
+  label: string;
+  emoji: string;
+  servings: number;
+  labor: number;
+  packaging: number;
+  waste: number; // %
+  margin: number; // %
+  hint: string;
+};
+
+const PRESETS: Preset[] = [
+  { key: "bolo-simples", emoji: "🎂", label: "Bolo simples", servings: 12, labor: 25, packaging: 1.5, waste: 8, margin: 30, hint: "Bolo caseiro de aniversário, recheado simples." },
+  { key: "bolo-decorado", emoji: "🍰", label: "Bolo decorado", servings: 20, labor: 80, packaging: 4, waste: 12, margin: 50, hint: "Bolo com pasta americana, chantilly trabalhado." },
+  { key: "torta-doce", emoji: "🥧", label: "Torta doce", servings: 10, labor: 30, packaging: 2, waste: 10, margin: 40, hint: "Torta de morango, limão, holandesa..." },
+  { key: "doces-finos", emoji: "🍬", label: "Doces finos (cento)", servings: 100, labor: 60, packaging: 0.3, waste: 8, margin: 60, hint: "Brigadeiros gourmet, beijinhos, casadinhos." },
+  { key: "cupcake", emoji: "🧁", label: "Cupcake (dúzia)", servings: 12, labor: 20, packaging: 1, waste: 8, margin: 50, hint: "Cupcakes decorados ou simples." },
+  { key: "salgados", emoji: "🥟", label: "Salgados (cento)", servings: 100, labor: 40, packaging: 0.2, waste: 5, margin: 35, hint: "Coxinha, esfirra, kibe, empada." },
+];
+
 
 function RecipesPage() {
   const { currentShop } = useAuth();
@@ -295,13 +319,21 @@ function RecipeDetail({
           <p className={`mt-1 font-display text-5xl italic ${negative ? "text-destructive" : "text-mauve"}`}>
             {formatBRL(cost.suggestedPrice)}
           </p>
-          <p className="mt-1 text-xs text-mauve/80">Margem alvo de {(recipe.target_margin * 100).toFixed(0)}%</p>
+          <p className="mt-1 text-xs text-mauve/80">Lucro desejado de {(recipe.target_margin * 100).toFixed(0)}% sobre o custo</p>
         </div>
 
         <div className="mt-5 space-y-2">
-          <Row label="Ingredientes" value={formatBRL(cost.ingredientsCost)} />
-          <Row label={`Perda (${(recipe.waste_pct * 100).toFixed(0)}%)`} value={formatBRL(cost.wasteCost)} />
-          <Row label="Mão de obra" value={formatBRL(recipe.labor_cost)} />
+          <Row label="Custo dos ingredientes" value={formatBRL(cost.ingredientsCost)} />
+          <Row
+            label={`Sobra/desperdício (${(recipe.waste_pct * 100).toFixed(0)}%)`}
+            value={formatBRL(cost.wasteCost)}
+            hint="Cascas, sobras de massa, erros — quanto se perde no processo."
+          />
+          <Row
+            label="Seu trabalho"
+            value={formatBRL(recipe.labor_cost)}
+            hint="Quanto você quer ganhar pelo tempo gasto fazendo essa receita."
+          />
           <Row label={`Total da receita (÷ ${recipe.servings} fatias)`} value={formatBRL(cost.totalRecipe)} bold />
           <Row label="Embalagem por fatia" value={formatBRL(recipe.packaging_cost)} />
           <Row label="Custo final por fatia" value={formatBRL(cost.perSlice)} bold danger={negative} />
@@ -333,11 +365,14 @@ function RecipeDetail({
   );
 }
 
-function Row({ label, value, bold, danger }: { label: string; value: string; bold?: boolean; danger?: boolean }) {
+function Row({ label, value, bold, danger, hint }: { label: string; value: string; bold?: boolean; danger?: boolean; hint?: string }) {
   const color = danger ? "text-destructive" : "text-mauve";
   return (
     <div className={`flex items-center justify-between rounded-xl px-3 py-2 text-sm ${bold ? "bg-secondary font-semibold" : ""}`}>
-      <span className={bold ? color : "text-muted-foreground"}>{label}</span>
+      <span className={`inline-flex items-center gap-1.5 ${bold ? color : "text-muted-foreground"}`} title={hint}>
+        {label}
+        {hint && <HelpCircle className="h-3 w-3 opacity-60" />}
+      </span>
       <span className={color}>{value}</span>
     </div>
   );
@@ -366,6 +401,14 @@ function RecipeForm({
   const [items, setItems] = useState<RecipeIngredient[]>(initial?.ingredients ?? []);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  const applyPreset = (p: Preset) => {
+    setLaborCost(p.labor.toString());
+    setPackagingCost(p.packaging.toString());
+    setWastePct(p.waste.toString());
+    setTargetMargin(p.margin.toString());
+    toast.success(`Valores sugeridos para "${p.label}" aplicados`);
+  };
 
   const previewRecipe: Recipe = {
     id: "preview",
@@ -483,24 +526,64 @@ function RecipeForm({
             />
           </Field>
 
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Field label="Fatias">
+          {/* Presets — sugestões prontas */}
+          <div className="rounded-2xl border border-border bg-background p-3">
+            <div className="mb-2 flex items-center gap-1.5">
+              <Wand2 className="h-3.5 w-3.5 text-rose" />
+              <p className="text-[10px] uppercase tracking-widest text-rose">Sugestões prontas</p>
+            </div>
+            <p className="mb-2 text-[11px] text-muted-foreground">
+              Toque em um tipo para preencher valores recomendados — depois é só ajustar.
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {PRESETS.map((p) => (
+                <button
+                  key={p.key}
+                  type="button"
+                  onClick={() => applyPreset(p)}
+                  title={p.hint}
+                  className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2.5 py-1 text-[11px] text-mauve hover:border-rose/60 hover:bg-blush/40"
+                >
+                  <span>{p.emoji}</span> {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Field
+              label="Quantas fatias / unidades?"
+              hint="Em quantos pedaços você divide essa receita pronta. Ex: 12 fatias, 100 brigadeiros."
+            >
               <input type="number" inputMode="numeric" value={servings} onChange={(e) => setServings(e.target.value)} className="input-base" />
             </Field>
-            <Field label="Mão obra (R$)">
+            <Field
+              label="Seu trabalho (R$)"
+              hint="Quanto VOCÊ quer ganhar pelo tempo gasto fazendo essa receita inteira (mão de obra). Ex: levou 2h e seu valor é R$ 25/h → R$ 50."
+            >
               <input type="number" step="0.01" inputMode="decimal" value={laborCost} onChange={(e) => setLaborCost(e.target.value)} className="input-base" />
             </Field>
-            <Field label="Embalagem/fatia">
+            <Field
+              label="Embalagem por unidade (R$)"
+              hint="Custo da caixa, papel, lacre, fita por cada fatia/unidade vendida."
+            >
               <input type="number" step="0.01" inputMode="decimal" value={packagingCost} onChange={(e) => setPackagingCost(e.target.value)} className="input-base" />
             </Field>
-            <Field label="Perda (%)">
+            <Field
+              label="Sobra/desperdício (%)"
+              hint="Quanto se perde em cascas, sobras, erros. Iniciantes: ~10%. Profissionais: ~5%."
+            >
               <input type="number" step="0.1" inputMode="decimal" value={wastePct} onChange={(e) => setWastePct(e.target.value)} className="input-base" />
             </Field>
           </div>
 
-          <Field label="Margem alvo (%)">
+          <Field
+            label="Lucro desejado (%)"
+            hint="Quanto você quer ganhar ALÉM do custo total. Ex: 30% iniciante, 50% experiente, 60%+ produtos especiais. Esse é o lucro real do negócio."
+          >
             <input type="number" step="0.1" inputMode="decimal" value={targetMargin} onChange={(e) => setTargetMargin(e.target.value)} className="input-base" />
           </Field>
+
 
           <div className="rounded-2xl bg-blush/30 p-3">
             <div className="flex items-center justify-between">
@@ -622,10 +705,13 @@ function RecipeForm({
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="text-[10px] uppercase tracking-widest text-rose">{label}</label>
+      <label className="inline-flex items-center gap-1 text-[10px] uppercase tracking-widest text-rose" title={hint}>
+        {label}
+        {hint && <HelpCircle className="h-3 w-3 opacity-60" />}
+      </label>
       <div className="mt-1">{children}</div>
     </div>
   );
