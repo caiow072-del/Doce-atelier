@@ -521,187 +521,307 @@ function RecipeForm({
           </button>
         </div>
 
-        <div className="space-y-3">
-          <Field label="Nome">
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Ex: Torta Ouro Branco"
-              className="input-base"
-            />
-          </Field>
-          <Field label="Descrição (opcional)">
-            <textarea
-              value={description ?? ""}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={2}
-              className="input-base resize-none"
-            />
-          </Field>
+        <div className="space-y-5">
+          {/* ───── SEÇÃO 1: Informações básicas ───── */}
+          <section className="space-y-3">
+            <SectionTitle index={1} title="Informações básicas" />
+            <Field label="Nome da receita">
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Ex: Torta Ouro Branco"
+                className="input-base"
+              />
+            </Field>
+            <Field label="Descrição (opcional)">
+              <textarea
+                value={description ?? ""}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={2}
+                className="input-base resize-none"
+              />
+            </Field>
 
-          {/* Presets — sugestões prontas */}
-          <div className="rounded-2xl border border-border bg-background p-3">
-            <div className="mb-2 flex items-center gap-1.5">
-              <Wand2 className="h-3.5 w-3.5 text-rose" />
-              <p className="text-[10px] uppercase tracking-widest text-rose">Sugestões prontas</p>
+            <div className="rounded-2xl border border-border bg-background p-3">
+              <div className="mb-2 flex items-center gap-1.5">
+                <Wand2 className="h-3.5 w-3.5 text-rose" />
+                <p className="text-[10px] uppercase tracking-widest text-rose">Sugestões prontas</p>
+              </div>
+              <p className="mb-2 text-[11px] text-muted-foreground">
+                Toque em um tipo para preencher valores recomendados — depois é só ajustar.
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {PRESETS.map((p) => (
+                  <button
+                    key={p.key}
+                    type="button"
+                    onClick={() => applyPreset(p)}
+                    title={p.hint}
+                    className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2.5 py-1 text-[11px] text-mauve hover:border-rose/60 hover:bg-blush/40"
+                  >
+                    <span>{p.emoji}</span> {p.label}
+                  </button>
+                ))}
+              </div>
             </div>
-            <p className="mb-2 text-[11px] text-muted-foreground">
-              Toque em um tipo para preencher valores recomendados — depois é só ajustar.
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {PRESETS.map((p) => (
+          </section>
+
+          {/* ───── SEÇÃO 2: Insumos (coração da receita) ───── */}
+          <section className="space-y-2">
+            <SectionTitle index={2} title="Insumos" subtitle="O coração da sua receita" />
+            <div className="rounded-2xl border-2 border-rose/30 bg-blush/30 p-4">
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-mauve/80">
+                  Selecione os insumos e a quantidade usada — o custo é calculado automaticamente.
+                </p>
                 <button
-                  key={p.key}
                   type="button"
-                  onClick={() => applyPreset(p)}
-                  title={p.hint}
-                  className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2.5 py-1 text-[11px] text-mauve hover:border-rose/60 hover:bg-blush/40"
+                  onClick={() => setPickerOpen((v) => !v)}
+                  disabled={available.length === 0}
+                  className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-mauve px-3 py-1.5 text-xs font-medium text-cream disabled:opacity-50"
                 >
-                  <span>{p.emoji}</span> {p.label}
+                  <Plus className="h-3 w-3" /> Adicionar insumo
                 </button>
-              ))}
-            </div>
-          </div>
+              </div>
 
-          <div className="grid grid-cols-2 gap-3">
+              {pickerOpen && available.length > 0 && (
+                <div className="mt-2 max-h-48 overflow-y-auto rounded-xl border border-border bg-card">
+                  {available.map((ing) => (
+                    <button
+                      key={ing.id}
+                      type="button"
+                      onClick={() => {
+                        addItem(ing.id);
+                        setPickerOpen(false);
+                      }}
+                      className="block w-full px-3 py-2 text-left text-sm text-mauve hover:bg-blush/50"
+                    >
+                      {ing.name} <span className="text-xs text-muted-foreground">({ing.unit})</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {items.length === 0 ? (
+                <p className="mt-3 text-xs text-muted-foreground">
+                  Nenhum insumo adicionado ainda.
+                </p>
+              ) : (
+                <ul className="mt-3 space-y-2">
+                  {items.map((it) => {
+                    const ing = ingredients.find((i) => i.id === it.ingredient_id);
+                    if (!ing) return null;
+                    const lineCost =
+                      ing.package_qty > 0 ? (ing.price_paid / ing.package_qty) * it.quantity : 0;
+                    return (
+                      <li key={it.ingredient_id} className="flex items-center gap-2 rounded-xl bg-card px-3 py-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm text-mauve">{ing.name}</p>
+                          <p className="text-[11px] text-muted-foreground">{formatBRL(lineCost)}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setQty(it.ingredient_id, it.quantity - 1)}
+                          className="rounded-lg bg-blush/50 p-1 text-mauve"
+                          aria-label="Diminuir"
+                        >
+                          <Minus className="h-3 w-3" />
+                        </button>
+                        <input
+                          type="number"
+                          step="0.01"
+                          inputMode="decimal"
+                          value={it.quantity}
+                          onChange={(e) => setQty(it.ingredient_id, Number(e.target.value))}
+                          className="w-20 rounded-lg border border-border bg-background px-2 py-1 text-center text-sm text-mauve outline-none focus:border-rose"
+                        />
+                        <span className="w-8 text-xs text-muted-foreground">{ing.unit}</span>
+                        <button
+                          type="button"
+                          onClick={() => setQty(it.ingredient_id, it.quantity + 1)}
+                          className="rounded-lg bg-blush/50 p-1 text-mauve"
+                          aria-label="Aumentar"
+                        >
+                          <Plus className="h-3 w-3" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeItem(it.ingredient_id)}
+                          className="rounded-lg p-1 text-destructive"
+                          aria-label="Remover"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+
+              {items.length > 0 && (
+                <div className="mt-3 flex items-center justify-between rounded-xl bg-card/70 px-3 py-2 text-xs">
+                  <span className="text-muted-foreground">Custo total dos insumos</span>
+                  <span className="font-display italic text-mauve">{formatBRL(cost.ingredientsCost)}</span>
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* ───── SEÇÃO 3: Rendimento ───── */}
+          <section className="space-y-3">
+            <SectionTitle index={3} title="Rendimento" subtitle="Quanto a receita produz" />
+            <div className="grid grid-cols-2 gap-3">
+              <Field
+                label="Peso total (g)"
+                hint="Peso aproximado da receita pronta. Opcional — ajuda a calcular o tamanho da fatia."
+              >
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  value={totalWeight}
+                  onChange={(e) => setTotalWeight(e.target.value)}
+                  placeholder="Ex: 1500"
+                  className="input-base"
+                />
+              </Field>
+              <Field
+                label="Rende quantas fatias / unidades?"
+                hint="Em quantos pedaços você divide essa receita pronta."
+              >
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  value={servings}
+                  onChange={(e) => setServings(e.target.value)}
+                  className="input-base"
+                />
+              </Field>
+            </div>
+            {sliceWeight > 0 && (
+              <p className="text-[11px] italic text-muted-foreground">
+                Tamanho médio da fatia: <span className="text-mauve">{sliceWeight} g</span>
+              </p>
+            )}
+          </section>
+
+          {/* ───── SEÇÃO 4: Custos extras e lucro ───── */}
+          <section className="space-y-3">
+            <SectionTitle index={4} title="Custos extras e lucro" />
+
             <Field
-              label="Quantas fatias / unidades?"
-              hint="Em quantos pedaços você divide essa receita pronta. Ex: 12 fatias, 100 brigadeiros."
+              label="Custo de Mão de Obra / Produção (R$)"
+              hint="Valor gasto para produzir especificamente esta receita (seu tempo, energia, gás)."
             >
-              <input type="number" inputMode="numeric" value={servings} onChange={(e) => setServings(e.target.value)} className="input-base" />
+              <input
+                type="number"
+                step="0.01"
+                inputMode="decimal"
+                value={laborCost}
+                onChange={(e) => setLaborCost(e.target.value)}
+                className="input-base"
+              />
             </Field>
-            <Field
-              label="Seu trabalho (R$)"
-              hint="Quanto VOCÊ quer ganhar pelo tempo gasto fazendo essa receita inteira (mão de obra). Ex: levou 2h e seu valor é R$ 25/h → R$ 50."
-            >
-              <input type="number" step="0.01" inputMode="decimal" value={laborCost} onChange={(e) => setLaborCost(e.target.value)} className="input-base" />
-            </Field>
+
             <Field
               label="Embalagem por unidade (R$)"
               hint="Custo da caixa, papel, lacre, fita por cada fatia/unidade vendida."
             >
-              <input type="number" step="0.01" inputMode="decimal" value={packagingCost} onChange={(e) => setPackagingCost(e.target.value)} className="input-base" />
+              <input
+                type="number"
+                step="0.01"
+                inputMode="decimal"
+                value={packagingCost}
+                onChange={(e) => setPackagingCost(e.target.value)}
+                className="input-base"
+              />
             </Field>
+
+            {/* Toggle de perda */}
+            <div className="rounded-2xl border border-border bg-background p-3">
+              <label className="flex cursor-pointer items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm text-mauve">
+                    Incluir margem de perda / quebra de ingredientes
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                    Adiciona uma % em cima do custo dos insumos para cobrir cascas, sobras e erros. Recomendado: 10%.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={includeWaste}
+                  onClick={() => setIncludeWaste((v) => !v)}
+                  className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${includeWaste ? "bg-mauve" : "bg-border"}`}
+                >
+                  <span
+                    className={`absolute top-0.5 h-5 w-5 rounded-full bg-cream shadow transition-transform ${includeWaste ? "translate-x-5" : "translate-x-0.5"}`}
+                  />
+                </button>
+              </label>
+              {includeWaste && (
+                <div className="mt-3 flex items-center gap-2">
+                  <input
+                    type="number"
+                    step="0.1"
+                    inputMode="decimal"
+                    value={wastePct}
+                    onChange={(e) => setWastePct(e.target.value)}
+                    className="w-24 rounded-lg border border-border bg-card px-2 py-1.5 text-center text-sm text-mauve outline-none focus:border-rose"
+                  />
+                  <span className="text-xs text-muted-foreground">% sobre o custo dos insumos</span>
+                </div>
+              )}
+            </div>
+
+            {/* Lucro desejado com sugestão rápida */}
             <Field
-              label="Sobra/desperdício (%)"
-              hint="Quanto se perde em cascas, sobras, erros. Iniciantes: ~10%. Profissionais: ~5%."
+              label="Lucro desejado (%)"
+              hint="Quanto você quer ganhar ALÉM do custo total. Esse é o lucro real do seu negócio."
             >
-              <input type="number" step="0.1" inputMode="decimal" value={wastePct} onChange={(e) => setWastePct(e.target.value)} className="input-base" />
-            </Field>
-          </div>
-
-          <Field
-            label="Lucro desejado (%)"
-            hint="Quanto você quer ganhar ALÉM do custo total. Ex: 30% iniciante, 50% experiente, 60%+ produtos especiais. Esse é o lucro real do negócio."
-          >
-            <input type="number" step="0.1" inputMode="decimal" value={targetMargin} onChange={(e) => setTargetMargin(e.target.value)} className="input-base" />
-          </Field>
-
-
-          <div className="rounded-2xl bg-blush/30 p-3">
-            <div className="flex items-center justify-between">
-              <p className="text-[11px] uppercase tracking-widest text-rose">Insumos</p>
-              <button
-                type="button"
-                onClick={() => setPickerOpen((v) => !v)}
-                disabled={available.length === 0}
-                className="inline-flex items-center gap-1 rounded-lg bg-mauve px-2.5 py-1 text-xs text-cream disabled:opacity-50"
-              >
-                <Plus className="h-3 w-3" /> Adicionar
-              </button>
-            </div>
-
-            {pickerOpen && available.length > 0 && (
-              <div className="mt-2 max-h-48 overflow-y-auto rounded-xl border border-border bg-card">
-                {available.map((ing) => (
-                  <button
-                    key={ing.id}
-                    type="button"
-                    onClick={() => {
-                      addItem(ing.id);
-                      setPickerOpen(false);
-                    }}
-                    className="block w-full px-3 py-2 text-left text-sm text-mauve hover:bg-blush/50"
-                  >
-                    {ing.name} <span className="text-xs text-muted-foreground">({ing.unit})</span>
-                  </button>
-                ))}
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  step="0.1"
+                  inputMode="decimal"
+                  value={targetMargin}
+                  onChange={(e) => setTargetMargin(e.target.value)}
+                  className="input-base flex-1"
+                />
+                <button
+                  type="button"
+                  onClick={() => setTargetMargin("50")}
+                  className="shrink-0 rounded-full border border-rose/50 bg-blush/40 px-3 py-1.5 text-[11px] text-mauve hover:bg-blush/60"
+                >
+                  Sugestão: 50%
+                </button>
               </div>
-            )}
+            </Field>
+          </section>
 
-            {items.length === 0 ? (
-              <p className="mt-3 text-xs text-muted-foreground">
-                Nenhum insumo adicionado ainda.
-              </p>
-            ) : (
-              <ul className="mt-3 space-y-2">
-                {items.map((it) => {
-                  const ing = ingredients.find((i) => i.id === it.ingredient_id);
-                  if (!ing) return null;
-                  const lineCost = ing.package_qty > 0 ? (ing.price_paid / ing.package_qty) * it.quantity : 0;
-                  return (
-                    <li key={it.ingredient_id} className="flex items-center gap-2 rounded-xl bg-card px-3 py-2">
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm text-mauve">{ing.name}</p>
-                        <p className="text-[11px] text-muted-foreground">{formatBRL(lineCost)}</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setQty(it.ingredient_id, it.quantity - 1)}
-                        className="rounded-lg bg-blush/50 p-1 text-mauve"
-                        aria-label="Diminuir"
-                      >
-                        <Minus className="h-3 w-3" />
-                      </button>
-                      <input
-                        type="number"
-                        step="0.01"
-                        inputMode="decimal"
-                        value={it.quantity}
-                        onChange={(e) => setQty(it.ingredient_id, Number(e.target.value))}
-                        className="w-20 rounded-lg border border-border bg-background px-2 py-1 text-center text-sm text-mauve outline-none focus:border-rose"
-                      />
-                      <span className="w-8 text-xs text-muted-foreground">{ing.unit}</span>
-                      <button
-                        type="button"
-                        onClick={() => setQty(it.ingredient_id, it.quantity + 1)}
-                        className="rounded-lg bg-blush/50 p-1 text-mauve"
-                        aria-label="Aumentar"
-                      >
-                        <Plus className="h-3 w-3" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => removeItem(it.ingredient_id)}
-                        className="rounded-lg p-1 text-destructive"
-                        aria-label="Remover"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </div>
-
-          <div className="grid grid-cols-3 gap-2 rounded-2xl bg-gradient-to-br from-blush/60 to-rose/30 p-3 text-center">
-            <div>
-              <p className="text-[10px] uppercase tracking-widest text-rose">Custo/fatia</p>
-              <p className="font-display text-lg italic text-mauve">{formatBRL(cost.perSlice)}</p>
+          {/* ───── Rodapé: resumo financeiro ───── */}
+          <div className="rounded-2xl bg-gradient-to-br from-blush/60 to-rose/30 p-4">
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div>
+                <p className="text-[10px] uppercase tracking-widest text-rose">Custo/fatia</p>
+                <p className="font-display text-lg italic text-mauve">{formatBRL(cost.perSlice)}</p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-widest text-rose">Sugerido</p>
+                <p className={`font-display text-lg italic ${cost.suggestedPrice <= cost.perSlice ? "text-destructive" : "text-mauve"}`}>
+                  {formatBRL(cost.suggestedPrice)}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-widest text-rose">Lucro/fatia</p>
+                <p className={`font-display text-lg italic ${cost.suggestedPrice - cost.perSlice <= 0 ? "text-destructive" : "text-mauve"}`}>
+                  {formatBRL(cost.suggestedPrice - cost.perSlice)}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-[10px] uppercase tracking-widest text-rose">Sugerido</p>
-              <p className={`font-display text-lg italic ${cost.suggestedPrice <= cost.perSlice ? "text-destructive" : "text-mauve"}`}>
-                {formatBRL(cost.suggestedPrice)}
-              </p>
-            </div>
-            <div>
-              <p className="text-[10px] uppercase tracking-widest text-rose">Lucro/fatia</p>
-              <p className={`font-display text-lg italic ${cost.suggestedPrice - cost.perSlice <= 0 ? "text-destructive" : "text-mauve"}`}>
-                {formatBRL(cost.suggestedPrice - cost.perSlice)}
-              </p>
-            </div>
+            <p className="mt-2 text-center text-[11px] text-mauve/70">
+              (Custo dos Insumos: {formatBRL(cost.ingredientsCost)} · Custos Extras: {formatBRL(extraCosts)})
+            </p>
           </div>
         </div>
 
