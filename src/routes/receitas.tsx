@@ -254,13 +254,17 @@ function RecipesPage() {
 
 function EmptyState({ onCreate }: { onCreate: () => void }) {
   return (
-    <div className="grid place-items-center rounded-3xl border-2 border-dashed border-border bg-card/40 p-16 text-center">
+    <div className="grid place-items-center rounded-3xl border-2 border-dashed border-border bg-card/40 p-12 text-center">
       <div className="grid h-16 w-16 place-items-center rounded-2xl bg-blush/60">
         <BookOpen className="h-7 w-7 text-mauve" strokeWidth={1.4} />
       </div>
       <h2 className="mt-4 font-display text-2xl italic text-mauve">Nenhuma receita ainda</h2>
       <p className="mt-2 max-w-md text-sm text-muted-foreground">
-        Crie sua primeira ficha técnica escolhendo os insumos cadastrados.
+        Comece criando sua primeira ficha — ou abra a Nova receita e clique em
+        <span className="mx-1 inline-flex items-center gap-1 rounded-full border border-rose/40 bg-blush/30 px-2 py-0.5 text-[11px] text-mauve">
+          <Sparkles className="h-3 w-3" /> Bolo de Ninho (3kg)
+        </span>
+        para ver um exemplo pronto.
       </p>
       <button
         onClick={onCreate}
