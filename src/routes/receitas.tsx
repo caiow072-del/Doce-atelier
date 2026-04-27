@@ -858,10 +858,11 @@ function RecipeForm({
                   role="switch"
                   aria-checked={includeWaste}
                   onClick={() => setIncludeWaste((v) => !v)}
-                  className={`relative h-5 w-9 shrink-0 overflow-hidden rounded-full border transition-colors ${includeWaste ? "border-mauve bg-mauve" : "border-border bg-card"}`}
+                  className={`relative h-6 w-11 shrink-0 rounded-full border transition-colors ${includeWaste ? "border-mauve bg-mauve" : "border-border bg-card"}`}
                 >
                   <span
-                    className={`absolute top-1/2 h-3.5 w-3.5 -translate-y-1/2 rounded-full shadow transition-transform ${includeWaste ? "translate-x-[18px] bg-cream" : "translate-x-0.5 bg-mauve/60"}`}
+                    style={{ transform: `translateX(${includeWaste ? 22 : 2}px)` }}
+                    className={`absolute top-1/2 -mt-2 left-0 h-4 w-4 rounded-full shadow transition-transform ${includeWaste ? "bg-cream" : "bg-mauve/50"}`}
                   />
                 </button>
               </div>
