@@ -148,6 +148,20 @@
     box-shadow: var(--shadow-soft);
   }
 
+  .input-base {
+    width: 100%;
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--color-border);
+    background-color: var(--color-background);
+    padding: 0.625rem 0.75rem;
+    font-size: 0.875rem;
+    color: var(--color-foreground);
+    outline: none;
+  }
+  .input-base:focus {
+    border-color: oklch(0.78 0.08 18);
+  }
+
   .floral-bg {
     background-color: var(--color-background);
     background-image:
