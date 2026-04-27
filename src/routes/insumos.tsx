@@ -92,12 +92,20 @@ function InsumosPage() {
             className="w-full rounded-2xl border border-border bg-card py-2.5 pl-9 pr-3 text-sm text-mauve outline-none focus:border-rose"
           />
         </div>
-        <button
-          onClick={() => setCreating(true)}
-          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-mauve px-4 py-2.5 text-sm font-medium text-cream hover:opacity-90"
-        >
-          <Plus className="h-4 w-4" /> Novo insumo
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowSuggestions(true)}
+            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-rose/40 bg-blush/30 px-3 py-2.5 text-sm font-medium text-mauve hover:bg-blush/50"
+          >
+            <Sparkles className="h-4 w-4" /> Sugestões
+          </button>
+          <button
+            onClick={() => setCreating(true)}
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-mauve px-4 py-2.5 text-sm font-medium text-cream hover:opacity-90"
+          >
+            <Plus className="h-4 w-4" /> Novo insumo
+          </button>
+        </div>
       </div>
 
       {loading ? (
