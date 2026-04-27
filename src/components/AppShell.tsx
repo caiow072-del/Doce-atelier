@@ -15,13 +15,20 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 
-const nav = [
+type NavItem = {
+  to: "/" | "/insumos" | "/receitas" | "/festival" | "/pdv";
+  label: string;
+  icon: typeof LayoutDashboard;
+  end?: boolean;
+};
+
+const nav: NavItem[] = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "/insumos", label: "Insumos", icon: Package },
   { to: "/receitas", label: "Receitas", icon: BookOpen },
   { to: "/festival", label: "Festivais", icon: CalendarHeart },
   { to: "/pdv", label: "PDV", icon: ShoppingBag },
-] as const;
+];
 
 const mobileNav = [
   { to: "/", label: "Início", icon: LayoutDashboard },
