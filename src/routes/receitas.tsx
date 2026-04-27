@@ -293,8 +293,9 @@ function RecipeDetail({
     <div onClick={onClose} className="fixed inset-0 z-50 flex items-end justify-center bg-mauve/30 backdrop-blur-sm sm:items-center">
       <div
         onClick={(e) => e.stopPropagation()}
-        className="max-h-[90vh] w-full max-w-2xl overflow-x-hidden overflow-y-auto overscroll-contain rounded-t-3xl bg-card p-6 pb-10 [scrollbar-gutter:stable] sm:rounded-3xl"
+        className="max-h-[90vh] w-full max-w-2xl overflow-hidden rounded-t-3xl bg-card sm:rounded-3xl"
       >
+       <div className="max-h-[90vh] overflow-y-auto overscroll-contain p-6 pb-10">
         <div className="flex items-start justify-between">
           <div>
             <p className="text-[11px] uppercase tracking-widest text-rose">Ficha técnica</p>
@@ -355,6 +356,7 @@ function RecipeDetail({
             );
           })}
         </ul>
+       </div>
       </div>
     </div>
   );
@@ -548,8 +550,9 @@ function RecipeForm({
       <form
         onClick={(e) => e.stopPropagation()}
         onSubmit={submit}
-        className="max-h-[92vh] w-full max-w-2xl overflow-x-hidden overflow-y-auto overscroll-contain rounded-t-3xl bg-card p-6 pb-10 [scrollbar-gutter:stable] sm:rounded-3xl"
+        className="max-h-[92vh] w-full max-w-2xl overflow-hidden rounded-t-3xl bg-card sm:rounded-3xl"
       >
+       <div className="max-h-[92vh] overflow-y-auto overscroll-contain p-6 pb-10">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="font-display text-2xl italic text-mauve">
             {initial ? "Editar receita" : "Nova receita"}
@@ -858,10 +861,11 @@ function RecipeForm({
                   role="switch"
                   aria-checked={includeWaste}
                   onClick={() => setIncludeWaste((v) => !v)}
-                  className={`relative h-5 w-9 shrink-0 overflow-hidden rounded-full border transition-colors ${includeWaste ? "border-mauve bg-mauve" : "border-border bg-card"}`}
+                  className={`relative h-6 w-11 shrink-0 rounded-full border transition-colors ${includeWaste ? "border-mauve bg-mauve" : "border-border bg-card"}`}
                 >
                   <span
-                    className={`absolute top-1/2 h-3.5 w-3.5 -translate-y-1/2 rounded-full shadow transition-transform ${includeWaste ? "translate-x-[18px] bg-cream" : "translate-x-0.5 bg-mauve/60"}`}
+                    style={{ transform: `translateX(${includeWaste ? 22 : 2}px)` }}
+                    className={`absolute top-1/2 -mt-2 left-0 h-4 w-4 rounded-full shadow transition-transform ${includeWaste ? "bg-cream" : "bg-mauve/50"}`}
                   />
                 </button>
               </div>
@@ -1031,6 +1035,7 @@ function RecipeForm({
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           {initial ? "Salvar alterações" : "Criar receita"}
         </button>
+       </div>
       </form>
     </div>
   );
