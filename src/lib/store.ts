@@ -54,7 +54,14 @@ type State = {
   addIngredient: (i: Omit<Ingredient, "id" | "shopId">) => void;
   addRecipe: (r: Omit<Recipe, "id" | "shopId">) => void;
   addFestival: (f: Omit<Festival, "id" | "shopId" | "schedule">) => void;
+  updateFestival: (id: string, patch: Partial<Pick<Festival, "name" | "date">>) => void;
+  deleteFestival: (id: string) => void;
+  setRecipeBatches: (festivalId: string, recipeId: string, batches: number) => void;
+  removeRecipeFromFestival: (festivalId: string, recipeId: string) => void;
+  addRecipeToFestival: (festivalId: string, recipeId: string) => void;
   toggleScheduleItem: (festivalId: string, day: keyof Festival["schedule"], idx: number) => void;
+  addScheduleTask: (festivalId: string, day: keyof Festival["schedule"], task: string) => void;
+  removeScheduleTask: (festivalId: string, day: keyof Festival["schedule"], idx: number) => void;
   addSale: (item: string, price: number) => void;
 };
 
@@ -181,6 +188,39 @@ export const useStore = create<State>((set) => ({
         { ...f, id: crypto.randomUUID(), shopId: s.shopId, schedule: defaultSchedule() },
       ],
     })),
+  updateFestival: (id, patch) =>
+    set((s) => ({
+      festivals: s.festivals.map((f) => (f.id === id ? { ...f, ...patch } : f)),
+    })),
+  deleteFestival: (id) =>
+    set((s) => ({ festivals: s.festivals.filter((f) => f.id !== id) })),
+  setRecipeBatches: (festivalId, recipeId, batches) =>
+    set((s) => ({
+      festivals: s.festivals.map((f) =>
+        f.id !== festivalId
+          ? f
+          : {
+              ...f,
+              recipes: f.recipes.map((r) =>
+                r.recipeId === recipeId ? { ...r, batches: Math.max(0, batches) } : r
+              ),
+            }
+      ),
+    })),
+  removeRecipeFromFestival: (festivalId, recipeId) =>
+    set((s) => ({
+      festivals: s.festivals.map((f) =>
+        f.id !== festivalId ? f : { ...f, recipes: f.recipes.filter((r) => r.recipeId !== recipeId) }
+      ),
+    })),
+  addRecipeToFestival: (festivalId, recipeId) =>
+    set((s) => ({
+      festivals: s.festivals.map((f) => {
+        if (f.id !== festivalId) return f;
+        if (f.recipes.some((r) => r.recipeId === recipeId)) return f;
+        return { ...f, recipes: [...f.recipes, { recipeId, batches: 1 }] };
+      }),
+    })),
   toggleScheduleItem: (festivalId, day, idx) =>
     set((s) => ({
       festivals: s.festivals.map((f) =>
@@ -193,6 +233,22 @@ export const useStore = create<State>((set) => ({
                 [day]: f.schedule[day].map((t, i) => (i === idx ? { ...t, done: !t.done } : t)),
               },
             }
+      ),
+    })),
+  addScheduleTask: (festivalId, day, task) =>
+    set((s) => ({
+      festivals: s.festivals.map((f) =>
+        f.id !== festivalId
+          ? f
+          : { ...f, schedule: { ...f.schedule, [day]: [...f.schedule[day], { task, done: false }] } }
+      ),
+    })),
+  removeScheduleTask: (festivalId, day, idx) =>
+    set((s) => ({
+      festivals: s.festivals.map((f) =>
+        f.id !== festivalId
+          ? f
+          : { ...f, schedule: { ...f.schedule, [day]: f.schedule[day].filter((_, i) => i !== idx) } }
       ),
     })),
   addSale: (item, price) =>
