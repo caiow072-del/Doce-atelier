@@ -76,14 +76,17 @@ function InsumosPage() {
 
   const filtered = items.filter((i) => i.name.toLowerCase().includes(search.toLowerCase()));
 
-  const remove = async (id: string, name: string) => {
-    if (!confirm(`Excluir "${name}"?`)) return;
-    const { error } = await supabase.from("ingredients").delete().eq("id", id);
+  const confirmDelete = async () => {
+    if (!toDelete) return;
+    setDeleting(true);
+    const { error } = await supabase.from("ingredients").delete().eq("id", toDelete.id);
+    setDeleting(false);
     if (error) {
       toast.error("Não foi possível excluir: " + error.message);
     } else {
       toast.success("Insumo excluído");
-      setItems((s) => s.filter((x) => x.id !== id));
+      setItems((s) => s.filter((x) => x.id !== toDelete.id));
+      setToDelete(null);
     }
   };
 
