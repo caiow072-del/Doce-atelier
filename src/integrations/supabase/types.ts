@@ -14,6 +14,151 @@ export type Database = {
   }
   public: {
     Tables: {
+      event_recipes: {
+        Row: {
+          batches: number
+          event_id: string
+          id: string
+          recipe_id: string
+        }
+        Insert: {
+          batches?: number
+          event_id: string
+          id?: string
+          recipe_id: string
+        }
+        Update: {
+          batches?: number
+          event_id?: string
+          id?: string
+          recipe_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_recipes_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_recipes_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_tasks: {
+        Row: {
+          created_at: string
+          day_key: string
+          done: boolean
+          event_id: string
+          id: string
+          position: number
+          task: string
+        }
+        Insert: {
+          created_at?: string
+          day_key: string
+          done?: boolean
+          event_id: string
+          id?: string
+          position?: number
+          task: string
+        }
+        Update: {
+          created_at?: string
+          day_key?: string
+          done?: boolean
+          event_id?: string
+          id?: string
+          position?: number
+          task?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_tasks_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_types: {
+        Row: {
+          color: string | null
+          created_at: string
+          icon: string | null
+          id: string
+          name: string
+          shop_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name: string
+          shop_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name?: string
+          shop_id?: string
+        }
+        Relationships: []
+      }
+      events: {
+        Row: {
+          created_at: string
+          date: string
+          event_type_id: string | null
+          id: string
+          location: string | null
+          name: string
+          notes: string | null
+          shop_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          event_type_id?: string | null
+          id?: string
+          location?: string | null
+          name: string
+          notes?: string | null
+          shop_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          event_type_id?: string | null
+          id?: string
+          location?: string | null
+          name?: string
+          notes?: string | null
+          shop_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_event_type_id_fkey"
+            columns: ["event_type_id"]
+            isOneToOne: false
+            referencedRelation: "event_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ingredients: {
         Row: {
           created_at: string
@@ -57,6 +202,104 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      orders: {
+        Row: {
+          created_at: string
+          customer_name: string
+          customer_phone: string | null
+          delivery_address: string | null
+          delivery_at: string
+          deposit_paid: number
+          description: string
+          id: string
+          notes: string | null
+          recipe_id: string | null
+          servings: number | null
+          shop_id: string
+          status: Database["public"]["Enums"]["order_status"]
+          total_price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_name: string
+          customer_phone?: string | null
+          delivery_address?: string | null
+          delivery_at: string
+          deposit_paid?: number
+          description: string
+          id?: string
+          notes?: string | null
+          recipe_id?: string | null
+          servings?: number | null
+          shop_id: string
+          status?: Database["public"]["Enums"]["order_status"]
+          total_price?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_name?: string
+          customer_phone?: string | null
+          delivery_address?: string | null
+          delivery_at?: string
+          deposit_paid?: number
+          description?: string
+          id?: string
+          notes?: string | null
+          recipe_id?: string | null
+          servings?: number | null
+          shop_id?: string
+          status?: Database["public"]["Enums"]["order_status"]
+          total_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pdv_products: {
+        Row: {
+          active: boolean
+          created_at: string
+          icon: string | null
+          id: string
+          label: string
+          position: number
+          price: number
+          shop_id: string
+          tone: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          icon?: string | null
+          id?: string
+          label: string
+          position?: number
+          price: number
+          shop_id: string
+          tone?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          icon?: string | null
+          id?: string
+          label?: string
+          position?: number
+          price?: number
+          shop_id?: string
+          tone?: string | null
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -127,8 +370,10 @@ export type Database = {
           labor_cost: number
           name: string
           packaging_cost: number
+          public_price: number | null
           servings: number
           shop_id: string
+          show_in_catalog: boolean
           target_margin: number
           updated_at: string
           waste_pct: number
@@ -141,8 +386,10 @@ export type Database = {
           labor_cost?: number
           name: string
           packaging_cost?: number
+          public_price?: number | null
           servings: number
           shop_id: string
+          show_in_catalog?: boolean
           target_margin?: number
           updated_at?: string
           waste_pct?: number
@@ -155,8 +402,10 @@ export type Database = {
           labor_cost?: number
           name?: string
           packaging_cost?: number
+          public_price?: number | null
           servings?: number
           shop_id?: string
+          show_in_catalog?: boolean
           target_margin?: number
           updated_at?: string
           waste_pct?: number
@@ -167,6 +416,47 @@ export type Database = {
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sales: {
+        Row: {
+          created_by: string | null
+          id: string
+          item: string
+          price: number
+          product_id: string | null
+          qty: number
+          shop_id: string
+          sold_at: string
+        }
+        Insert: {
+          created_by?: string | null
+          id?: string
+          item: string
+          price: number
+          product_id?: string | null
+          qty?: number
+          shop_id: string
+          sold_at?: string
+        }
+        Update: {
+          created_by?: string | null
+          id?: string
+          item?: string
+          price?: number
+          product_id?: string | null
+          qty?: number
+          shop_id?: string
+          sold_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "pdv_products"
             referencedColumns: ["id"]
           },
         ]
@@ -258,6 +548,13 @@ export type Database = {
       }
     }
     Enums: {
+      order_status:
+        | "orcamento"
+        | "confirmado"
+        | "produzindo"
+        | "pronto"
+        | "entregue"
+        | "cancelado"
       shop_role: "owner" | "manager" | "staff"
     }
     CompositeTypes: {
@@ -386,6 +683,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      order_status: [
+        "orcamento",
+        "confirmado",
+        "produzindo",
+        "pronto",
+        "entregue",
+        "cancelado",
+      ],
       shop_role: ["owner", "manager", "staff"],
     },
   },
