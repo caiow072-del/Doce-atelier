@@ -244,7 +244,7 @@ function RecipesPage() {
                           {formatBRL(realProfitTotal)}
                         </p>
                         <p className="text-[10px] text-mauve/70 leading-tight mt-0.5">
-                          + bolso: <span className="font-medium text-mauve">{formatBRL(realProfitTotal + (r.labor_cost ?? 0))}</span>
+                          Você recebe: <span className="font-medium text-mauve">{formatBRL(realProfitTotal + (r.labor_cost ?? 0))}</span>
                         </p>
                       </>
                     ) : (
