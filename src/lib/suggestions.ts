@@ -10,40 +10,43 @@ export type SuggestedIngredient = {
   hint?: string;
 };
 
+// Nomes limpos (sem "(395g)" etc) — a quantidade já aparece no campo abaixo.
 export const SUGGESTED_INGREDIENTS: SuggestedIngredient[] = [
   {
     key: "massa-pronta",
-    name: "Massa Pronta para Bolo (450g)",
+    name: "Massa Pronta para Bolo",
     unit: "g",
     package_qty: 450,
     price_paid: 7,
-    hint: "Pacote de ~450g",
+    hint: "Pacote padrão ~450g",
   },
   {
     key: "ovos",
-    name: "Ovos (bandeja 30un)",
+    name: "Ovos",
     unit: "un",
     package_qty: 30,
     price_paid: 20,
-    hint: "Sistema calcula ~R$ 0,66/ovo",
+    hint: "Bandeja de 30 unidades",
   },
   {
     key: "oleo",
-    name: "Óleo de Soja (900ml)",
+    name: "Óleo de Soja",
     unit: "ml",
     package_qty: 900,
     price_paid: 6,
+    hint: "Garrafa 900ml",
   },
   {
     key: "leite-integral",
-    name: "Leite Integral (1L)",
+    name: "Leite Integral",
     unit: "ml",
     package_qty: 1000,
     price_paid: 5,
+    hint: "Caixa 1L",
   },
   {
     key: "leite-condensado",
-    name: "Leite Condensado (395g)",
+    name: "Leite Condensado",
     unit: "g",
     package_qty: 395,
     price_paid: 5.9,
@@ -51,7 +54,7 @@ export const SUGGESTED_INGREDIENTS: SuggestedIngredient[] = [
   },
   {
     key: "creme-de-leite",
-    name: "Creme de Leite (200g)",
+    name: "Creme de Leite",
     unit: "g",
     package_qty: 200,
     price_paid: 3,
@@ -59,10 +62,11 @@ export const SUGGESTED_INGREDIENTS: SuggestedIngredient[] = [
   },
   {
     key: "leite-em-po",
-    name: "Leite em Pó (800g)",
+    name: "Leite em Pó",
     unit: "g",
     package_qty: 800,
     price_paid: 32,
+    hint: "Pacote 800g",
   },
   {
     key: "cakeboard",
@@ -96,18 +100,21 @@ export type SuggestedRecipe = {
   items: { ingredientKey: string; quantity: number; note?: string }[];
 };
 
+// Bolo de Ninho 3kg, vendido em 12 fatias grandes. Preço-alvo R$ 17/fatia
+// (conforme prática real da confeitaria) — a margem é ajustada para que o
+// "preço sugerido" caia perto disso, mas a confeiteira pode editar.
 export const SUGGESTED_RECIPES: SuggestedRecipe[] = [
   {
     key: "bolo-de-ninho-3kg",
     name: "Bolo de Ninho (3kg)",
     description:
-      "Bolo decorado de ninho — receita-base de exemplo com custos detalhados.",
-    servings: 30, // 3kg em fatias de ~100g
+      "Bolo decorado de ninho — receita-base de exemplo com custos detalhados. Fatias grandes (~250g).",
+    servings: 12,
     totalWeightG: 3000,
     laborCost: 80, // diária ajudante (editável)
-    packagingCost: 13 / 30, // cakeboard + caixa rateado por fatia (~R$0,43)
+    packagingCost: 13 / 12, // cakeboard + caixa rateado por fatia (~R$1,08)
     wastePct: 10,
-    margin: 50,
+    margin: 65, // resulta em preço sugerido próximo de R$ 17/fatia
     items: [
       { ingredientKey: "massa-pronta", quantity: 900, note: "2 pacotes (≈900g)" },
       { ingredientKey: "ovos", quantity: 6, note: "6 ovos" },

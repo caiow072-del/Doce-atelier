@@ -665,98 +665,97 @@ function RecipeForm({
                   Nenhum insumo adicionado ainda.
                 </p>
               ) : (
-                <ul className="mt-3 space-y-2">
-                  {items.map((it) => {
-                    const ing = ingredients.find((i) => i.id === it.ingredient_id);
-                    if (!ing) return null;
-                    const lineCost =
-                      ing.package_qty > 0 ? (ing.price_paid / ing.package_qty) * it.quantity : 0;
-                    const measureKey: MeasureKey = measureByItem[it.ingredient_id] ?? "native";
-                    const compat = compatibleMeasures(ing.unit);
-                    const display =
-                      displayQty[it.ingredient_id] ??
-                      (measureKey === "native" ? it.quantity.toString() : "");
-                    const onChangeQty = (raw: string) => {
-                      setDisplayQty((d) => ({ ...d, [it.ingredient_id]: raw }));
-                      const n = Number(raw);
-                      if (!isFinite(n)) return;
-                      const base = convertToBaseUnit(n, measureKey, ing.unit);
-                      if (base !== null) setQty(it.ingredient_id, base);
-                    };
-                    const onChangeMeasure = (k: MeasureKey) => {
-                      setMeasureByItem((m) => ({ ...m, [it.ingredient_id]: k }));
-                      // recalcula display preservando a quantidade base
-                      if (k === "native") {
-                        setDisplayQty((d) => ({ ...d, [it.ingredient_id]: it.quantity.toString() }));
-                      } else {
-                        const m = MEASURES.find((x) => x.key === k);
-                        if (m) {
-                          const baseInRefUnit =
-                            ing.unit.toLowerCase() === "l" || ing.unit.toLowerCase() === "kg"
-                              ? it.quantity * 1000
-                              : it.quantity;
-                          const inMeasure = baseInRefUnit / m.factor;
-                          setDisplayQty((d) => ({
-                            ...d,
-                            [it.ingredient_id]: inMeasure.toFixed(2),
-                          }));
+                <details open className="mt-3 group">
+                  <summary className="flex cursor-pointer items-center justify-between rounded-xl bg-card/70 px-3 py-2 text-xs select-none [&::-webkit-details-marker]:hidden">
+                    <span className="inline-flex items-center gap-1.5 text-mauve font-medium">
+                      <ChevronRight className="h-3.5 w-3.5 transition-transform group-open:rotate-90" />
+                      {items.length} {items.length === 1 ? "insumo" : "insumos"} · toque para {/* */}
+                      <span className="underline decoration-dotted">expandir/recolher</span>
+                    </span>
+                    <span className="font-display italic text-mauve">{formatBRL(cost.ingredientsCost)}</span>
+                  </summary>
+                  <ul className="mt-2 space-y-2">
+                    {items.map((it) => {
+                      const ing = ingredients.find((i) => i.id === it.ingredient_id);
+                      if (!ing) return null;
+                      const lineCost =
+                        ing.package_qty > 0 ? (ing.price_paid / ing.package_qty) * it.quantity : 0;
+                      const measureKey: MeasureKey = measureByItem[it.ingredient_id] ?? "native";
+                      const compat = compatibleMeasures(ing.unit);
+                      const display =
+                        displayQty[it.ingredient_id] ??
+                        (measureKey === "native" ? it.quantity.toString() : "");
+                      const onChangeQty = (raw: string) => {
+                        setDisplayQty((d) => ({ ...d, [it.ingredient_id]: raw }));
+                        const n = Number(raw);
+                        if (!isFinite(n)) return;
+                        const base = convertToBaseUnit(n, measureKey, ing.unit);
+                        if (base !== null) setQty(it.ingredient_id, base);
+                      };
+                      const onChangeMeasure = (k: MeasureKey) => {
+                        setMeasureByItem((m) => ({ ...m, [it.ingredient_id]: k }));
+                        if (k === "native") {
+                          setDisplayQty((d) => ({ ...d, [it.ingredient_id]: it.quantity.toString() }));
+                        } else {
+                          const m = MEASURES.find((x) => x.key === k);
+                          if (m) {
+                            const baseInRefUnit =
+                              ing.unit.toLowerCase() === "l" || ing.unit.toLowerCase() === "kg"
+                                ? it.quantity * 1000
+                                : it.quantity;
+                            const inMeasure = baseInRefUnit / m.factor;
+                            setDisplayQty((d) => ({
+                              ...d,
+                              [it.ingredient_id]: inMeasure.toFixed(2),
+                            }));
+                          }
                         }
-                      }
-                    };
-                    return (
-                      <li
-                        key={it.ingredient_id}
-                        className="rounded-xl bg-card px-3 py-2.5"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-medium text-mauve">{ing.name}</p>
-                            <p className="text-[11px] text-muted-foreground">
-                              {it.quantity.toFixed(2)} {ing.unit} · {formatBRL(lineCost)}
-                            </p>
+                      };
+                      return (
+                        <li key={it.ingredient_id} className="rounded-xl bg-card px-3 py-2.5">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-medium text-mauve">{ing.name}</p>
+                              <p className="text-[11px] text-muted-foreground">
+                                {it.quantity.toFixed(2)} {ing.unit} · {formatBRL(lineCost)}
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => removeItem(it.ingredient_id)}
+                              className="rounded-lg p-1 text-destructive hover:bg-destructive/10"
+                              aria-label="Remover"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => removeItem(it.ingredient_id)}
-                            className="rounded-lg p-1 text-destructive hover:bg-destructive/10"
-                            aria-label="Remover"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                        <div className="mt-2 flex items-center gap-1.5">
-                          <input
-                            type="number"
-                            step="0.01"
-                            inputMode="decimal"
-                            value={display}
-                            onChange={(e) => onChangeQty(e.target.value)}
-                            className="w-20 rounded-lg border border-border bg-background px-2 py-1.5 text-center text-sm text-mauve outline-none focus:border-rose"
-                          />
-                          <select
-                            value={measureKey}
-                            onChange={(e) => onChangeMeasure(e.target.value as MeasureKey)}
-                            className="flex-1 rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-mauve outline-none focus:border-rose"
-                          >
-                            <option value="native">{ing.unit} (padrão)</option>
-                            {compat.map((m) => (
-                              <option key={m.key} value={m.key}>
-                                {m.label}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-
-              {items.length > 0 && (
-                <div className="mt-3 flex items-center justify-between rounded-xl bg-card/70 px-3 py-2 text-xs">
-                  <span className="text-muted-foreground">Custo total dos insumos</span>
-                  <span className="font-display italic text-mauve">{formatBRL(cost.ingredientsCost)}</span>
-                </div>
+                          <div className="mt-2 flex items-center gap-1.5">
+                            <input
+                              type="number"
+                              step="0.01"
+                              inputMode="decimal"
+                              value={display}
+                              onChange={(e) => onChangeQty(e.target.value)}
+                              className="w-20 rounded-lg border border-border bg-background px-2 py-1.5 text-center text-sm text-mauve outline-none focus:border-rose"
+                            />
+                            <select
+                              value={measureKey}
+                              onChange={(e) => onChangeMeasure(e.target.value as MeasureKey)}
+                              className="flex-1 rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-mauve outline-none focus:border-rose"
+                            >
+                              <option value="native">{ing.unit} (padrão)</option>
+                              {compat.map((m) => (
+                                <option key={m.key} value={m.key}>
+                                  {m.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </details>
               )}
             </div>
           </section>

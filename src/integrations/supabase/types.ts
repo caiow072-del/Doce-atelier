@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      customers: {
+        Row: {
+          address: string
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string
+          shop_id: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          address: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone: string
+          shop_id: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          address?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string
+          shop_id?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       event_recipes: {
         Row: {
           batches: number
@@ -227,6 +266,7 @@ export type Database = {
       orders: {
         Row: {
           created_at: string
+          customer_id: string | null
           customer_name: string
           customer_phone: string | null
           delivery_address: string | null
@@ -244,6 +284,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          customer_id?: string | null
           customer_name: string
           customer_phone?: string | null
           delivery_address?: string | null
@@ -261,6 +302,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          customer_id?: string | null
           customer_name?: string
           customer_phone?: string | null
           delivery_address?: string | null
@@ -277,6 +319,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "orders_recipe_id_fkey"
             columns: ["recipe_id"]
