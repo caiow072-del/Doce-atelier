@@ -38,18 +38,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [shops, setShops] = useState<ShopMembership[]>([]);
   const [currentShopId, setCurrentShopIdState] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) setCurrentShopIdState(stored);
-  }, []);
-
   const setCurrentShopId = (id: string) => {
     setCurrentShopIdState(id);
     if (typeof window !== "undefined") localStorage.setItem(STORAGE_KEY, id);
   };
 
-  const loadShops = async (userId: string) => {
+  const loadShops = async (userId: string, preferredShopId?: string | null) => {
     const { data, error } = await supabase
       .from("shop_members")
       .select("shop_id, role, shops(id, name, slug, whatsapp, description, logo_url)")
@@ -61,17 +55,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     const memberships = (data ?? []) as unknown as ShopMembership[];
     setShops(memberships);
-    if (memberships.length > 0) {
-      const stored = currentShopId;
-      const valid = memberships.find((m) => m.shop_id === stored);
-      if (!valid) setCurrentShopId(memberships[0].shop_id);
+    if (memberships.length === 0) {
+      setCurrentShopIdState(null);
+      return;
     }
+
+    const nextShopId = memberships.some((m) => m.shop_id === preferredShopId)
+      ? preferredShopId!
+      : memberships[0].shop_id;
+
+    setCurrentShopIdState(nextShopId);
+    if (typeof window !== "undefined") localStorage.setItem(STORAGE_KEY, nextShopId);
   };
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
+    const storedShopId = localStorage.getItem(STORAGE_KEY);
+    if (storedShopId) setCurrentShopIdState(storedShopId);
+
     let resolved = false;
+    let lastSessionUserId: string | null | undefined;
     const finish = () => {
       if (!resolved) {
         resolved = true;
@@ -79,31 +83,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     };
 
-    // Safety net — never hang on the loader
-    const timeout = setTimeout(finish, 4000);
-
-    // 1. Listener FIRST (sync only inside)
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    const syncSession = (newSession: Session | null) => {
       setSession(newSession);
+      finish();
+
+      const userId = newSession?.user?.id;
+      if (lastSessionUserId === userId) return;
+      lastSessionUserId = userId;
+
       if (newSession?.user) {
-        setTimeout(() => {
-          loadShops(newSession.user.id).finally(finish);
-        }, 0);
+        void loadShops(newSession.user.id, storedShopId);
       } else {
         setShops([]);
-        finish();
+        setCurrentShopIdState(null);
+        localStorage.removeItem(STORAGE_KEY);
       }
+    };
+
+    // Safety net — never hang on the loader
+    const timeout = setTimeout(finish, 1500);
+
+    // 1. Listener FIRST
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      syncSession(newSession);
     });
 
     // 2. Then check existing session
-    supabase.auth.getSession().then(({ data: { session: existing } }) => {
-      setSession(existing);
-      if (existing?.user) {
-        loadShops(existing.user.id).finally(finish);
-      } else {
-        finish();
-      }
-    }).catch(finish);
+    supabase.auth
+      .getSession()
+      .then(({ data: { session: existing } }) => {
+        syncSession(existing);
+      })
+      .catch(finish);
 
     return () => {
       clearTimeout(timeout);
