@@ -33,7 +33,8 @@ function Dashboard() {
   const estCost = sales.length * 7.5;
   const profit = revenue - estCost;
   const costRatio = revenue > 0 ? estCost / revenue : 0;
-  const profitable = costRatio < 0.6;
+  const costsHigh = costRatio >= 0.6;
+  const profitNegative = profit < 0;
   const margin = revenue > 0 ? (profit / revenue) * 100 : 0;
   const firstName = (user?.user_metadata?.full_name as string | undefined)?.split(" ")[0]
     ?? user?.email?.split("@")[0]
@@ -91,21 +92,21 @@ function Dashboard() {
           label="Custos"
           value={formatBRL(estCost)}
           hint={`${(costRatio * 100).toFixed(0)}% do faturamento`}
-          tone={profitable ? "sage" : "warn"}
+          tone={costsHigh ? "danger" : "sage"}
         />
         <Metric
           icon={<Sparkles className="h-4 w-4" />}
           label="Lucro líquido"
           value={formatBRL(profit)}
-          hint={profitable ? "Saudável" : "Atenção"}
-          tone={profitable ? "sage" : "warn"}
+          hint={profitNegative ? "No vermelho" : costsHigh ? "Atenção" : "Saudável"}
+          tone={profitNegative ? "danger" : costsHigh ? "warn" : "sage"}
         />
         <Metric
           icon={<ChefHat className="h-4 w-4" />}
           label="Margem"
           value={`${margin.toFixed(0)}%`}
           hint="meta 30%"
-          tone={margin >= 30 ? "sage" : "warn"}
+          tone={margin < 0 ? "danger" : margin >= 30 ? "sage" : "warn"}
         />
       </section>
 
@@ -182,16 +183,18 @@ function Metric({
   label: string;
   value: string;
   hint?: string;
-  tone: "rose" | "sage" | "warn";
+  tone: "rose" | "sage" | "warn" | "danger";
 }) {
   const toneCls =
-    tone === "sage" ? "text-success" : tone === "warn" ? "text-warning" : "text-mauve";
+    tone === "sage"
+      ? "text-success"
+      : tone === "warn"
+        ? "text-warning"
+        : tone === "danger"
+          ? "text-destructive"
+          : "text-mauve";
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="card-soft p-4 sm:p-5"
-    >
+    <div className="card-soft p-4 sm:p-5">
       <div className="flex items-center gap-2 text-rose">
         {icon}
         <span className="text-[11px] uppercase tracking-widest">{label}</span>
