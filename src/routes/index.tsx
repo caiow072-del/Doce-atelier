@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 import {
   TrendingUp,
   Wallet,
@@ -10,10 +11,13 @@ import {
   BookOpen,
   Package,
   ChefHat,
+  ClipboardList,
 } from "lucide-react";
-import { useStore, formatBRL } from "@/lib/store";
 import { useAuth } from "@/lib/auth";
+import { supabase } from "@/integrations/supabase/client";
 import heroCake from "@/assets/hero-cake.jpg";
+
+const formatBRL = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -25,12 +29,39 @@ export const Route = createFileRoute("/")({
   component: Dashboard,
 });
 
-function Dashboard() {
-  const { sales, recipes, ingredients } = useStore();
-  const { user, currentShop } = useAuth();
+type Recipe = { id: string; name: string; servings: number };
 
-  const revenue = sales.reduce((s, x) => s + x.price, 0);
-  const estCost = sales.length * 7.5;
+function Dashboard() {
+  const { user, currentShop } = useAuth();
+  const shopId = currentShop?.shop_id;
+
+  const [revenue, setRevenue] = useState(0);
+  const [salesCount, setSalesCount] = useState(0);
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [ingredientsCount, setIngredientsCount] = useState(0);
+  const [pendingOrders, setPendingOrders] = useState(0);
+
+  useEffect(() => {
+    if (!shopId) return;
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+    Promise.all([
+      supabase.from("sales").select("price").eq("shop_id", shopId).gte("sold_at", startOfMonth.toISOString()),
+      supabase.from("recipes").select("id, name, servings").eq("shop_id", shopId).order("name").limit(6),
+      supabase.from("ingredients").select("id", { count: "exact", head: true }).eq("shop_id", shopId),
+      supabase.from("orders").select("id", { count: "exact", head: true }).eq("shop_id", shopId).in("status", ["orcamento", "confirmado", "produzindo", "pronto"]),
+    ]).then(([s, r, i, o]) => {
+      const sales = (s.data ?? []) as { price: number }[];
+      setRevenue(sales.reduce((sum, x) => sum + Number(x.price), 0));
+      setSalesCount(sales.length);
+      setRecipes((r.data ?? []) as Recipe[]);
+      setIngredientsCount(i.count ?? 0);
+      setPendingOrders(o.count ?? 0);
+    });
+  }, [shopId]);
+
+  const estCost = salesCount * 7.5;
   const profit = revenue - estCost;
   const costRatio = revenue > 0 ? estCost / revenue : 0;
   const costsHigh = costRatio >= 0.6;
@@ -63,10 +94,10 @@ function Dashboard() {
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link
-              to="/festival"
+              to="/eventos"
               className="inline-flex items-center gap-2 rounded-2xl bg-mauve px-5 py-3 text-sm font-medium text-cream shadow-soft transition hover:opacity-90"
             >
-              <CalendarHeart className="h-4 w-4" /> Novo festival
+              <CalendarHeart className="h-4 w-4" /> Novo evento
             </Link>
             <Link
               to="/pdv"
@@ -84,7 +115,7 @@ function Dashboard() {
           icon={<TrendingUp className="h-4 w-4" />}
           label="Faturamento"
           value={formatBRL(revenue)}
-          hint={`${sales.length} vendas`}
+          hint={`${salesCount} vendas neste mês`}
           tone="rose"
         />
         <Metric
@@ -147,7 +178,7 @@ function Dashboard() {
               <Package className="h-4 w-4" />
               <p className="text-[11px] uppercase tracking-widest">Estoque</p>
             </div>
-            <p className="mt-2 font-display text-4xl italic text-mauve">{ingredients.length}</p>
+            <p className="mt-2 font-display text-4xl italic text-mauve">{ingredientsCount}</p>
             <p className="text-xs text-muted-foreground">insumos cadastrados</p>
             <Link
               to="/insumos"
@@ -157,14 +188,19 @@ function Dashboard() {
             </Link>
           </div>
 
-          <div className="card-soft overflow-hidden p-0">
-            <div className="bg-gradient-to-br from-rose/40 to-blush/30 p-6">
-              <p className="text-[11px] uppercase tracking-widest text-mauve/70">Em breve</p>
-              <h3 className="mt-1 font-display text-xl italic text-mauve">Vitrine pública</h3>
-              <p className="mt-2 text-xs text-mauve/80">
-                Um link para enviar aos clientes no WhatsApp com o festival da semana e o cardápio de encomendas.
-              </p>
+          <div className="card-soft p-6">
+            <div className="flex items-center gap-2 text-rose">
+              <ClipboardList className="h-4 w-4" />
+              <p className="text-[11px] uppercase tracking-widest">Encomendas</p>
             </div>
+            <p className="mt-2 font-display text-4xl italic text-mauve">{pendingOrders}</p>
+            <p className="text-xs text-muted-foreground">pedidos em andamento</p>
+            <Link
+              to="/encomendas"
+              className="mt-4 inline-flex w-full items-center justify-center gap-1 rounded-xl bg-blush/40 py-2 text-xs font-medium text-mauve hover:bg-blush/70"
+            >
+              Ver encomendas <ArrowRight className="h-3 w-3" />
+            </Link>
           </div>
         </div>
       </section>
