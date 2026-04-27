@@ -14,6 +14,10 @@ import {
   Users,
   MessageCircle,
   MapPin,
+  Globe,
+  Package,
+  Truck,
+  Check,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -52,6 +56,10 @@ type Order = {
   deposit_paid: number;
   status: OrderStatus;
   notes: string | null;
+  source: "manual" | "storefront" | null;
+  delivery_method: "pickup" | "delivery" | null;
+  items: Array<{ name: string; qty: number; price: number }> | null;
+  created_at: string;
 };
 
 const statusLabel: Record<OrderStatus, string> = {
