@@ -460,7 +460,7 @@ function RecipeForm({
       servings: Number(servings),
       labor_cost: Number(laborCost),
       packaging_cost: Number(packagingCost),
-      waste_pct: Number(wastePct) / 100,
+      waste_pct: includeWaste ? Number(wastePct) / 100 : 0,
       target_margin: Number(targetMargin) / 100,
     };
 
