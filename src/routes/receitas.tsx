@@ -925,9 +925,30 @@ function RecipeForm({
             </div>
           </section>
 
+          {/* ───── SEÇÃO 5: Preço Real Praticado ───── */}
+          <section className="space-y-2">
+            <SectionTitle index={5} title="Preço de venda real" subtitle="O que você cobra de verdade" />
+            <div className="rounded-2xl border-2 border-mauve/30 bg-card p-3">
+              <Field
+                label="Preço de venda real (R$ por fatia/unid.)"
+                hint="O preço que você realmente cobra. O slider acima é só sugestão — o lucro abaixo é calculado com este valor."
+              >
+                <input
+                  type="number"
+                  step="0.01"
+                  inputMode="decimal"
+                  value={realPrice}
+                  onChange={(e) => setRealPrice(e.target.value)}
+                  placeholder="Ex: 17.00"
+                  className="input-base"
+                />
+              </Field>
+            </div>
+          </section>
+
           {/* ───── Rodapé: resumo financeiro ───── */}
           <div className="rounded-2xl bg-gradient-to-br from-blush/60 to-rose/30 p-4">
-            <div className="grid grid-cols-3 gap-2 text-center">
+            <div className="grid grid-cols-2 gap-2 text-center sm:grid-cols-4">
               <div>
                 <p className="text-[10px] uppercase tracking-widest text-rose">Custo/fatia</p>
                 <p className="font-display text-lg italic text-mauve">{formatBRL(cost.perSlice)}</p>
@@ -939,14 +960,29 @@ function RecipeForm({
                 </p>
               </div>
               <div>
-                <p className="text-[10px] uppercase tracking-widest text-rose">Lucro/fatia</p>
-                <p className={`font-display text-lg italic ${cost.suggestedPrice - cost.perSlice <= 0 ? "text-destructive" : "text-mauve"}`}>
-                  {formatBRL(cost.suggestedPrice - cost.perSlice)}
+                <p className="text-[10px] uppercase tracking-widest text-rose">Preço real</p>
+                <p className="font-display text-lg italic text-mauve">
+                  {realPriceNum > 0 ? formatBRL(realPriceNum) : "—"}
                 </p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-widest text-rose">Lucro real</p>
+                {realPriceNum > 0 ? (
+                  <>
+                    <p className={`font-display text-lg italic ${realProfit <= 0 ? "text-destructive" : "text-mauve"}`}>
+                      {formatBRL(realProfit)}
+                    </p>
+                    <p className={`text-[10px] ${realProfit <= 0 ? "text-destructive" : "text-mauve/70"}`}>
+                      {realMarginPct.toFixed(0)}%
+                    </p>
+                  </>
+                ) : (
+                  <p className="font-display text-lg italic text-muted-foreground">—</p>
+                )}
               </div>
             </div>
             <p className="mt-2 text-center text-[11px] text-mauve/70">
-              (Custo dos Insumos: {formatBRL(cost.ingredientsCost)} · Custos Extras: {formatBRL(extraCosts)})
+              (Insumos: {formatBRL(cost.ingredientsCost)} · Extras: {formatBRL(extraCosts)})
             </p>
           </div>
         </div>
