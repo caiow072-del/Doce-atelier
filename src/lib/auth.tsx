@@ -31,16 +31,18 @@ const AuthContext = createContext<AuthState | undefined>(undefined);
 const STORAGE_KEY = "jm_current_shop_id";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // On SSR we don't have access to the browser session — start as not-loading
-  // so the public shell can render. The client effect will flip it back on
-  // mount if needed and resolve the real session.
-  const [loading, setLoading] = useState(typeof window !== "undefined");
+  // Start with the same initial state on server and client to avoid hydration
+  // mismatches. We hydrate auth from localStorage/Supabase only after mount.
+  const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<Session | null>(null);
   const [shops, setShops] = useState<ShopMembership[]>([]);
-  const [currentShopId, setCurrentShopIdState] = useState<string | null>(() => {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem(STORAGE_KEY);
-  });
+  const [currentShopId, setCurrentShopIdState] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) setCurrentShopIdState(stored);
+  }, []);
 
   const setCurrentShopId = (id: string) => {
     setCurrentShopIdState(id);
