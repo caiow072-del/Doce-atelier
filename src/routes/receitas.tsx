@@ -393,6 +393,11 @@ function RecipeForm({
   const [targetMargin, setTargetMargin] = useState(((initial?.target_margin ?? 0.3) * 100).toString());
   const [items, setItems] = useState<RecipeIngredient[]>(initial?.ingredients ?? []);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerSearch, setPickerSearch] = useState("");
+  // Por item, qual unidade está sendo usada para entrada (xícara/colher/native).
+  const [measureByItem, setMeasureByItem] = useState<Record<string, MeasureKey>>({});
+  // Quantidade exibida no input (na unidade escolhida) — convertida para a base ao salvar.
+  const [displayQty, setDisplayQty] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
   const applySuggestedRecipe = (s: SuggestedRecipe) => {
