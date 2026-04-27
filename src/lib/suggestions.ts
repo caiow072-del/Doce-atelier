@@ -114,7 +114,7 @@ export const SUGGESTED_RECIPES: SuggestedRecipe[] = [
     laborCost: 25, // valor do tempo da confeiteira nesta receita (editável)
     packagingCost: 13 / 12, // cakeboard + caixa rateado por fatia (~R$1,08)
     wastePct: 10,
-    margin: 65, // resulta em preço sugerido próximo de R$ 17/fatia
+    margin: 50, // sugestão padrão de lucro
     items: [
       { ingredientKey: "massa-pronta", quantity: 900, note: "2 pacotes (≈900g)" },
       { ingredientKey: "ovos", quantity: 6, note: "6 ovos" },
