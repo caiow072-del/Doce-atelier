@@ -395,14 +395,40 @@ function RecipeForm({
   const [pickerOpen, setPickerOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const applyPreset = (p: Preset) => {
-    setServings(p.servings.toString());
-    setLaborCost(p.labor.toString());
-    setPackagingCost(p.packaging.toString());
-    setIncludeWaste(p.waste > 0);
-    setWastePct((p.waste > 0 ? p.waste : 10).toString());
-    setTargetMargin(p.margin.toString());
-    toast.success(`Valores sugeridos para "${p.label}" aplicados`);
+  const applySuggestedRecipe = (s: SuggestedRecipe) => {
+    if (!name) setName(s.name);
+    if (!description) setDescription(s.description);
+    setServings(s.servings.toString());
+    setTotalWeight(s.totalWeightG.toString());
+    setLaborCost(s.laborCost.toString());
+    setPackagingCost(s.packagingCost.toFixed(2));
+    setIncludeWaste(s.wastePct > 0);
+    setWastePct((s.wastePct > 0 ? s.wastePct : 10).toString());
+    setTargetMargin(s.margin.toString());
+
+    // Casa por nome (case-insensitive) com insumos já cadastrados.
+    const matched: RecipeIngredient[] = [];
+    const missing: string[] = [];
+    for (const it of s.items) {
+      const sug = SUGGESTED_INGREDIENTS.find((x) => x.key === it.ingredientKey);
+      if (!sug) continue;
+      const ing = ingredients.find((i) => i.name.toLowerCase() === sug.name.toLowerCase());
+      if (ing) {
+        matched.push({ ingredient_id: ing.id, quantity: it.quantity });
+      } else {
+        missing.push(sug.name);
+      }
+    }
+    setItems(matched);
+
+    if (missing.length > 0) {
+      toast.warning(
+        `Sugestão aplicada. Cadastre estes insumos para o cálculo ficar completo: ${missing.join(", ")}`,
+        { duration: 6000 }
+      );
+    } else {
+      toast.success(`Sugestão "${s.name}" aplicada — ajuste o que precisar`);
+    }
   };
 
   const previewRecipe: Recipe = {
