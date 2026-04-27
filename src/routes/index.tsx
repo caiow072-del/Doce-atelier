@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 import {
   TrendingUp,
   Wallet,
@@ -10,10 +11,13 @@ import {
   BookOpen,
   Package,
   ChefHat,
+  ClipboardList,
 } from "lucide-react";
-import { useStore, formatBRL } from "@/lib/store";
 import { useAuth } from "@/lib/auth";
+import { supabase } from "@/integrations/supabase/client";
 import heroCake from "@/assets/hero-cake.jpg";
+
+const formatBRL = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -25,12 +29,39 @@ export const Route = createFileRoute("/")({
   component: Dashboard,
 });
 
-function Dashboard() {
-  const { sales, recipes, ingredients } = useStore();
-  const { user, currentShop } = useAuth();
+type Recipe = { id: string; name: string; servings: number };
 
-  const revenue = sales.reduce((s, x) => s + x.price, 0);
-  const estCost = sales.length * 7.5;
+function Dashboard() {
+  const { user, currentShop } = useAuth();
+  const shopId = currentShop?.shop_id;
+
+  const [revenue, setRevenue] = useState(0);
+  const [salesCount, setSalesCount] = useState(0);
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [ingredientsCount, setIngredientsCount] = useState(0);
+  const [pendingOrders, setPendingOrders] = useState(0);
+
+  useEffect(() => {
+    if (!shopId) return;
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+    Promise.all([
+      supabase.from("sales").select("price").eq("shop_id", shopId).gte("sold_at", startOfMonth.toISOString()),
+      supabase.from("recipes").select("id, name, servings").eq("shop_id", shopId).order("name").limit(6),
+      supabase.from("ingredients").select("id", { count: "exact", head: true }).eq("shop_id", shopId),
+      supabase.from("orders").select("id", { count: "exact", head: true }).eq("shop_id", shopId).in("status", ["orcamento", "confirmado", "produzindo", "pronto"]),
+    ]).then(([s, r, i, o]) => {
+      const sales = (s.data ?? []) as { price: number }[];
+      setRevenue(sales.reduce((sum, x) => sum + Number(x.price), 0));
+      setSalesCount(sales.length);
+      setRecipes((r.data ?? []) as Recipe[]);
+      setIngredientsCount(i.count ?? 0);
+      setPendingOrders(o.count ?? 0);
+    });
+  }, [shopId]);
+
+  const estCost = salesCount * 7.5;
   const profit = revenue - estCost;
   const costRatio = revenue > 0 ? estCost / revenue : 0;
   const costsHigh = costRatio >= 0.6;
