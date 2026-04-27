@@ -39,6 +39,7 @@ function InsumosPage() {
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<Ingredient | null>(null);
   const [creating, setCreating] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const load = async () => {
     if (!shopId) return;
