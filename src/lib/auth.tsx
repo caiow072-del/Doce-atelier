@@ -101,7 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     // Safety net — never hang on the loader
-    const timeout = setTimeout(finish, 1500);
+    const timeout = setTimeout(finish, 800);
 
     // 1. Listener FIRST
     const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
