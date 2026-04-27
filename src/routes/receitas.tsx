@@ -21,6 +21,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
 import { formatBRL } from "@/lib/store";
+import {
+  SUGGESTED_RECIPES,
+  SUGGESTED_INGREDIENTS,
+  MEASURES,
+  compatibleMeasures,
+  convertToBaseUnit,
+  type MeasureKey,
+  type SuggestedRecipe,
+} from "@/lib/suggestions";
 
 export const Route = createFileRoute("/receitas")({
   head: () => ({
