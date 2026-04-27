@@ -92,7 +92,7 @@ function EncomendasPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNew, setShowNew] = useState(false);
-  const [filter, setFilter] = useState<"todos" | "ativos" | OrderStatus>("ativos");
+  const [filter, setFilter] = useState<"todos" | "ativos" | "vitrine" | OrderStatus>("ativos");
 
   const loadAll = async () => {
     if (!shopId) return;
@@ -124,8 +124,13 @@ function EncomendasPage() {
   const visible = orders.filter((o) => {
     if (filter === "todos") return true;
     if (filter === "ativos") return !["entregue", "cancelado"].includes(o.status);
+    if (filter === "vitrine") return o.source === "storefront";
     return o.status === filter;
   });
+
+  const pendingStorefront = orders.filter(
+    (o) => o.source === "storefront" && o.status === "orcamento",
+  ).length;
 
   const updateStatus = async (id: string, status: OrderStatus) => {
     const { error } = await supabase.from("orders").update({ status }).eq("id", id);
@@ -146,17 +151,26 @@ function EncomendasPage() {
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap gap-1.5">
-          {(["ativos", "orcamento", "confirmado", "produzindo", "pronto", "entregue", "todos"] as const).map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-                filter === f ? "bg-mauve text-cream" : "bg-card text-muted-foreground hover:bg-blush/40"
-              }`}
-            >
-              {f === "ativos" ? "Ativos" : f === "todos" ? "Todos" : statusLabel[f as OrderStatus]}
-            </button>
-          ))}
+          {(["ativos", "vitrine", "orcamento", "confirmado", "produzindo", "pronto", "entregue", "todos"] as const).map((f) => {
+            const isVitrine = f === "vitrine";
+            return (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`relative inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                  filter === f ? "bg-mauve text-cream" : "bg-card text-muted-foreground hover:bg-blush/40"
+                }`}
+              >
+                {isVitrine && <Globe className="h-3 w-3" />}
+                {f === "ativos" ? "Ativos" : f === "todos" ? "Todos" : isVitrine ? "Vitrine" : statusLabel[f as OrderStatus]}
+                {isVitrine && pendingStorefront > 0 && (
+                  <span className="ml-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-rose px-1 text-[10px] font-semibold text-mauve">
+                    {pendingStorefront}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
         <button
           onClick={() => setShowNew(true)}
