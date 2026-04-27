@@ -293,7 +293,7 @@ function RecipeDetail({
     <div onClick={onClose} className="fixed inset-0 z-50 flex items-end justify-center bg-mauve/30 backdrop-blur-sm sm:items-center">
       <div
         onClick={(e) => e.stopPropagation()}
-        className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-t-3xl bg-card p-6 pb-10 sm:rounded-3xl"
+        className="max-h-[90vh] w-full max-w-2xl overflow-x-hidden overflow-y-auto overscroll-contain rounded-t-3xl bg-card p-6 pb-10 [scrollbar-gutter:stable] sm:rounded-3xl"
       >
         <div className="flex items-start justify-between">
           <div>
@@ -548,7 +548,7 @@ function RecipeForm({
       <form
         onClick={(e) => e.stopPropagation()}
         onSubmit={submit}
-        className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-t-3xl bg-card p-6 pb-10 sm:rounded-3xl"
+        className="max-h-[92vh] w-full max-w-2xl overflow-x-hidden overflow-y-auto overscroll-contain rounded-t-3xl bg-card p-6 pb-10 [scrollbar-gutter:stable] sm:rounded-3xl"
       >
         <div className="mb-4 flex items-center justify-between">
           <h2 className="font-display text-2xl italic text-mauve">
@@ -858,10 +858,10 @@ function RecipeForm({
                   role="switch"
                   aria-checked={includeWaste}
                   onClick={() => setIncludeWaste((v) => !v)}
-                  className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${includeWaste ? "bg-mauve" : "bg-border"}`}
+                  className={`relative h-5 w-9 shrink-0 overflow-hidden rounded-full border transition-colors ${includeWaste ? "border-mauve bg-mauve" : "border-border bg-card"}`}
                 >
                   <span
-                    className={`absolute top-0.5 h-4 w-4 rounded-full bg-cream shadow transition-transform ${includeWaste ? "translate-x-[18px]" : "translate-x-0.5"}`}
+                    className={`absolute top-1/2 h-3.5 w-3.5 -translate-y-1/2 rounded-full shadow transition-transform ${includeWaste ? "translate-x-[18px] bg-cream" : "translate-x-0.5 bg-mauve/60"}`}
                   />
                 </button>
               </div>
