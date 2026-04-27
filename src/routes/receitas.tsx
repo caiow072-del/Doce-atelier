@@ -667,45 +667,81 @@ function RecipeForm({
                     if (!ing) return null;
                     const lineCost =
                       ing.package_qty > 0 ? (ing.price_paid / ing.package_qty) * it.quantity : 0;
+                    const measureKey: MeasureKey = measureByItem[it.ingredient_id] ?? "native";
+                    const compat = compatibleMeasures(ing.unit);
+                    const display =
+                      displayQty[it.ingredient_id] ??
+                      (measureKey === "native" ? it.quantity.toString() : "");
+                    const onChangeQty = (raw: string) => {
+                      setDisplayQty((d) => ({ ...d, [it.ingredient_id]: raw }));
+                      const n = Number(raw);
+                      if (!isFinite(n)) return;
+                      const base = convertToBaseUnit(n, measureKey, ing.unit);
+                      if (base !== null) setQty(it.ingredient_id, base);
+                    };
+                    const onChangeMeasure = (k: MeasureKey) => {
+                      setMeasureByItem((m) => ({ ...m, [it.ingredient_id]: k }));
+                      // recalcula display preservando a quantidade base
+                      if (k === "native") {
+                        setDisplayQty((d) => ({ ...d, [it.ingredient_id]: it.quantity.toString() }));
+                      } else {
+                        const m = MEASURES.find((x) => x.key === k);
+                        if (m) {
+                          const baseInRefUnit =
+                            ing.unit.toLowerCase() === "l" || ing.unit.toLowerCase() === "kg"
+                              ? it.quantity * 1000
+                              : it.quantity;
+                          const inMeasure = baseInRefUnit / m.factor;
+                          setDisplayQty((d) => ({
+                            ...d,
+                            [it.ingredient_id]: inMeasure.toFixed(2),
+                          }));
+                        }
+                      }
+                    };
                     return (
-                      <li key={it.ingredient_id} className="flex items-center gap-2 rounded-xl bg-card px-3 py-2">
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm text-mauve">{ing.name}</p>
-                          <p className="text-[11px] text-muted-foreground">{formatBRL(lineCost)}</p>
+                      <li
+                        key={it.ingredient_id}
+                        className="rounded-xl bg-card px-3 py-2.5"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium text-mauve">{ing.name}</p>
+                            <p className="text-[11px] text-muted-foreground">
+                              {it.quantity.toFixed(2)} {ing.unit} · {formatBRL(lineCost)}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeItem(it.ingredient_id)}
+                            className="rounded-lg p-1 text-destructive hover:bg-destructive/10"
+                            aria-label="Remover"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => setQty(it.ingredient_id, it.quantity - 1)}
-                          className="rounded-lg bg-blush/50 p-1 text-mauve"
-                          aria-label="Diminuir"
-                        >
-                          <Minus className="h-3 w-3" />
-                        </button>
-                        <input
-                          type="number"
-                          step="0.01"
-                          inputMode="decimal"
-                          value={it.quantity}
-                          onChange={(e) => setQty(it.ingredient_id, Number(e.target.value))}
-                          className="w-20 rounded-lg border border-border bg-background px-2 py-1 text-center text-sm text-mauve outline-none focus:border-rose"
-                        />
-                        <span className="w-8 text-xs text-muted-foreground">{ing.unit}</span>
-                        <button
-                          type="button"
-                          onClick={() => setQty(it.ingredient_id, it.quantity + 1)}
-                          className="rounded-lg bg-blush/50 p-1 text-mauve"
-                          aria-label="Aumentar"
-                        >
-                          <Plus className="h-3 w-3" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => removeItem(it.ingredient_id)}
-                          className="rounded-lg p-1 text-destructive"
-                          aria-label="Remover"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </button>
+                        <div className="mt-2 flex items-center gap-1.5">
+                          <input
+                            type="number"
+                            step="0.01"
+                            inputMode="decimal"
+                            value={display}
+                            onChange={(e) => onChangeQty(e.target.value)}
+                            className="w-20 rounded-lg border border-border bg-background px-2 py-1.5 text-center text-sm text-mauve outline-none focus:border-rose"
+                          />
+                          <select
+                            value={measureKey}
+                            onChange={(e) => onChangeMeasure(e.target.value as MeasureKey)}
+                            className="flex-1 rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-mauve outline-none focus:border-rose"
+                          >
+                            <option value="native">{ing.unit} (padrão)</option>
+                            {compat.map((m) => (
+                              <option key={m.key} value={m.key}>
+                                {m.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
                       </li>
                     );
                   })}
