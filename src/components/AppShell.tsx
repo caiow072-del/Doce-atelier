@@ -11,12 +11,15 @@ import {
   ChevronDown,
   Sparkles,
   X,
+  ClipboardList,
+  CalendarDays,
+  Globe,
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 
 type NavItem = {
-  to: "/" | "/insumos" | "/receitas" | "/festival" | "/pdv";
+  to: "/" | "/insumos" | "/receitas" | "/eventos" | "/encomendas" | "/calendario" | "/catalogo" | "/pdv";
   label: string;
   icon: typeof LayoutDashboard;
   end?: boolean;
@@ -26,14 +29,17 @@ const nav: NavItem[] = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "/insumos", label: "Insumos", icon: Package },
   { to: "/receitas", label: "Receitas", icon: BookOpen },
-  { to: "/festival", label: "Festivais", icon: CalendarHeart },
+  { to: "/eventos", label: "Eventos", icon: CalendarHeart },
+  { to: "/encomendas", label: "Encomendas", icon: ClipboardList },
+  { to: "/calendario", label: "Calendário", icon: CalendarDays },
+  { to: "/catalogo", label: "Catálogo", icon: Globe },
   { to: "/pdv", label: "PDV", icon: ShoppingBag },
 ];
 
 const mobileNav = [
   { to: "/", label: "Início", icon: LayoutDashboard },
-  { to: "/receitas", label: "Receitas", icon: BookOpen },
-  { to: "/festival", label: "Festival", icon: CalendarHeart },
+  { to: "/eventos", label: "Eventos", icon: CalendarHeart },
+  { to: "/encomendas", label: "Pedidos", icon: ClipboardList },
   { to: "/pdv", label: "PDV", icon: ShoppingBag },
 ] as const;
 
@@ -51,9 +57,9 @@ export function AppShell() {
     <div className="min-h-screen floral-bg">
       <div className="flex">
         {/* ============ Desktop Sidebar ============ */}
-        <aside className="sticky top-0 hidden h-screen w-72 shrink-0 flex-col border-r border-border/60 bg-card/60 backdrop-blur-xl lg:flex">
+        <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-border/60 bg-card/60 backdrop-blur-xl lg:flex">
           {/* Brand */}
-          <div className="flex items-center gap-3 px-6 pt-7">
+          <div className="flex items-center gap-3 px-5 pt-6">
             <div className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-blush to-rose shadow-soft">
               <Sparkles className="h-5 w-5 text-mauve" strokeWidth={1.6} />
             </div>
@@ -64,7 +70,7 @@ export function AppShell() {
           </div>
 
           {/* Shop switcher */}
-          <div className="mt-6 px-4">
+          <div className="mt-5 px-3">
             <button
               onClick={() => setShopMenuOpen((v) => !v)}
               className="flex w-full items-center justify-between rounded-2xl border border-border/70 bg-background/60 px-3 py-2.5 text-left transition-colors hover:border-rose/50"
@@ -97,7 +103,7 @@ export function AppShell() {
           </div>
 
           {/* Nav */}
-          <nav className="mt-6 flex-1 space-y-1 px-3">
+          <nav className="mt-5 flex-1 space-y-0.5 px-2 overflow-y-auto">
             {nav.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.to, item.end);
@@ -105,7 +111,7 @@ export function AppShell() {
                 <Link
                   key={item.to}
                   to={item.to}
-                  className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+                  className={`group relative flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors ${
                     active
                       ? "bg-gradient-to-r from-blush/80 to-rose/30 text-mauve"
                       : "text-muted-foreground hover:bg-blush/30 hover:text-mauve"
@@ -190,7 +196,7 @@ export function AppShell() {
         </div>
       </nav>
 
-      {/* ============ Mobile drawer (CSS only, instant) ============ */}
+      {/* ============ Mobile drawer ============ */}
       {mobileOpen && (
         <div
           className="fixed inset-0 z-50 bg-mauve/30 backdrop-blur-sm lg:hidden"
@@ -217,7 +223,7 @@ export function AppShell() {
               <p className="text-sm font-medium text-mauve">{currentShop?.shops.name}</p>
             </div>
 
-            <nav className="mt-6 space-y-1">
+            <nav className="mt-6 space-y-1 overflow-y-auto">
               {nav.map((item) => {
                 const Icon = item.icon;
                 const active = isActive(item.to, item.end);
