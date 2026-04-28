@@ -6,7 +6,7 @@ import {
   ShoppingBag,
   Package,
   Store,
-  Menu,
+  
   LogOut,
   ChevronDown,
   Sparkles,
@@ -154,21 +154,21 @@ export function AppShell() {
 
         {/* ============ Main content ============ */}
         <div className="flex min-h-screen flex-1 flex-col">
-          {/* Mobile topbar */}
-          <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border/60 bg-card/80 px-4 py-3 backdrop-blur-xl lg:hidden">
+          {/* Mobile topbar — slim, no hamburger (bottom nav handles primary nav) */}
+          <header className="sticky top-0 z-40 flex items-center justify-between gap-3 border-b border-border/60 bg-card/80 px-4 py-2.5 backdrop-blur-xl lg:hidden">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-blush to-rose">
+                <Sparkles className="h-4 w-4 text-mauve" strokeWidth={1.6} />
+              </div>
+              <p className="font-brand text-base text-mauve truncate">{currentShop?.shops.name ?? "Cakes Manager"}</p>
+            </div>
             <button
               onClick={() => setMobileOpen(true)}
-              className="grid h-10 w-10 place-items-center rounded-xl bg-blush/60 text-mauve"
-              aria-label="Abrir menu"
+              className="grid h-9 w-9 place-items-center rounded-full bg-rose/40 text-sm font-semibold text-mauve"
+              aria-label="Abrir mais opções"
             >
-              <Menu className="h-5 w-5" />
-            </button>
-            <div className="text-center leading-tight">
-              <p className="font-brand text-lg text-mauve">{currentShop?.shops.name ?? "Cakes Manager"}</p>
-            </div>
-            <div className="grid h-10 w-10 place-items-center rounded-full bg-rose/40 text-sm font-semibold text-mauve">
               {(user?.email ?? "?").charAt(0).toUpperCase()}
-            </div>
+            </button>
           </header>
 
           {/* Page */}
