@@ -180,7 +180,7 @@ function RecipesPage() {
       ) : recipes.length === 0 ? (
         <EmptyState onCreate={() => ingredients.length ? setCreating(true) : toast.error("Cadastre insumos antes.")} />
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {filtered.map((r) => {
             const cost = fullCost(r, ingredients);
             const realPrice = r.public_price ?? 0;
