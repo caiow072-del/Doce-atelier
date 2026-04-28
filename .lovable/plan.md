@@ -26,10 +26,12 @@
 
 ## 🔜 Próximas ondas (em ordem de prioridade)
 
-### Onda B — Dashboard com lucros reais
-- [ ] Substituir "custos = vendas × 7,50" por cálculo real usando `recipeCost()` cruzando `sales.product_id → recipes → recipe_ingredients → ingredients`
-- [ ] Margem real e meta editável (`shops.target_margin`) com indicador colorido
-- [ ] Card de "produtos mais lucrativos" e "que dão prejuízo"
+### Onda B — Dashboard com lucros reais ✅
+- [x] Custo real via `recipeCost()` cruzando `sales.item → recipes` (match por nome) + `recipe_ingredients` + `ingredients`
+- [x] Margem real comparada com `shops.target_margin` (cor verde/amarelo/vermelho)
+- [x] Cards "Mais lucrativos" e "Dando prejuízo" no dashboard
+- [x] Indicador "% estimado" quando venda não bate com receita
+- [ ] (futuro Onda D) Substituir match por nome → `pdv_products.recipe_id` direto
 
 ### Onda C — Eventos: recorrência única + ocorrências
 - [ ] UI de recorrência: dropdown semanal/mensal + dia da semana + "até quando"
