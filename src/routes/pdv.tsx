@@ -33,6 +33,8 @@ const PAY_METHODS: { key: PaymentMethod; label: string }[] = [
   { key: "cash", label: "Dinheiro" }, { key: "pix", label: "Pix" }, { key: "credit", label: "Crédito" }, { key: "debit", label: "Débito" }, { key: "other", label: "Outro" },
 ];
 
+type Period = "today" | "week" | "month" | "all";
+
 function PDVPage() {
   const { currentShop } = useAuth();
   const shopId = currentShop?.shop_id;
@@ -43,9 +45,18 @@ function PDVPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [payment, setPayment] = useState<PaymentMethod>("cash");
   const [sales, setSales] = useState<Sale[]>([]);
+  const [period, setPeriod] = useState<Period>("today");
   const [showManage, setShowManage] = useState(false);
   const [showCart, setShowCart] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  const periodStart = useMemo(() => {
+    const d = new Date();
+    if (period === "today") { d.setHours(0,0,0,0); return d; }
+    if (period === "week") { d.setDate(d.getDate() - 7); return d; }
+    if (period === "month") { d.setMonth(d.getMonth() - 1); return d; }
+    return null; // all
+  }, [period]);
 
   // ============ Load ============
   useEffect(() => {
