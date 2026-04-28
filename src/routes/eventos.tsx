@@ -36,7 +36,7 @@ import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
 import { formatBRL } from "@/lib/store";
 import { toast } from "sonner";
-import { nextOccurrence, WEEKDAYS } from "@/lib/recurrence";
+import { nextOccurrence, WEEKDAYS, parseLocalDate } from "@/lib/recurrence";
 import { recipeCost } from "@/lib/costs";
 
 export const Route = createFileRoute("/eventos")({
@@ -1169,7 +1169,7 @@ function EditMeta({
           onClick={() =>
             onSave({
               name: name.trim() || event.name,
-              date: new Date(date).toISOString(),
+              date: parseLocalDate(date).toISOString(),
               start_time: startTime || null,
               location: location || null,
               notes: notes || null,
@@ -1180,8 +1180,8 @@ function EditMeta({
               fee: Number(fee) || 0,
               opening_cash: Number(openingCash) || 0,
               recurrence,
-              weekday: recurrence === "weekly" ? (weekday !== "" ? Number(weekday) : new Date(date).getDay()) : null,
-              day_of_month: recurrence === "monthly" ? (dayOfMonth ? Number(dayOfMonth) : new Date(date).getDate()) : null,
+              weekday: recurrence === "weekly" ? (weekday !== "" ? Number(weekday) : parseLocalDate(date).getDay()) : null,
+              day_of_month: recurrence === "monthly" ? (dayOfMonth ? Number(dayOfMonth) : parseLocalDate(date).getDate()) : null,
               recurrence_until: recurrence !== "none" && recurrenceUntil ? recurrenceUntil : null,
             })
           }
@@ -1231,7 +1231,7 @@ function NewEventSheet({
     if (!name.trim()) return toast.error("Dê um nome");
     setSaving(true);
 
-    const anchor = new Date(date);
+    const anchor = parseLocalDate(date);
     const { data: row, error } = await supabase
       .from("events")
       .insert({
