@@ -734,18 +734,38 @@ function PromotionsSection({
     <Section title="Promoções">
       <div className="grid gap-2 sm:grid-cols-2">
         {promotions.map((p) => (
-          <div key={p.id} className="flex items-center justify-between gap-3 rounded-2xl border border-rose/30 bg-white p-3">
-            <div className="flex-1 min-w-0">
-              <EditableText editing={editing} value={p.title} onChange={(v) => onChange(promotions.map((x) => x.id === p.id ? { ...x, title: v } : x))} className="text-sm font-medium text-mauve" placeholder="Promoção" />
-              {(p.price_from || p.price_to) && (
-                <p className="text-xs text-mauve/60">
-                  {p.price_from ? brl(p.price_from) : ""}
-                  {p.price_to ? ` → ${brl(p.price_to)}` : ""}
-                </p>
+          <div key={p.id} className="rounded-2xl border border-rose/30 bg-white p-3">
+            <div className="flex items-start justify-between gap-2">
+              <EditableText editing={editing} value={p.title} onChange={(v) => onChange(promotions.map((x) => x.id === p.id ? { ...x, title: v } : x))} className="text-sm font-medium text-mauve flex-1" placeholder="Nome do produto em promoção" />
+              {editing && (
+                <button onClick={() => onChange(promotions.filter((x) => x.id !== p.id))} className="text-rose hover:text-rose/70"><X className="h-4 w-4" /></button>
               )}
             </div>
+            {editing ? (
+              <div className="mt-2 flex items-center gap-2 text-xs">
+                <label className="text-mauve/60">De</label>
+                <input
+                  type="number" step="0.01" defaultValue={p.price_from ?? ""}
+                  onBlur={(e) => onChange(promotions.map((x) => x.id === p.id ? { ...x, price_from: Number(e.target.value) || undefined } : x))}
+                  className="w-20 rounded-lg border border-rose/30 bg-white px-2 py-1 text-right"
+                />
+                <label className="text-mauve/60">Por</label>
+                <input
+                  type="number" step="0.01" defaultValue={p.price_to ?? ""}
+                  onBlur={(e) => onChange(promotions.map((x) => x.id === p.id ? { ...x, price_to: Number(e.target.value) || undefined } : x))}
+                  className="w-20 rounded-lg border border-rose/30 bg-white px-2 py-1 text-right"
+                />
+              </div>
+            ) : (
+              (p.price_from || p.price_to) && (
+                <p className="text-xs text-mauve/70 mt-1">
+                  {p.price_from && <span className="line-through opacity-70 mr-1">{brl(p.price_from)}</span>}
+                  {p.price_to && <span className="font-semibold text-mauve">{brl(p.price_to)}</span>}
+                </p>
+              )
+            )}
             {editing && (
-              <button onClick={() => onChange(promotions.filter((x) => x.id !== p.id))} className="text-rose hover:text-rose/70"><X className="h-4 w-4" /></button>
+              <p className="mt-1.5 text-[10px] text-mauve/50">Dica: use o nome exato do produto do catálogo para aparecer com selo PROMO no card.</p>
             )}
           </div>
         ))}
