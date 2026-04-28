@@ -708,38 +708,62 @@ export type Database = {
       }
       shop_storefront: {
         Row: {
+          about_text: string | null
           banner_url: string | null
           created_at: string
+          cta_label: string | null
+          cta_link: string | null
+          gallery: Json
           hero_subtitle: string | null
           hero_title: string | null
+          mobile_overrides: Json
           promotions: Json
           sections: Json
+          sections_config: Json
           shop_id: string
           social: Json
+          template: string
+          testimonials: Json
           theme_overrides: Json
           updated_at: string
         }
         Insert: {
+          about_text?: string | null
           banner_url?: string | null
           created_at?: string
+          cta_label?: string | null
+          cta_link?: string | null
+          gallery?: Json
           hero_subtitle?: string | null
           hero_title?: string | null
+          mobile_overrides?: Json
           promotions?: Json
           sections?: Json
+          sections_config?: Json
           shop_id: string
           social?: Json
+          template?: string
+          testimonials?: Json
           theme_overrides?: Json
           updated_at?: string
         }
         Update: {
+          about_text?: string | null
           banner_url?: string | null
           created_at?: string
+          cta_label?: string | null
+          cta_link?: string | null
+          gallery?: Json
           hero_subtitle?: string | null
           hero_title?: string | null
+          mobile_overrides?: Json
           promotions?: Json
           sections?: Json
+          sections_config?: Json
           shop_id?: string
           social?: Json
+          template?: string
+          testimonials?: Json
           theme_overrides?: Json
           updated_at?: string
         }
