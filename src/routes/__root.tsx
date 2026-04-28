@@ -33,10 +33,46 @@ export const Route = createRootRoute({
 function RootComponent() {
   return (
     <AuthProvider>
+      <ThemeBridge />
       <AuthGate />
       <Toaster richColors position="top-center" />
     </AuthProvider>
   );
+}
+
+// Applies the current shop theme (or storefront slug theme on /loja/*)
+function ThemeBridge() {
+  const { currentShop } = useAuth();
+  const location = useLocation();
+  const [storefrontTheme, setStorefrontTheme] = useState<ShopTheme | null>(null);
+
+  // On /loja/$slug, fetch theme by slug for visitors without auth
+  useEffect(() => {
+    const m = location.pathname.match(/^\/loja\/([^/]+)/);
+    if (!m) {
+      setStorefrontTheme(null);
+      return;
+    }
+    const slug = m[1];
+    supabase
+      .from("shops")
+      .select("theme")
+      .eq("slug", slug)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.theme) setStorefrontTheme(data.theme as ShopTheme);
+      });
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (storefrontTheme) {
+      applyTheme(storefrontTheme);
+    } else if (currentShop) {
+      applyTheme(((currentShop.shops as any).theme ?? null) as ShopTheme | null);
+    }
+  }, [currentShop, storefrontTheme]);
+
+  return null;
 }
 
 // Routes that don't require login
