@@ -440,7 +440,27 @@ function StorefrontPage() {
             <button onClick={() => setDevice("mobile")} className={`rounded-full p-1.5 ${device === "mobile" ? "bg-mauve text-cream" : "text-mauve"}`} title="Mobile"><Smartphone className="h-3.5 w-3.5" /></button>
             <button onClick={() => setDevice("desktop")} className={`rounded-full p-1.5 ${device === "desktop" ? "bg-mauve text-cream" : "text-mauve"}`} title="Desktop"><Monitor className="h-3.5 w-3.5" /></button>
           </div>
-          <button onClick={() => setEditing(false)} className="rounded-full border border-border bg-white px-3 py-1.5 text-xs text-mauve hover:border-rose/50">Sair</button>
+          <button
+            onClick={() => {
+              setEditing(false);
+              if (typeof window !== "undefined") {
+                const url = new URL(window.location.href);
+                url.searchParams.delete("edit");
+                window.history.replaceState({}, "", url.pathname + url.search);
+              }
+            }}
+            className="rounded-full border border-border bg-white px-3 py-1.5 text-xs text-mauve hover:border-rose/50"
+            title="Ver vitrine como cliente"
+          >
+            <Eye className="inline h-3 w-3 mr-1" /> Ver pública
+          </button>
+          <Link
+            to="/"
+            className="rounded-full border border-border bg-white px-3 py-1.5 text-xs text-mauve hover:border-rose/50"
+            title="Voltar ao painel"
+          >
+            ← Painel
+          </Link>
           <button onClick={save} disabled={saving || !dirty} className="inline-flex items-center gap-1.5 rounded-full bg-mauve px-4 py-1.5 text-xs font-semibold text-cream disabled:opacity-50">
             {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
             Publicar
