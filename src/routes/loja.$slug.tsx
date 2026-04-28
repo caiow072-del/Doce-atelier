@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import {
   ShoppingBag,
   Plus,
@@ -13,10 +13,16 @@ import {
   Search,
   ChevronRight,
   Cake,
+  Pencil,
+  Instagram,
+  Clock,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
+import { useAuth } from "@/lib/auth";
+import { StorefrontEditor, type StorefrontDraft } from "@/components/StorefrontEditor";
+import { applyTheme, type ShopTheme } from "@/lib/theme";
 
 const checkoutSchema = z.object({
   name: z.string().trim().min(2, "Informe seu nome").max(80),
