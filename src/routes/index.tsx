@@ -194,26 +194,71 @@ function Dashboard() {
         />
         <Metric
           icon={<Wallet className="h-4 w-4" />}
-          label="Custos"
-          value={formatBRL(estCost)}
-          hint={`${(costRatio * 100).toFixed(0)}% do faturamento`}
+          label="Custos reais"
+          value={formatBRL(realCost)}
+          hint={estRatio > 0.1 ? `${(estRatio * 100).toFixed(0)}% estimado` : `${(costRatio * 100).toFixed(0)}% do faturamento`}
           tone={costsHigh ? "danger" : "sage"}
         />
         <Metric
           icon={<Sparkles className="h-4 w-4" />}
           label="Lucro líquido"
           value={formatBRL(profit)}
-          hint={profitNegative ? "No vermelho" : costsHigh ? "Atenção" : "Saudável"}
-          tone={profitNegative ? "danger" : costsHigh ? "warn" : "sage"}
+          hint={profitNegative ? "No vermelho" : meetingTarget ? "Acima da meta ✨" : "Abaixo da meta"}
+          tone={profitNegative ? "danger" : meetingTarget ? "sage" : "warn"}
         />
         <Metric
-          icon={<ChefHat className="h-4 w-4" />}
+          icon={<Target className="h-4 w-4" />}
           label="Margem"
           value={`${margin.toFixed(0)}%`}
-          hint="meta 30%"
-          tone={margin < 0 ? "danger" : margin >= 30 ? "sage" : "warn"}
+          hint={`meta ${targetMarginPct.toFixed(0)}%`}
+          tone={margin < 0 ? "danger" : meetingTarget ? "sage" : "warn"}
         />
       </section>
+
+      {/* ============ Lucratividade por produto ============ */}
+      {(topProfit.length > 0 || lossMakers.length > 0) && (
+        <section className="grid gap-4 md:grid-cols-2">
+          {topProfit.length > 0 && (
+            <div className="card-soft p-5">
+              <div className="mb-3 flex items-center gap-2 text-success">
+                <TrendingUp className="h-4 w-4" />
+                <p className="text-[11px] uppercase tracking-widest">Mais lucrativos</p>
+              </div>
+              <ul className="space-y-2">
+                {topProfit.map((p) => (
+                  <li key={p.name} className="flex items-center justify-between gap-3 rounded-xl border border-border/50 bg-background/40 px-3 py-2">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-mauve">{p.name}</p>
+                      <p className="text-[11px] text-muted-foreground">{p.qty}× · {formatBRL(p.revenue)}{p.estimated && " · estim."}</p>
+                    </div>
+                    <span className="font-display text-base italic text-success">{formatBRL(p.profit)}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {lossMakers.length > 0 && (
+            <div className="card-soft p-5">
+              <div className="mb-3 flex items-center gap-2 text-destructive">
+                <TrendingDown className="h-4 w-4" />
+                <p className="text-[11px] uppercase tracking-widest">Dando prejuízo</p>
+              </div>
+              <ul className="space-y-2">
+                {lossMakers.map((p) => (
+                  <li key={p.name} className="flex items-center justify-between gap-3 rounded-xl border border-destructive/30 bg-destructive/5 px-3 py-2">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-mauve">{p.name}</p>
+                      <p className="text-[11px] text-muted-foreground">{p.qty}× · {formatBRL(p.revenue)}{p.estimated && " · estim."}</p>
+                    </div>
+                    <span className="font-display text-base italic text-destructive">{formatBRL(p.profit)}</span>
+                  </li>
+                ))}
+              </ul>
+              <Link to="/receitas" className="mt-3 block text-[11px] text-rose hover:underline">Revise o preço público dessas receitas →</Link>
+            </div>
+          )}
+        </section>
+      )}
 
       {/* ============ Vitrine: pedidos pendentes ============ */}
       {storefrontPending > 0 && (
