@@ -12,6 +12,8 @@ export type ShopMembership = {
     whatsapp: string | null;
     description: string | null;
     logo_url: string | null;
+    theme: any;
+    target_margin: number;
   };
 };
 
@@ -46,7 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loadShops = async (userId: string, preferredShopId?: string | null) => {
     const { data, error } = await supabase
       .from("shop_members")
-      .select("shop_id, role, shops(id, name, slug, whatsapp, description, logo_url)")
+      .select("shop_id, role, shops(id, name, slug, whatsapp, description, logo_url, theme, target_margin)")
       .eq("user_id", userId);
     if (error) {
       console.error("loadShops error", error);

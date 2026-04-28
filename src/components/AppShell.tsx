@@ -15,12 +15,13 @@ import {
   CalendarDays,
   Globe,
   Users,
+  Palette,
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 
 type NavItem = {
-  to: "/" | "/insumos" | "/receitas" | "/eventos" | "/encomendas" | "/calendario" | "/catalogo" | "/clientes" | "/pdv";
+  to: "/" | "/insumos" | "/receitas" | "/eventos" | "/encomendas" | "/calendario" | "/catalogo" | "/clientes" | "/pdv" | "/vitrine";
   label: string;
   icon: typeof LayoutDashboard;
   end?: boolean;
@@ -35,6 +36,7 @@ const nav: NavItem[] = [
   { to: "/eventos", label: "Eventos", icon: CalendarHeart },
   { to: "/calendario", label: "Calendário", icon: CalendarDays },
   { to: "/catalogo", label: "Catálogo", icon: Globe },
+  { to: "/vitrine", label: "Minha vitrine", icon: Palette },
   { to: "/pdv", label: "PDV", icon: ShoppingBag },
 ];
 
