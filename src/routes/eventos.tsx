@@ -509,11 +509,21 @@ function EventosPage() {
                     <p className="text-[11px] text-muted-foreground">
                       {fmtDate(e.date)}
                       {e.start_time ? ` · ${e.start_time}` : ""}
-                      {e.recurrence !== "none" && (
-                        <span className="ml-1 inline-flex items-center gap-0.5 text-rose">
-                          <Repeat className="h-3 w-3" /> {e.recurrence === "weekly" ? "semanal" : "mensal"}
-                        </span>
-                      )}
+                      {e.recurrence !== "none" && (() => {
+                        const next = nextOccurrence({
+                          date: e.date,
+                          recurrence: e.recurrence,
+                          recurrence_until: e.recurrence_until,
+                          weekday: e.weekday,
+                          day_of_month: e.day_of_month,
+                        });
+                        return (
+                          <span className="ml-1 inline-flex items-center gap-0.5 text-rose">
+                            <Repeat className="h-3 w-3" /> {e.recurrence === "weekly" ? "semanal" : "mensal"}
+                            {next && <span className="ml-1 text-muted-foreground">· próx: {fmtDate(next.toISOString())}</span>}
+                          </span>
+                        );
+                      })()}
                     </p>
                   </div>
                   {closed && <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
