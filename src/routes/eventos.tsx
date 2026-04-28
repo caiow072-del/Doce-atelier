@@ -647,7 +647,7 @@ function EventosPage() {
       {showTypes && shopId && (
         <TypesSheet shopId={shopId} types={types} onClose={() => setShowTypes(false)} onChange={setTypes} />
       )}
-    </div>
+    </PageContainer>
   );
 }
 
