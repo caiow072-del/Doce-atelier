@@ -1,12 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Cake, Utensils, Sparkles, Settings2, Plus, Trash2, X, Minus, ShoppingCart, CalendarHeart, Store } from "lucide-react";
+import { Cake, Utensils, Sparkles, Settings2, Plus, Trash2, X, Minus, ShoppingCart, CalendarHeart, Store, Image as ImageIcon, Loader2, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
 import { toast } from "sonner";
 import { getOccurrences } from "@/lib/recurrence";
+import { uploadShopImage } from "@/lib/upload";
 
 export const Route = createFileRoute("/pdv")({
   head: () => ({
@@ -18,7 +19,7 @@ export const Route = createFileRoute("/pdv")({
   component: PDVPage,
 });
 
-type Product = { id: string; label: string; price: number; icon: string; tone: string; position: number; active: boolean };
+type Product = { id: string; label: string; price: number; icon: string; tone: string; position: number; active: boolean; image_url: string | null };
 type EventProduct = { id: string; event_id: string; name: string; unit_price: number; planned_qty: number; sold_qty: number; image_url: string | null };
 type EventLite = { id: string; name: string; date: string; closed_at: string | null; recurrence?: string; recurrence_until?: string | null; weekday?: number | null; day_of_month?: number | null };
 type Sale = { id: string; item: string; price: number; sold_at: string; payment_method: string };
@@ -98,9 +99,17 @@ function PDVPage() {
   const cartTotal = useMemo(() => cart.reduce((s, x) => s + x.price * x.qty, 0), [cart]);
   const cartCount = useMemo(() => cart.reduce((s, x) => s + x.qty, 0), [cart]);
 
-  const addToCart = (item: Omit<CartItem, "qty">) => {
+  const inCart = (eventProductId: string) =>
+    cart.find((c) => c.event_product_id === eventProductId)?.qty ?? 0;
+
+  const addToCart = (item: Omit<CartItem, "qty">, maxAvailable?: number) => {
     setCart((prev) => {
       const idx = prev.findIndex((c) => c.id === item.id);
+      const currentQty = idx >= 0 ? prev[idx].qty : 0;
+      if (typeof maxAvailable === "number" && currentQty + 1 > maxAvailable) {
+        toast.error("Sem estoque suficiente");
+        return prev;
+      }
       if (idx >= 0) {
         const copy = [...prev]; copy[idx] = { ...copy[idx], qty: copy[idx].qty + 1 }; return copy;
       }
@@ -230,8 +239,10 @@ function PDVPage() {
         ) : (
           <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {eventProducts.map((p) => {
-              const left = Math.max(0, p.planned_qty - p.sold_qty);
+              const inC = inCart(p.id);
+              const left = p.planned_qty > 0 ? Math.max(0, p.planned_qty - p.sold_qty - inC) : Infinity;
               const sold_out = p.planned_qty > 0 && left === 0;
+              const maxAvail = p.planned_qty > 0 ? p.planned_qty - p.sold_qty : undefined;
               return (
                 <motion.button
                   key={p.id}
@@ -244,8 +255,8 @@ function PDVPage() {
                     source: "event",
                     product_id: null,
                     event_product_id: p.id,
-                  })}
-                  className="card-soft group flex flex-col overflow-hidden text-left disabled:opacity-50"
+                  }, maxAvail)}
+                  className="card-soft group relative flex flex-col overflow-hidden text-left disabled:opacity-50"
                 >
                   <div className="relative aspect-[4/3] w-full overflow-hidden bg-gradient-to-br from-blush/60 to-card">
                     {p.image_url ? (
@@ -258,6 +269,11 @@ function PDVPage() {
                     {p.planned_qty > 0 && (
                       <span className={`absolute right-1.5 top-1.5 rounded-full px-1.5 py-0.5 text-[10px] tabular-nums backdrop-blur ${sold_out ? "bg-destructive/80 text-white" : "bg-card/85 text-mauve"}`}>
                         {sold_out ? "Esgotado" : `${left} restam`}
+                      </span>
+                    )}
+                    {inC > 0 && !sold_out && (
+                      <span className="absolute left-1.5 top-1.5 grid h-6 min-w-6 place-items-center rounded-full bg-mauve px-1.5 text-[10px] font-semibold text-cream">
+                        {inC}
                       </span>
                     )}
                   </div>
@@ -286,6 +302,7 @@ function PDVPage() {
             {products.map((p) => {
               const Icon = iconMap[p.icon] ?? Cake;
               const bg = toneMap[p.tone] ?? toneMap.rose;
+              const inC = cart.find((c) => c.product_id === p.id)?.qty ?? 0;
               return (
                 <motion.button
                   key={p.id}
@@ -298,13 +315,33 @@ function PDVPage() {
                     product_id: p.id,
                     event_product_id: null,
                   })}
-                  className={`card-soft flex flex-col items-center justify-center gap-1.5 bg-gradient-to-br ${bg} px-3 py-3 text-center min-h-[110px]`}
+                  className={`card-soft group relative flex flex-col overflow-hidden text-left min-h-[110px] ${p.image_url ? "" : `items-center justify-center gap-1.5 bg-gradient-to-br ${bg} px-3 py-3 text-center`}`}
                 >
-                  <div className="grid h-9 w-9 place-items-center rounded-xl bg-card/70">
-                    <Icon className="h-5 w-5 text-mauve" strokeWidth={1.4} />
-                  </div>
-                  <p className="line-clamp-2 text-xs font-medium leading-tight text-mauve">{p.label}</p>
-                  <p className="text-sm font-semibold text-mauve">{fmtBRL(Number(p.price))}</p>
+                  {p.image_url ? (
+                    <>
+                      <div className="relative aspect-[4/3] w-full overflow-hidden bg-gradient-to-br from-blush/60 to-card">
+                        <img src={p.image_url} alt={p.label} className="h-full w-full object-cover transition-transform group-hover:scale-105" loading="lazy" />
+                        {inC > 0 && (
+                          <span className="absolute left-1.5 top-1.5 grid h-6 min-w-6 place-items-center rounded-full bg-mauve px-1.5 text-[10px] font-semibold text-cream">{inC}</span>
+                        )}
+                      </div>
+                      <div className="flex flex-1 flex-col justify-between gap-1 px-2.5 py-2">
+                        <p className="line-clamp-2 text-xs font-medium leading-tight text-mauve">{p.label}</p>
+                        <p className="text-sm font-semibold text-mauve">{fmtBRL(Number(p.price))}</p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="grid h-9 w-9 place-items-center rounded-xl bg-card/70">
+                        <Icon className="h-5 w-5 text-mauve" strokeWidth={1.4} />
+                      </div>
+                      <p className="line-clamp-2 text-xs font-medium leading-tight text-mauve">{p.label}</p>
+                      <p className="text-sm font-semibold text-mauve">{fmtBRL(Number(p.price))}</p>
+                      {inC > 0 && (
+                        <span className="absolute left-1.5 top-1.5 grid h-6 min-w-6 place-items-center rounded-full bg-mauve px-1.5 text-[10px] font-semibold text-cream">{inC}</span>
+                      )}
+                    </>
+                  )}
                 </motion.button>
               );
             })}
@@ -401,6 +438,34 @@ function PDVPage() {
       {showManage && shopId && (
         <ManageProductsSheet shopId={shopId} products={products} onClose={() => setShowManage(false)} onChange={setProducts} />
       )}
+
+      {/* FAB carrinho flutuante */}
+      <AnimatePresence>
+        {cartCount > 0 && !showCart && (
+          <motion.button
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            whileTap={{ scale: 0.92 }}
+            onClick={() => setShowCart(true)}
+            className="fixed bottom-20 right-4 z-40 inline-flex items-center gap-2 rounded-full bg-mauve px-5 py-3.5 text-cream shadow-petal sm:bottom-6"
+            aria-label={`Abrir carrinho com ${cartCount} itens`}
+          >
+            <div className="relative">
+              <ShoppingCart className="h-5 w-5" />
+              <motion.span
+                key={cartCount}
+                initial={{ scale: 1.4 }}
+                animate={{ scale: 1 }}
+                className="absolute -right-2 -top-2 grid h-5 min-w-5 place-items-center rounded-full bg-rose px-1 text-[10px] font-semibold text-mauve"
+              >
+                {cartCount}
+              </motion.span>
+            </div>
+            <span className="text-sm font-semibold tabular-nums">{fmtBRL(cartTotal)}</span>
+          </motion.button>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -412,17 +477,61 @@ function ManageProductsSheet({
   const [price, setPrice] = useState("");
   const [icon, setIcon] = useState("cake");
   const [tone, setTone] = useState("rose");
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
-  const add = async () => {
-    if (!label.trim() || !price) return toast.error("Preencha rótulo e preço");
-    const { data, error } = await supabase.from("pdv_products").insert({ shop_id: shopId, label: label.trim(), price: Number(price), icon, tone, position: products.length }).select("*").single();
-    if (error) return toast.error("Erro");
-    onChange([...products, data as Product]); setLabel(""); setPrice("");
+  const startEdit = (p: Product) => {
+    setEditingId(p.id);
+    setLabel(p.label);
+    setPrice(String(p.price));
+    setIcon(p.icon);
+    setTone(p.tone);
+    setImageUrl(p.image_url);
   };
+
+  const reset = () => {
+    setEditingId(null); setLabel(""); setPrice(""); setIcon("cake"); setTone("rose"); setImageUrl(null);
+  };
+
+  const handleUpload = async (file: File) => {
+    setUploading(true);
+    try {
+      const url = await uploadShopImage("product-images", shopId, file);
+      setImageUrl(url);
+      toast.success("Imagem enviada");
+    } catch (e: any) {
+      toast.error(e.message ?? "Falha no upload");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const save = async () => {
+    if (!label.trim() || !price) return toast.error("Preencha rótulo e preço");
+    if (editingId) {
+      const { data, error } = await supabase.from("pdv_products")
+        .update({ label: label.trim(), price: Number(price), icon, tone, image_url: imageUrl })
+        .eq("id", editingId).select("*").single();
+      if (error) return toast.error("Erro ao salvar");
+      onChange(products.map((p) => p.id === editingId ? (data as Product) : p));
+      toast.success("Produto atualizado");
+    } else {
+      const { data, error } = await supabase.from("pdv_products")
+        .insert({ shop_id: shopId, label: label.trim(), price: Number(price), icon, tone, image_url: imageUrl, position: products.length })
+        .select("*").single();
+      if (error) return toast.error("Erro ao criar");
+      onChange([...products, data as Product]);
+      toast.success("Produto adicionado");
+    }
+    reset();
+  };
+
   const remove = async (id: string) => {
     const { error } = await supabase.from("pdv_products").update({ active: false }).eq("id", id);
     if (error) return toast.error("Erro");
     onChange(products.filter((p) => p.id !== id));
+    if (editingId === id) reset();
   };
 
   return (
@@ -436,18 +545,59 @@ function ManageProductsSheet({
           {products.length === 0 ? (
             <li className="p-4 text-center text-sm text-muted-foreground">Nenhum produto.</li>
           ) : products.map((p) => (
-            <li key={p.id} className="flex items-center justify-between px-4 py-2.5">
-              <div>
-                <p className="text-sm text-mauve">{p.label}</p>
+            <li key={p.id} className={`flex items-center gap-2 px-3 py-2 ${editingId === p.id ? "bg-blush/30" : ""}`}>
+              {p.image_url ? (
+                <img src={p.image_url} alt="" className="h-10 w-10 shrink-0 rounded-lg object-cover" />
+              ) : (
+                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-blush/40">
+                  <Cake className="h-4 w-4 text-mauve" />
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm text-mauve">{p.label}</p>
                 <p className="text-[11px] text-muted-foreground">{fmtBRL(Number(p.price))}</p>
               </div>
-              <button onClick={() => remove(p.id)} className="rounded-lg p-1.5 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></button>
+              <button onClick={() => startEdit(p)} className="rounded-lg p-1.5 text-mauve hover:bg-blush/50" aria-label="Editar"><Settings2 className="h-4 w-4" /></button>
+              <button onClick={() => remove(p.id)} className="rounded-lg p-1.5 text-destructive hover:bg-destructive/10" aria-label="Excluir"><Trash2 className="h-4 w-4" /></button>
             </li>
           ))}
         </ul>
         <div className="mt-4 space-y-2 rounded-xl border border-border p-3">
-          <p className="text-[10px] uppercase tracking-widest text-rose">Novo produto</p>
-          <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Rótulo" className="input-base" />
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] uppercase tracking-widest text-rose">{editingId ? "Editando produto" : "Novo produto"}</p>
+            {editingId && (
+              <button onClick={reset} className="text-[11px] text-muted-foreground hover:text-mauve">Cancelar edição</button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-3">
+            <label className={`grid h-16 w-16 shrink-0 cursor-pointer place-items-center overflow-hidden rounded-xl border border-dashed border-border bg-blush/20 ${uploading ? "opacity-50" : "hover:bg-blush/40"}`}>
+              {uploading ? (
+                <Loader2 className="h-5 w-5 animate-spin text-mauve" />
+              ) : imageUrl ? (
+                <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <ImageIcon className="h-5 w-5 text-mauve/60" />
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                disabled={uploading}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) handleUpload(f);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+            <div className="flex-1 space-y-1.5">
+              {imageUrl && (
+                <button onClick={() => setImageUrl(null)} className="text-[11px] text-destructive hover:underline">Remover imagem</button>
+              )}
+              <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Rótulo" className="input-base w-full" />
+            </div>
+          </div>
           <input value={price} onChange={(e) => setPrice(e.target.value)} type="number" placeholder="Preço" className="input-base" />
           <div className="grid grid-cols-2 gap-2">
             <select value={icon} onChange={(e) => setIcon(e.target.value)} className="input-base">
@@ -457,8 +607,8 @@ function ManageProductsSheet({
               <option value="rose">Rosa</option><option value="blush">Blush</option><option value="sage">Verde</option>
             </select>
           </div>
-          <button onClick={add} className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-mauve px-4 py-2 text-sm text-cream hover:opacity-90">
-            <Plus className="h-4 w-4" /> Adicionar
+          <button onClick={save} disabled={uploading} className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-mauve px-4 py-2 text-sm text-cream hover:opacity-90 disabled:opacity-60">
+            {editingId ? <><Check className="h-4 w-4" /> Salvar</> : <><Plus className="h-4 w-4" /> Adicionar</>}
           </button>
         </div>
       </div>
