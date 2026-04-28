@@ -12,6 +12,8 @@ export type ShopMembership = {
     whatsapp: string | null;
     description: string | null;
     logo_url: string | null;
+    theme: any;
+    target_margin: number;
   };
 };
 
