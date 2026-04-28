@@ -20,6 +20,7 @@ import {
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { recipeCost, type IngredientLite, type RecipeIngredientLite, type RecipeLite } from "@/lib/costs";
+import { PageContainer } from "@/components/PageContainer";
 import heroCake from "@/assets/hero-cake.jpg";
 
 const formatBRL = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -147,7 +148,8 @@ function Dashboard() {
   const firstName = rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase();
 
   return (
-    <div className="space-y-6 lg:space-y-8">
+    <PageContainer width="wide">
+    <div className="space-y-5 lg:space-y-6">
       {/* ============ Hero (compact) ============ */}
       <motion.section
         initial={{ opacity: 0, y: 8 }}
@@ -185,7 +187,7 @@ function Dashboard() {
       </motion.section>
 
       {/* ============ Metric grid ============ */}
-      <section className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+      <section className="grid-cards-sm">
         <Metric
           icon={<TrendingUp className="h-4 w-4" />}
           label="Faturamento"
@@ -291,28 +293,28 @@ function Dashboard() {
       )}
 
       {/* ============ Two-column main ============ */}
-      <section className="grid gap-6 lg:grid-cols-3">
+      <section className="grid gap-5 lg:grid-cols-[1fr_280px]">
         {/* Catalog */}
-        <div className="card-soft lg:col-span-2 p-6">
+        <div className="card-soft p-5">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[11px] uppercase tracking-widest text-rose">No seu cardápio</p>
-              <h2 className="font-display text-2xl italic text-mauve">Receitas ativas</h2>
+              <p className="text-[10px] uppercase tracking-widest text-rose">No seu cardápio</p>
+              <h2 className="text-lg font-semibold text-mauve">Receitas ativas</h2>
             </div>
-            <Link to="/receitas" className="inline-flex items-center gap-1 text-sm text-mauve hover:underline">
+            <Link to="/receitas" className="inline-flex items-center gap-1 text-xs text-mauve hover:underline">
               Gerenciar <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          <div className="mt-4 grid-cards-sm">
             {recipes.map((r) => (
-              <div key={r.id} className="rounded-2xl border border-border bg-background/60 p-4 transition hover:border-rose/40">
-                <div className="flex items-center gap-3">
-                  <div className="grid h-10 w-10 place-items-center rounded-xl bg-blush/60">
+              <div key={r.id} className="rounded-xl border border-border bg-background/60 p-3 transition hover:border-rose/40">
+                <div className="flex items-center gap-2.5">
+                  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-blush/60">
                     <BookOpen className="h-4 w-4 text-mauve" strokeWidth={1.6} />
                   </div>
                   <div className="min-w-0">
-                    <p className="truncate font-medium text-mauve">{r.name}</p>
-                    <p className="text-xs text-muted-foreground">{r.servings} fatias</p>
+                    <p className="truncate text-sm font-medium text-mauve">{r.name}</p>
+                    <p className="text-[11px] text-muted-foreground">{r.servings} fatias</p>
                   </div>
                 </div>
               </div>
@@ -321,32 +323,32 @@ function Dashboard() {
         </div>
 
         {/* Side panel */}
-        <div className="space-y-6">
-          <div className="card-soft p-6">
+        <div className="space-y-4">
+          <div className="card-soft p-5">
             <div className="flex items-center gap-2 text-rose">
               <Package className="h-4 w-4" />
-              <p className="text-[11px] uppercase tracking-widest">Estoque</p>
+              <p className="text-[10px] uppercase tracking-widest">Estoque</p>
             </div>
-            <p className="mt-2 font-display text-4xl italic text-mauve">{ingredientsCount}</p>
+            <p className="mt-2 text-3xl font-semibold text-mauve num">{ingredientsCount}</p>
             <p className="text-xs text-muted-foreground">insumos cadastrados</p>
             <Link
               to="/insumos"
-              className="mt-4 inline-flex w-full items-center justify-center gap-1 rounded-xl bg-blush/40 py-2 text-xs font-medium text-mauve hover:bg-blush/70"
+              className="mt-3 inline-flex w-full items-center justify-center gap-1 rounded-lg bg-blush/40 py-2 text-xs font-medium text-mauve hover:bg-blush/70"
             >
               Gerenciar insumos <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
 
-          <div className="card-soft p-6">
+          <div className="card-soft p-5">
             <div className="flex items-center gap-2 text-rose">
               <ClipboardList className="h-4 w-4" />
-              <p className="text-[11px] uppercase tracking-widest">Encomendas</p>
+              <p className="text-[10px] uppercase tracking-widest">Encomendas</p>
             </div>
-            <p className="mt-2 font-display text-4xl italic text-mauve">{pendingOrders}</p>
+            <p className="mt-2 text-3xl font-semibold text-mauve num">{pendingOrders}</p>
             <p className="text-xs text-muted-foreground">pedidos em andamento</p>
             <Link
               to="/encomendas"
-              className="mt-4 inline-flex w-full items-center justify-center gap-1 rounded-xl bg-blush/40 py-2 text-xs font-medium text-mauve hover:bg-blush/70"
+              className="mt-3 inline-flex w-full items-center justify-center gap-1 rounded-lg bg-blush/40 py-2 text-xs font-medium text-mauve hover:bg-blush/70"
             >
               Ver encomendas <ArrowRight className="h-3 w-3" />
             </Link>
@@ -354,6 +356,7 @@ function Dashboard() {
         </div>
       </section>
     </div>
+    </PageContainer>
   );
 }
 
