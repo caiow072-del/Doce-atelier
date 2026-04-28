@@ -1320,20 +1320,31 @@ function NewEventSheet({
 
             {/* Recorrência (festival, fair, generic) */}
             {(kind === "festival" || kind === "fair" || kind === "generic") && (
-              <div className="rounded-xl border border-border bg-blush/20 p-3">
-                <p className="text-[10px] uppercase tracking-widest text-rose mb-2 flex items-center gap-1"><Repeat className="h-3 w-3" /> Repetir</p>
+              <div className="rounded-xl border border-border bg-blush/20 p-3 space-y-2">
+                <p className="text-[10px] uppercase tracking-widest text-rose flex items-center gap-1"><Repeat className="h-3 w-3" /> Repetir</p>
                 <div className="grid grid-cols-2 gap-2">
                   <select value={recurrence} onChange={(e) => setRecurrence(e.target.value as any)} className="input-base">
                     <option value="none">Não repetir</option>
                     <option value="weekly">Toda semana</option>
                     <option value="monthly">Todo mês</option>
                   </select>
-                  {recurrence !== "none" && (
-                    <input type="number" min="1" max="52" value={recurrenceCount} onChange={(e) => setRecurrenceCount(e.target.value)}
-                      placeholder="qtas vezes" className="input-base" />
+                  {recurrence === "weekly" && (
+                    <select value={weekday} onChange={(e) => setWeekday(e.target.value)} className="input-base">
+                      <option value="">Mesmo dia da data</option>
+                      {WEEKDAYS.map((w) => <option key={w.v} value={w.v}>{w.label}</option>)}
+                    </select>
+                  )}
+                  {recurrence === "monthly" && (
+                    <input type="number" min="1" max="31" value={dayOfMonth} onChange={(e) => setDayOfMonth(e.target.value)} placeholder="Dia do mês" className="input-base" />
                   )}
                 </div>
-                {recurrence !== "none" && <p className="mt-1 text-[10px] text-muted-foreground">Cria {recurrenceCount} ocorrências, uma por {recurrence === "weekly" ? "semana" : "mês"}.</p>}
+                {recurrence !== "none" && (
+                  <div>
+                    <label className="text-[10px] uppercase tracking-widest text-rose">Até quando (opcional)</label>
+                    <input type="date" value={recurrenceUntil} onChange={(e) => setRecurrenceUntil(e.target.value)} className="input-base mt-1" />
+                    <p className="mt-1 text-[10px] text-muted-foreground">Um único evento que se repete {recurrence === "weekly" ? "toda semana" : "todo mês"} — sem duplicar no banco.</p>
+                  </div>
+                )}
               </div>
             )}
 
