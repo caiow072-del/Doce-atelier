@@ -52,6 +52,13 @@ function InsumosPage() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [toDelete, setToDelete] = useState<Ingredient | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [view, setView] = useState<"grid" | "list">(() => {
+    if (typeof window === "undefined") return "grid";
+    return (localStorage.getItem("insumos-view") as "grid" | "list") ?? "grid";
+  });
+  useEffect(() => {
+    if (typeof window !== "undefined") localStorage.setItem("insumos-view", view);
+  }, [view]);
 
   const load = async () => {
     if (!shopId) return;
