@@ -1,87 +1,101 @@
-# Cakes Manager — Plano e Checklist
+# Repaginação Global de UI
 
-> Atualizado em 28/04/2026 — pós editor de vitrine ao vivo.
+O problema-raiz é que o app usa `max-w-7xl` único para tudo (incluindo formulários e listas), os cards não têm teto de largura, e cada página foi ajustada isoladamente — por isso "arrumar uma quebra outra". Vou centralizar as regras no `AppShell` + `PageHeader` para que toda página herde o comportamento certo.
 
----
+## 1. Sistema de larguras por contexto (causa-raiz do "esticado")
 
-## ✅ Já feito
+Substituir o `max-w-7xl` único por **3 containers semânticos** aplicáveis via prop no `PageHeader` e numa nova classe utilitária:
 
-### Onda A — Fundação & Branding
-- [x] Migrações: `shops.theme`, `shops.target_margin`, `shop_storefront`, `recipes.category/catalog_position/image_url`, `events.weekday/day_of_month`, `event_occurrences`, `pdv_products.image_url`
-- [x] Buckets de storage públicos: `recipe-images`, `product-images`, `storefront-banners` (com RLS por shop)
-- [x] `ThemeProvider` em `__root.tsx` aplicando variáveis CSS do shop atual
-- [x] 6 presets de cor + 4 fontes display com Google Fonts dinâmico
-- [x] Helpers: `costs.ts` (custo real de receita), `recurrence.ts` (ocorrências em runtime), `upload.ts`
+```text
+narrow  → max-w-3xl  (~768px)  formulários, perfil, login, configs
+default → max-w-5xl  (~1024px) listas, eventos, encomendas, clientes, insumos, receitas
+wide    → max-w-7xl  (~1280px) dashboard, catálogo, PDV, vitrine
+```
 
-### Onda G (parcial) — Vitrine personalizável
-- [x] Tabela `shop_storefront` com hero, banner, social, promoções
-- [x] Vitrine pública `/loja/{slug}` aplicando tema da loja
-- [x] Vitrine de evento `/loja/{slug}/e/{event_id}`
-- [x] **Editor `/vitrine` com preview ao vivo embutido** (iframe + postMessage, toggle desktop/mobile, publicar único)
-- [x] Upload de banner direto no editor
-- [x] Aba de promoções no editor
-- [x] Lista de vitrines de eventos com link "copiar/abrir"
+- `AppShell` deixa de impor `max-w-7xl` no `<main>` — apenas padding.
+- Cada rota envolve seu conteúdo num `<PageContainer width="narrow|default|wide">` (componente novo).
+- Resultado: receitas e insumos ficam em ~1024px com 2-3 colunas reais (não 4 esticadas); dashboard e catálogo continuam aproveitando tela.
 
----
+## 2. Header sticky com título da página (mobile + PC)
 
-## 🔜 Próximas ondas (em ordem de prioridade)
+Reformular `AppShell` + `PageHeader`:
 
-### Onda B — Dashboard com lucros reais ✅
-- [x] Custo real via `recipeCost()` cruzando `sales.item → recipes` (match por nome) + `recipe_ingredients` + `ingredients`
-- [x] Margem real comparada com `shops.target_margin` (cor verde/amarelo/vermelho)
-- [x] Cards "Mais lucrativos" e "Dando prejuízo" no dashboard
-- [x] Indicador "% estimado" quando venda não bate com receita
-- [ ] (futuro Onda D) Substituir match por nome → `pdv_products.recipe_id` direto
+- `AppShell` cria um **slot sticky** (`<div className="sticky top-0 z-30 ...">`) logo no topo do `<main>`, tanto no PC quanto no mobile (no mobile fica abaixo da topbar atual).
+- `PageHeader` ganha props `actions?: ReactNode` e `sticky?: boolean` (default `true`).
+- Renderiza: eyebrow + título à esquerda, ações (`+ Novo`, busca) à direita, alinhados na mesma linha em md+.
+- Fundo `bg-card/85 backdrop-blur` com borda inferior suave; encolhe altura quando rolado (opcional, via classe).
+- Todas as páginas migram seus botões "+ Novo X" para `actions` do `PageHeader`, removendo a barra de ação separada que está duplicando espaço vertical.
 
-### Onda C — Eventos: recorrência única + ocorrências ✅
-- [x] UI de recorrência: dropdown semanal/mensal + dia da semana + "até quando"
-- [x] Não duplica mais eventos no banco — uma única linha com weekday/day_of_month/recurrence_until
-- [x] Calendário consome `getOccurrences()` para expandir recorrentes em runtime
-- [x] PDV inclui eventos recorrentes com ocorrência nos próximos 7 dias
-- [x] Card da lista mostra "próx: dd/mm" para recorrentes
-- [ ] (futuro) Script de migração para colapsar eventos antigos duplicados (parent_event_id)
-- [ ] (futuro) Fechamento de caixa por ocorrência em `event_occurrences`
+## 3. Cards: teto de largura + densidade controlada
 
-### Onda D — Produtos do evento ligados à receita ✅
-- [x] Modal "Adicionar produto" com busca de receita
-- [x] Modo de venda inteiro/fatia (auto-calcula preço sugerido e qtd planejada)
-- [x] Custo real, margem prevista colorida e alerta de insumos faltando
-- [x] Quantidade em lotes da receita (com conversão automática)
-- [x] Imagem puxa de `recipes.image_url` por padrão
-- [x] Lista de produtos mostra custo/margem por linha
+Criar utilitário CSS em `styles.css`:
 
-### Onda E — PDV polido ✅
-- [x] FAB de carrinho flutuante com badge de itens e total
-- [x] Trava de estoque: `addToCart` impede passar de `planned − sold − inCart`
-- [x] Badge "Esgotado" no card quando acabar (e contador no canto quando há no carrinho)
-- [x] Upload de imagem para `pdv_products` + edição completa em `ManageProductsSheet`
-- [x] Mini animação de confirmação ao adicionar (badge anima e FAB salta)
+```css
+.grid-cards-sm  { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.grid-cards-md  { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.grid-cards-lg  { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+```
 
-### Onda F — Insumos densos ✅
-- [x] Grid 3+ colunas com cards compactos (nome, embalagem · preço · custo/un, badge de estoque)
-- [x] Toggle lista/grade com persistência em localStorage
-- [x] Alerta visual em estoque ≤ 0 (badge destrutivo)
+Vantagem do `auto-fill` + `minmax`: o card **nunca estica além de ~320px** mesmo num monitor 4K, e em mobile cai naturalmente para 1 coluna. Isso resolve "cards grandes no PC" em insumos, receitas, eventos, catálogo e PDV de uma vez sem precisar definir breakpoints manuais por página.
 
-### Onda G+ — Catálogo & vitrine ✅
-- [x] `/catalogo` com 2 abas: vitrine da loja | vitrines de eventos (com copiar link)
-- [x] Reordenar receitas (catalog_position com botões ↑/↓ + persistência)
-- [x] Categorias/tags em recipes (datalist + filtro pills na vitrine pública)
-- [x] Seções arrastáveis na vitrine (já existia: ↑/↓ + visibilidade)
-- [x] Promoções renderizadas com badge "PROMO" e preço de/por (match por nome)
-- [x] Botão "compartilhar vitrine" com QR Code (qrcode.react) no editor
+## 4. Página por página
 
-### Onda H — Qualidade, segurança, performance
-- [ ] Rodar `supabase--linter` e zerar warnings de RLS
-- [ ] Lazy-load de rotas pesadas (`/eventos`, `/pdv`, `/loja.$slug`)
-- [ ] Imagens com `loading="lazy"` e `srcset`
-- [ ] SEO por rota: og:image dinâmico em `/loja/{slug}` (banner)
-- [ ] Service worker / offline básico para PDV
-- [ ] Auditoria de inputs públicos (orders/customers via storefront) com Zod no servidor
-- [ ] Rate-limit por IP nas rotas públicas (edge function)
+**Dashboard (`index.tsx`)**
+- Container `wide`. Hero compactado (já está).
+- Grid de métricas: muda de `lg:grid-cols-4` esticado para `grid-cards-sm` com `max-w` por card → cards param de inflar.
+- Painel lateral (Estoque/Encomendas) com largura fixa ~280px no PC.
 
----
+**Insumos (`insumos.tsx`)**
+- Container `default` (~1024px).
+- Trocar grid de cards por **tabela densa no PC** (≥md) com colunas: nome / unidade / estoque / preço pago / ações. Em mobile mantém cards mas com altura fixa, padding reduzido (`p-3`), texto base `text-sm`, sem truncar dados críticos (mostrar 2 linhas).
+- Botão "+ Novo insumo" sobe para `PageHeader.actions`.
 
-## Notas de arquitetura
-- **Preview ao vivo**: `/vitrine` carrega `/loja/{slug}?preview=1` num iframe. A loja escuta `postMessage` para aplicar tema/draft sem salvar. "Publicar" persiste tudo de uma vez.
-- **Sem duplicar UI**: o editor não recria a página da loja — usa a real, garantindo que o que o cliente vê = o que a confeiteira edita.
-- **Tema escopado**: `applyTheme()` injeta variáveis CSS no `:root`. Ao publicar, o dashboard da própria dona também atualiza.
+**Receitas (`receitas.tsx`)**
+- Container `default`.
+- Cards usam `grid-cards-md` (max ~280px), padding reduzido, valores em coluna sem `font-display italic` exagerado, fonte `tabular-nums` para alinhar.
+- **Modal "Nova/Editar receita"**:
+  - Largura `max-w-3xl` no PC (`sm:max-w-3xl`).
+  - Conteúdo em **grid 2 colunas no md+**: Nome | Servings, Peso total | Rende quantas, Mão-de-obra | Embalagem.
+  - Mobile mantém 1 coluna mas usa `grid grid-cols-2 gap-3` para os pares numéricos curtos (peso/rende, produção/embalagem) com labels acima — alinhamento consistente.
+- Repassar tipografia: títulos `text-base font-semibold`, valores `text-sm tabular-nums`.
+
+**Eventos (`eventos.tsx`)**
+- Container `default`.
+- Cards de evento e histórico com `grid-cards-md` + altura mínima fixa, removendo `lg:col-span-2` e similares que esticam.
+- **Histórico**: passa a ser tabela compacta no PC (data / nome / receita / lucro / ações) com **scroll interno máximo `max-h-[60vh]`** + paginação simples ("Ver mais"); em mobile, cards compactos colapsáveis.
+- Painel "Evento selecionado": dividido em sub-cards de largura `max-w-sm` cada (Produtos, Tarefas, Caixa) num `flex flex-wrap` em vez de full-width esticados.
+
+**PDV (`pdv.tsx`)** — refatoração maior
+- Container `wide`, **layout 2 colunas no PC**: produtos à esquerda (`flex-1`), carrinho fixo à direita (`w-80 sticky top-[header]`).
+- Produtos em `grid-cards-sm` (cards ~220px max), foto menor, nome + preço + stepper +/- compacto.
+- Carrinho lateral: lista densa, total fixo no rodapé do painel, botão "Finalizar venda".
+- Mobile: carrinho vira **drawer/sheet** acionado por botão flutuante mostrando contador (já tem padrão Sheet no projeto). Grid de produtos em 2 colunas com cards menores, sem corte horizontal.
+
+**Catálogo, Clientes, Encomendas, Calendário, Vitrine**
+- Aplicar mesma migração: `PageContainer` certo + `PageHeader` com `actions` + grid `auto-fill`.
+
+## 5. Garantias contra "arrumar um e quebrar outro"
+
+- Toda mudança de largura/grid acontece em **2 lugares só**: `AppShell` (stripped do max-w) + utilitários CSS no `styles.css`.
+- Páginas declaram apenas seu `width` e usam classes utilitárias — nada de breakpoints inline customizados.
+- Mobile e PC ficam isolados: mobile usa `grid-cols-1/2` explícito + sheets; PC usa `auto-fill`. Mexer em um não afeta o outro.
+
+## Detalhes técnicos
+
+**Arquivos a criar:**
+- `src/components/PageContainer.tsx` — wrapper com prop `width: "narrow" | "default" | "wide"`.
+
+**Arquivos a editar:**
+- `src/components/AppShell.tsx` — remover `max-w-7xl` do `<main>`, manter só padding; adicionar slot sticky.
+- `src/components/PageHeader.tsx` — adicionar `actions?`, `sticky?` (default true), layout flex com título à esquerda e ações à direita em md+.
+- `src/styles.css` — adicionar utilitários `.grid-cards-sm/md/lg`, `.page-narrow/default/wide`, regra `tabular-nums` em valores de moeda.
+- `src/routes/index.tsx` — width=wide, grid de métricas com auto-fill.
+- `src/routes/insumos.tsx` — width=default, tabela no PC + cards compactos no mobile, ação no header.
+- `src/routes/receitas.tsx` — width=default, grid auto-fill, modal em grid 2-col no PC, alinhamento mobile.
+- `src/routes/eventos.tsx` — width=default, histórico em tabela paginada, sub-cards do evento selecionado em flex-wrap.
+- `src/routes/pdv.tsx` — width=wide, split products/cart, sheet no mobile.
+- `src/routes/catalogo.tsx`, `clientes.tsx`, `encomendas.tsx`, `calendario.tsx`, `vitrine.tsx` — adotar PageContainer + PageHeader.actions + grid utilitário.
+
+**Sem mudanças em:** lógica de banco, paleta de cores, autenticação, supabase types, vitrine pública (`loja.$slug.tsx`) — só o app interno.
+
+Após implementar, rodo verificação visual nas páginas em viewports 375px (mobile), 947px (atual) e 1440px (PC) para confirmar que nenhuma quebrou.
