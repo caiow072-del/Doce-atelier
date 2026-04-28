@@ -411,9 +411,17 @@ function StorefrontPage() {
       <>
         {storefrontBody}
         {isOwner && session && (
-          <button onClick={() => setEditing(true)} className="fixed right-4 top-4 z-40 inline-flex items-center gap-1.5 rounded-full bg-mauve px-4 py-2 text-xs font-medium text-cream shadow-lg hover:opacity-90">
-            <Pencil className="h-3.5 w-3.5" /> Editar vitrine
-          </button>
+          <div className="fixed right-4 top-4 z-40 flex items-center gap-2">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-white/90 px-3 py-2 text-xs font-medium text-mauve shadow-sm backdrop-blur hover:border-rose/50"
+            >
+              ← Painel
+            </Link>
+            <button onClick={() => setEditing(true)} className="inline-flex items-center gap-1.5 rounded-full bg-mauve px-4 py-2 text-xs font-medium text-cream shadow-lg hover:opacity-90">
+              <Pencil className="h-3.5 w-3.5" /> Editar vitrine
+            </button>
+          </div>
         )}
         {cartOpen && (
           <CartDrawer cart={cart} total={total} updateQty={updateQty} onClose={() => setCartOpen(false)} onCheckout={() => { setCartOpen(false); setCheckoutOpen(true); }} />
