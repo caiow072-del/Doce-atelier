@@ -13,8 +13,24 @@ export type RecurringEvent = {
 
 const DAY_MS = 86_400_000;
 
+/**
+ * Parse a date value as LOCAL time, never UTC-shifted.
+ * Accepts "YYYY-MM-DD" (from <input type=date>) or full ISO strings.
+ * For "YYYY-MM-DD" alone, returns local noon to avoid DST/timezone edge issues.
+ */
+export function parseLocalDate(value: string | Date): Date {
+  if (value instanceof Date) return value;
+  // Plain YYYY-MM-DD → build at local noon
+  const ymd = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (ymd) {
+    return new Date(Number(ymd[1]), Number(ymd[2]) - 1, Number(ymd[3]), 12, 0, 0, 0);
+  }
+  // Full ISO with time → trust it
+  return new Date(value);
+}
+
 export function getOccurrences(ev: RecurringEvent, from: Date, to: Date): Date[] {
-  const start = new Date(ev.date);
+  const start = parseLocalDate(ev.date);
   if (ev.recurrence === "none" || !ev.recurrence) {
     return start >= from && start <= to ? [start] : [];
   }
