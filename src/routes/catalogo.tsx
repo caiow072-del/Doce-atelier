@@ -52,13 +52,17 @@ type EventProduct = {
   event_id: string;
   recipe_id: string | null;
   name: string;
+  description: string | null;
+  category: string | null;
   unit_price: number;
+  promo_price: number | null;
   planned_qty: number;
   sold_qty: number;
   image_url: string | null;
   position: number;
   sale_mode: string;
   batches: number;
+  is_featured: boolean;
 };
 
 const brl = (n: number | null | undefined) =>
