@@ -56,8 +56,50 @@ export type Database = {
         }
         Relationships: []
       }
+      event_occurrences: {
+        Row: {
+          closed_at: string | null
+          created_at: string
+          event_id: string
+          id: string
+          notes: string | null
+          occurrence_date: string
+          payment_summary: Json | null
+          updated_at: string
+        }
+        Insert: {
+          closed_at?: string | null
+          created_at?: string
+          event_id: string
+          id?: string
+          notes?: string | null
+          occurrence_date: string
+          payment_summary?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          closed_at?: string | null
+          created_at?: string
+          event_id?: string
+          id?: string
+          notes?: string | null
+          occurrence_date?: string
+          payment_summary?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_occurrences_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_products: {
         Row: {
+          batches: number
           created_at: string
           event_id: string
           id: string
@@ -66,11 +108,13 @@ export type Database = {
           planned_qty: number
           position: number
           recipe_id: string | null
+          sale_mode: string
           sold_qty: number
           unit_price: number
           updated_at: string
         }
         Insert: {
+          batches?: number
           created_at?: string
           event_id: string
           id?: string
@@ -79,11 +123,13 @@ export type Database = {
           planned_qty?: number
           position?: number
           recipe_id?: string | null
+          sale_mode?: string
           sold_qty?: number
           unit_price?: number
           updated_at?: string
         }
         Update: {
+          batches?: number
           created_at?: string
           event_id?: string
           id?: string
@@ -92,6 +138,7 @@ export type Database = {
           planned_qty?: number
           position?: number
           recipe_id?: string | null
+          sale_mode?: string
           sold_qty?: number
           unit_price?: number
           updated_at?: string
@@ -208,6 +255,7 @@ export type Database = {
           created_at: string
           customer_name: string | null
           date: string
+          day_of_month: number | null
           event_type_id: string | null
           fee: number
           guests: number | null
@@ -224,12 +272,14 @@ export type Database = {
           shop_id: string
           start_time: string | null
           updated_at: string
+          weekday: number | null
         }
         Insert: {
           closed_at?: string | null
           created_at?: string
           customer_name?: string | null
           date: string
+          day_of_month?: number | null
           event_type_id?: string | null
           fee?: number
           guests?: number | null
@@ -246,12 +296,14 @@ export type Database = {
           shop_id: string
           start_time?: string | null
           updated_at?: string
+          weekday?: number | null
         }
         Update: {
           closed_at?: string | null
           created_at?: string
           customer_name?: string | null
           date?: string
+          day_of_month?: number | null
           event_type_id?: string | null
           fee?: number
           guests?: number | null
@@ -268,6 +320,7 @@ export type Database = {
           shop_id?: string
           start_time?: string | null
           updated_at?: string
+          weekday?: number | null
         }
         Relationships: [
           {
@@ -410,6 +463,7 @@ export type Database = {
           created_at: string
           icon: string | null
           id: string
+          image_url: string | null
           label: string
           position: number
           price: number
@@ -421,6 +475,7 @@ export type Database = {
           created_at?: string
           icon?: string | null
           id?: string
+          image_url?: string | null
           label: string
           position?: number
           price: number
@@ -432,6 +487,7 @@ export type Database = {
           created_at?: string
           icon?: string | null
           id?: string
+          image_url?: string | null
           label?: string
           position?: number
           price?: number
@@ -502,6 +558,8 @@ export type Database = {
       }
       recipes: {
         Row: {
+          catalog_position: number
+          category: string | null
           created_at: string
           description: string | null
           id: string
@@ -513,11 +571,14 @@ export type Database = {
           servings: number
           shop_id: string
           show_in_catalog: boolean
+          slice_price: number | null
           target_margin: number
           updated_at: string
           waste_pct: number
         }
         Insert: {
+          catalog_position?: number
+          category?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -529,11 +590,14 @@ export type Database = {
           servings: number
           shop_id: string
           show_in_catalog?: boolean
+          slice_price?: number | null
           target_margin?: number
           updated_at?: string
           waste_pct?: number
         }
         Update: {
+          catalog_position?: number
+          category?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -545,6 +609,7 @@ export type Database = {
           servings?: number
           shop_id?: string
           show_in_catalog?: boolean
+          slice_price?: number | null
           target_margin?: number
           updated_at?: string
           waste_pct?: number
@@ -641,6 +706,53 @@ export type Database = {
           },
         ]
       }
+      shop_storefront: {
+        Row: {
+          banner_url: string | null
+          created_at: string
+          hero_subtitle: string | null
+          hero_title: string | null
+          promotions: Json
+          sections: Json
+          shop_id: string
+          social: Json
+          theme_overrides: Json
+          updated_at: string
+        }
+        Insert: {
+          banner_url?: string | null
+          created_at?: string
+          hero_subtitle?: string | null
+          hero_title?: string | null
+          promotions?: Json
+          sections?: Json
+          shop_id: string
+          social?: Json
+          theme_overrides?: Json
+          updated_at?: string
+        }
+        Update: {
+          banner_url?: string | null
+          created_at?: string
+          hero_subtitle?: string | null
+          hero_title?: string | null
+          promotions?: Json
+          sections?: Json
+          shop_id?: string
+          social?: Json
+          theme_overrides?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_storefront_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: true
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shops: {
         Row: {
           created_at: string
@@ -650,6 +762,8 @@ export type Database = {
           logo_url: string | null
           name: string
           slug: string
+          target_margin: number
+          theme: Json
           updated_at: string
           whatsapp: string | null
         }
@@ -661,6 +775,8 @@ export type Database = {
           logo_url?: string | null
           name: string
           slug: string
+          target_margin?: number
+          theme?: Json
           updated_at?: string
           whatsapp?: string | null
         }
@@ -672,6 +788,8 @@ export type Database = {
           logo_url?: string | null
           name?: string
           slug?: string
+          target_margin?: number
+          theme?: Json
           updated_at?: string
           whatsapp?: string | null
         }

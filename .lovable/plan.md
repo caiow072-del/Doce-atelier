@@ -1,98 +1,213 @@
-## Plano em ondas
 
-Você listou 6 frentes. Tentar tudo num ciclo só quebra coisas que já funcionam (financeiro de receitas está delicado). Vamos por ondas. **Esta aprovação cobre só a Onda 1.** Onda 2 e 3 ficam descritas no fim para você aprovar separadamente depois.
+# Resposta direta às suas 6 dúvidas + plano de execução
 
----
+## 1. De onde vêm os dados do Dashboard hoje
 
-## ONDA 1 — Eventos + PDV por evento + Fechamento de caixa
+Olhei `src/routes/index.tsx` (linhas 49–81). A verdade nua:
 
-### O que muda do ponto de vista do uso
+- **Faturamento** = soma de `sales.price` do mês atual (real, vindo do PDV). ✅ ok
+- **Custos** = `salesCount * 7.5` — **um chute fixo de R$ 7,50 por venda**. ❌ inventado
+- **Lucro líquido** = faturamento − custos chutados. ❌ derivado do chute
+- **Margem** = lucro / faturamento × 100. ❌ derivado do chute
+- **Meta 30%** = string fixa no código, não é meta configurável. ❌ hard-coded
 
-**Eventos (festival de tortas, feira, etc.)**
-- Criar evento com **vários produtos**, não só uma receita. Ex: festival de sábado com 9 bolos, cada um com quantidade prevista, preço de venda no evento e custo unitário (puxado da receita).
-- Eventos **recorrentes**: marcar "todo sábado" e o sistema gera as próximas ocorrências.
-- Lista de insumos do evento agora é **colapsável** (recolhida por padrão, abre num acordeão), libera a tela.
-- Cada evento tem 4 abas: **Produtos**, **Insumos** (calculado), **Tarefas** (já existe), **Caixa**.
-
-**PDV ligado a evento**
-- Topo do PDV: seletor "Vendendo em: [Loja / Festival sábado 04/05 / Feira centro]".
-- Quando um evento está selecionado, os **botões do PDV viram os produtos daquele evento** (com preço do evento, foto se tiver). Sem evento = produtos PDV padrão de hoje.
-- **Carrinho lateral**: toca no produto, vai pro carrinho, pode +/- quantidade, escolhe forma de pagamento (Dinheiro / Pix / Crédito / Débito), fecha venda. Uma venda = vários itens.
-- Mostra **estoque previsto** do produto no evento (ex: "5/40 vendidos") em tempo real.
-
-**Fechamento de Caixa do Evento**
-- Aba "Caixa" do evento mostra: troco inicial, total vendido (somado das vendas do PDV durante o evento), por forma de pagamento, custo dos insumos consumidos, taxa do evento, **lucro real do evento**, sobras (produtos não vendidos).
-- Botão "Fechar caixa" trava o evento, gera um snapshot pra histórico e libera a comparação "previsto vs realizado".
-
-**Dashboard (atualização leve, não é repaginada total)**
-- Card "Próximo evento" com contagem regressiva.
-- Card "Resultado do último evento fechado" puxando direto do snapshot.
-
-### Mudanças técnicas
-
-**Banco — migrações novas**
-- `event_products`: id, event_id, name, recipe_id (nullable), unit_price, planned_qty, sold_qty, image_url, position. Substitui o `event_recipes` atual como fonte de produtos do evento (mantemos `event_recipes` por compat, mas a UI nova usa `event_products`).
-- `events`: adicionar `recurrence` (text: 'none' | 'weekly' | 'monthly'), `recurrence_until` (date nullable), `parent_event_id` (uuid nullable, pra ligar ocorrências), `closed_at` (timestamptz nullable), `payment_summary` (jsonb nullable — snapshot ao fechar).
-- `sales`: adicionar `event_id` (uuid nullable), `payment_method` (text: 'cash'|'pix'|'credit'|'debit'|'other'), `cart_id` (uuid — agrupa itens da mesma venda). RLS herda do shop via product/event.
-- Novo `pdv_carts` opcional só pra agrupar vendas do mesmo cliente — ou usar `cart_id` no próprio `sales` (mais simples, vou por aqui).
-
-**Frontend**
-- `src/routes/eventos.tsx`: refatorar pra UI por abas; lista de insumos vira `<Collapsible>` recolhido. Editor de produtos do evento (tabela com nome, receita opcional, qtd planejada, preço).
-- `src/routes/pdv.tsx`: adicionar seletor de evento no topo; carrinho lateral (Sheet); seleção de forma de pagamento; query de produtos muda quando há evento selecionado.
-- Nova rota `src/routes/eventos/$id.tsx` (detalhe do evento com as 4 abas) — ou modal grande, decido pelo padrão atual da tela. Vou manter dentro de `eventos.tsx` como sheet de detalhe pra não inflar rotas.
-- `src/routes/index.tsx`: 2 cards novos (próximo evento, último fechamento).
-
-**Segurança / migração futura**
-- Tudo via `supabase` client direto + RLS (já o padrão atual). Nada de TanStack server functions específicas do Lovable. RLS novas seguem o padrão `is_shop_member` / `has_shop_role` que já existe.
-- Sem AI, sem connectors novos. Zero acoplamento com Lovable.
-
-### Riscos e o que NÃO mexo
-
-- **Não toco** em `receitas.tsx`, `insumos.tsx`, `clientes.tsx`, `encomendas.tsx`. Já estão estabilizados.
-- **Não toco** no cálculo financeiro da receita (Você recebe / Lucro real).
-- `event_recipes` continua existindo pra não quebrar eventos antigos; novos eventos usam `event_products`.
-
-### Entregáveis da Onda 1
-1. Migração SQL com as 3 mudanças acima.
-2. Eventos refatorado com produtos múltiplos + recorrência + insumos colapsáveis.
-3. PDV com seletor de evento + carrinho + forma de pagamento.
-4. Aba Caixa do evento com fechamento.
-5. Dashboard com 2 cards novos.
-
-Estimativa: ~4-6 arquivos tocados, 1 migração.
+**Vou consertar:** custos passam a ser calculados pelo custo real das receitas (ingredientes × quantidades + labor + packaging) das vendas do mês. A meta de margem vira um campo na loja (`shops.target_margin`) editável.
 
 ---
 
-## ONDA 2 (depois, aprovação separada) — Vitrine pública estilo iFood
+## 2. Recorrência de eventos cria várias cópias (errado)
 
-Como você descreveu: cliente acessa `/loja/{slug}`, vê produtos com foto/preço/descrição, **se cadastra na hora** (nome, whatsapp, endereço, retirada/entrega), monta pedido, ao confirmar:
-1. Cria registro em `customers` (ou reusa se whatsapp já existe).
-2. Cria `order` com status `pendente`.
-3. Abre WhatsApp com mensagem pronta pra você.
-4. Aparece em Encomendas (badge "novo") + no Dashboard.
+Confirmado em `src/routes/eventos.tsx` linhas 1198–1244: a lógica gera N eventos físicos no banco, um por semana. Isso polui o histórico e sincronizar mudanças vira pesadelo.
 
-Segurança crítica (vitrine é pública, qualquer um acessa):
-- Endpoint público com **rate limit por IP+whatsapp**.
-- Validação Zod rigorosa de todos os campos.
-- RLS policy nova permitindo INSERT anônimo só nas colunas seguras de `customers` e `orders`, com `shop_id` derivado do slug (não confiável vindo do cliente).
-- Honeypot anti-bot + checagem de whatsapp em formato BR válido.
-- Sem login do cliente, sem sessão, sem dados sensíveis retornados.
-- Editor de produtos da vitrine: upload de imagem (Supabase Storage bucket `catalog-images` público de leitura, escrita só dono).
-- Separar **vitrine de encomendas** (catálogo padrão) de **vitrine de evento** (produtos de um evento específico, com data limite). Toggle por receita: "mostrar em encomendas" / "mostrar no evento X".
-
-Arquivos: nova rota `src/routes/loja.$slug.tsx` (pública, fora do `_authenticated`), refatoração de `catalogo.tsx` com editor, novo bucket de Storage, 2 migrações (storage + RLS pública).
+**Vai virar:** **um único evento** com:
+- `recurrence` = `weekly` / `monthly`
+- `weekday` = dia da semana (0–6) ou `day_of_month`
+- `recurrence_until` = data limite opcional
+- As ocorrências futuras são **calculadas em runtime** (no calendário, no dashboard, no PDV) — não duplicadas no banco.
+- Produtos, tarefas e checklist ficam atrelados ao evento-mãe e são reutilizados a cada ocorrência. O **caixa fechado** vira histórico por ocorrência (nova tabela `event_occurrences` com `occurrence_date` + snapshot).
 
 ---
 
-## ONDA 3 (depois, aprovação separada) — Polimento e densidade
+## 3. Produtos do evento bagunçados
 
-- Insumos: layout em tabela densa (ou cards 2-3 colunas), edit inline.
-- Filtros globais por período (dia/semana/mês/ano/evento) em vendas, encomendas, dashboard.
-- Dashboard repaginado com gráficos (receita por mês, top produtos, ticket médio).
-- Auditoria de RLS com `supabase--linter`, revisão de policies pensando em pós-Lovable.
-- Limpeza de `festival.tsx` órfão.
-- Documento `MIGRATION.md` listando tudo que precisa ser desacoplado quando sair do Lovable (variáveis de ambiente, build do TanStack Start no Hostinger, etc.).
+Hoje você digita nome, preço e quantidade na mão, sem ligação real com receita. Vou refazer o seletor:
+
+1. Botão **"Adicionar produto"** abre um modal:
+   - Escolhe a **receita** (autocomplete).
+   - Escolhe o **modo de venda**: `inteiro` ou `fatia`.
+   - Se for fatia: puxa `recipes.servings` e calcula automaticamente preço/fatia sugerido a partir de `public_price` ou custo + margem da loja.
+   - Mostra **custo real** da unidade (ingredientes × qty), **margem** prevista e **alerta de insumos faltando** (cruzando `recipe_ingredients` × `ingredients.stock_qty`).
+2. Quantidade planejada vira **lotes da receita** (mais intuitivo) com conversão automática para fatias.
+3. Imagem do produto puxa de `recipes.image_url` automaticamente (com opção de override).
+
+Resultado visual: card limpo com foto, nome, preço unitário, **custo unit / margem**, planejado/vendido/restante. Sem campos soltos.
 
 ---
 
-**Confirma a Onda 1?** Se sim, eu já começo pelo schema do banco e depois UI. Onda 2 e 3 viram tarefas separadas depois que a 1 estiver redonda em produção.
+## 4. PDV: carrinho flutuante, estoque, edição de produto, imagens
+
+Problemas confirmados em `src/routes/pdv.tsx`:
+- Carrinho não tem indicador flutuante visível (só um card lá em cima).
+- `addToCart` **não respeita** `planned_qty − sold_qty` (deixa adicionar infinito).
+- Não dá pra editar produto avulso (só criar) e não tem upload de imagem.
+
+**Vou implementar:**
+- **FAB de carrinho** flutuante no canto inferior direito, sempre visível com badge de itens e total. Toque abre o drawer.
+- **Trava de estoque**: `addToCart` impede passar de `left = planned_qty - sold_qty - inCart`. Botão fica disabled e mostra "Esgotado" no card.
+- **Upload de imagem** para `pdv_products` via Supabase Storage (bucket novo `product-images`, público).
+- Modal de edição completo do produto avulso (label, preço, ícone, tom, imagem).
+
+---
+
+## 5a. Sistema de temas por loja (multi-cliente)
+
+Hoje as cores estão hard-coded em `src/styles.css` (`--rose`, `--blush`, `--mauve`...). Pra cada confeiteira ter seu estilo:
+
+- Adicionar à tabela `shops` um campo `theme` JSONB com `{ primary, accent, background, font, preset }`.
+- Criar um `<ThemeProvider>` no `__root.tsx` que injeta variáveis CSS dinamicamente a partir de `currentShop.theme` (sobrescrevendo `--primary`, `--rose`, `--blush`, etc.).
+- Criar uma página **Configurações → Marca** com:
+  - 6 presets prontos (Rosé, Lavanda, Menta, Caramelo, Chocolate, Monocromático).
+  - Color picker para personalizar.
+  - Seleção de fonte display (Playfair, Cormorant, DM Serif, Fraunces).
+  - Upload de logo.
+  - Preview ao vivo.
+
+A vitrine pública aplica o mesmo tema automaticamente.
+
+---
+
+## 5b. Lista de insumos densa (3 por linha)
+
+Hoje é uma linha por insumo (largura desperdiçada). Vou converter para **grid de cards micro** (3 colunas em desktop, 2 em tablet, 1 em mobile estreito) com:
+- Nome (negrito) + ícone de alerta se estoque ≤ 0
+- Embalagem · preço · custo/unidade em uma linha discreta
+- Badge de estoque colorido
+- Hover revela ações de editar/excluir
+
+Mantém a tabela como modo alternativo via toggle "lista / grade".
+
+---
+
+## 6. Catálogo + Vitrines personalizáveis
+
+### Catálogo interno (`/catalogo`)
+Hoje é uma lista chata com toggle de visibilidade e preço. Vou refazer como:
+- **Duas abas no topo**: `Vitrine da loja` | `Vitrines de eventos`
+- Cards com **imagem** (upload via Supabase Storage), descrição, preço, badge de visibilidade.
+- Drag-and-drop pra reordenar (`recipes.catalog_position`).
+- Categorias/tags opcionais (`recipes.category`).
+- Para "Vitrines de eventos": lista os eventos e cada um abre sua própria vitrine pública (`/loja/{slug}/evento/{event_slug}`) que mostra só os produtos daquele evento.
+
+### Vitrine pública (`/loja/{slug}` e nova `/loja/{slug}/e/{event_slug}`)
+Adicionar tabela `shop_storefront` (1-1 com shops) com:
+- `hero_title`, `hero_subtitle`, `banner_url`
+- `theme_overrides` (cores específicas da vitrine, separadas do app)
+- `sections` JSONB: lista ordenada de blocos (banner, destaques, categorias, depoimentos, sobre, contato)
+- `promotions` JSONB: lista de promoções ativas
+- `social` JSONB: instagram, whatsapp, endereço, horários
+
+Página nova **"Minha vitrine"** no painel com **editor visual**:
+- Lista de seções arrastáveis com toggle on/off
+- Edição inline de cada bloco (banner com upload, título, texto)
+- Cadastro de promoções com preço de/por e validade
+- Preview ao vivo lado a lado em modo desktop/mobile
+- Botão "copiar link" da vitrine geral e de cada vitrine de evento
+
+---
+
+## Plano técnico de execução (ordem)
+
+```text
+ONDA A — Fundação
+  1. Migração: shops.theme, shops.target_margin, shop_storefront, recipes.category/catalog_position/image_url
+  2. Migração: events.weekday/day_of_month, event_occurrences (snapshot por ocorrência)
+  3. Bucket Storage product-images + recipe-images + storefront-banners (público, RLS por shop)
+  4. ThemeProvider em __root.tsx aplicando variáveis CSS do shop atual
+
+ONDA B — Dashboard de verdade
+  5. Função SQL ou util TS calc_real_costs(shop_id, period) usando recipe_ingredients
+  6. Refazer cards do dashboard: faturamento (já ok), custos reais, lucro real, margem real, meta editável
+
+ONDA C — Eventos consertados
+  7. UI de recorrência: dropdown semanal/mensal + dia da semana + até quando
+  8. Geração de ocorrências futuras em runtime (helper getOccurrences)
+  9. Fechamento de caixa grava em event_occurrences (não no evento-mãe)
+  10. Calendário e dashboard mostram ocorrências calculadas
+
+ONDA D — Produtos de evento conectados à receita
+  11. Modal "Adicionar produto" com seletor de receita + modo (inteiro/fatia) + cálculo automático
+  12. Card de produto mostrando custo real, margem, faltando insumos
+  13. Quantidade em lotes ↔ unidades
+
+ONDA E — PDV polido
+  14. FAB de carrinho flutuante persistente
+  15. Trava de estoque com left = planned - sold - inCart
+  16. Upload de imagem em pdv_products + edição completa
+  17. Confirmação visual de adicionar (mini animação no FAB)
+
+ONDA F — Insumos densos
+  18. Grid 3 colunas com cards compactos + toggle lista/grade
+
+ONDA G — Catálogo + Vitrines
+  19. /catalogo refeito com 2 abas, upload de imagem nas receitas, drag-and-drop, categorias
+  20. /loja/{slug}/e/{event_slug} — vitrine de evento
+  21. Nova página /vitrine — editor visual de seções, promoções, branding
+  22. Aplicar shop_storefront.theme_overrides nas duas vitrines
+  23. Botões de "copiar link" e "abrir vitrine" em ambos os contextos
+```
+
+---
+
+## Mudanças no banco (resumo)
+
+```sql
+-- shops
+ALTER TABLE shops
+  ADD COLUMN theme JSONB DEFAULT '{}'::jsonb,
+  ADD COLUMN target_margin NUMERIC DEFAULT 0.30;
+
+-- recipes
+ALTER TABLE recipes
+  ADD COLUMN category TEXT,
+  ADD COLUMN catalog_position INT DEFAULT 0;
+
+-- events: trocar parent_event_id por modelo de instância única
+ALTER TABLE events
+  ADD COLUMN weekday INT,            -- 0..6
+  ADD COLUMN day_of_month INT;       -- 1..31
+
+CREATE TABLE event_occurrences (
+  id UUID PK,
+  event_id UUID REFERENCES events ON DELETE CASCADE,
+  occurrence_date DATE NOT NULL,
+  closed_at TIMESTAMPTZ,
+  payment_summary JSONB,
+  UNIQUE (event_id, occurrence_date)
+);
+
+CREATE TABLE shop_storefront (
+  shop_id UUID PK REFERENCES shops,
+  hero_title TEXT,
+  hero_subtitle TEXT,
+  banner_url TEXT,
+  theme_overrides JSONB DEFAULT '{}'::jsonb,
+  sections JSONB DEFAULT '[]'::jsonb,
+  promotions JSONB DEFAULT '[]'::jsonb,
+  social JSONB DEFAULT '{}'::jsonb
+);
+
+-- pdv_products: imagem
+ALTER TABLE pdv_products ADD COLUMN image_url TEXT;
+```
+
+Tudo com RLS espelhando os padrões já existentes (`is_shop_member` / `has_shop_role`); leitura pública anônima apenas em `shop_storefront` e nas listas que ela referencia.
+
+---
+
+## Notas
+
+- Trabalho longo: vou fazer em ondas A→G, validando build e comportamento entre cada uma. Você só recebe a checklist final no fim, como você pediu.
+- Nada de remover funcionalidades existentes — só evoluir.
+- Vou preservar a paleta atual como **preset "Rosé"** padrão para sua loja não mudar visualmente.
+
+Aprova pra eu sair fazendo?
