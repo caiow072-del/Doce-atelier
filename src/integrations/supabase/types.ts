@@ -564,9 +564,11 @@ export type Database = {
           description: string | null
           id: string
           image_url: string | null
+          is_featured: boolean
           labor_cost: number
           name: string
           packaging_cost: number
+          promo_price: number | null
           public_price: number | null
           servings: number
           shop_id: string
@@ -583,9 +585,11 @@ export type Database = {
           description?: string | null
           id?: string
           image_url?: string | null
+          is_featured?: boolean
           labor_cost?: number
           name: string
           packaging_cost?: number
+          promo_price?: number | null
           public_price?: number | null
           servings: number
           shop_id: string
@@ -602,9 +606,11 @@ export type Database = {
           description?: string | null
           id?: string
           image_url?: string | null
+          is_featured?: boolean
           labor_cost?: number
           name?: string
           packaging_cost?: number
+          promo_price?: number | null
           public_price?: number | null
           servings?: number
           shop_id?: string
