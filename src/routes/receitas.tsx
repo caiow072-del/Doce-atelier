@@ -230,41 +230,41 @@ function RecipesPage() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="rounded-xl bg-blush/30 px-3 py-2">
+                  <div className="rounded-xl bg-blush/30 px-3 py-2 min-w-0">
                     <p className="text-[10px] uppercase tracking-widest text-rose">Preço real</p>
-                    <p className="font-display text-lg italic text-mauve leading-tight">
+                    <p className="font-display text-base italic text-mauve leading-tight truncate">
                       {hasReal ? formatBRL(realPrice) : "—"}
                     </p>
                   </div>
-                  <div className={`rounded-xl px-3 py-2 ${profitNegative ? "bg-destructive/10" : "bg-blush/30"}`}>
+                  <div className={`rounded-xl px-3 py-2 min-w-0 ${profitNegative ? "bg-destructive/10" : "bg-blush/30"}`}>
                     <p className="text-[10px] uppercase tracking-widest text-rose">Lucro real total</p>
                     {hasReal ? (
                       <>
-                        <p className={`font-display text-lg italic leading-tight ${profitNegative ? "text-destructive" : "text-mauve"}`}>
+                        <p className={`font-display text-base italic leading-tight truncate ${profitNegative ? "text-destructive" : "text-mauve"}`}>
                           {formatBRL(realProfitTotal)}
                         </p>
-                        <p className="text-[10px] text-mauve/70 leading-tight mt-0.5">
-                          Você recebe: <span className="font-medium text-mauve">{formatBRL(realProfitTotal + (r.labor_cost ?? 0))}</span>
+                        <p className="text-[10px] text-mauve/70 leading-tight mt-0.5 truncate">
+                          Recebe: <span className="font-medium text-mauve">{formatBRL(realProfitTotal + (r.labor_cost ?? 0))}</span>
                         </p>
                       </>
                     ) : (
                       <p className="text-xs text-muted-foreground italic">Defina o preço real</p>
                     )}
                   </div>
-                  <div className="rounded-xl bg-card/70 px-3 py-2">
-                    <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Custo real/fatia</p>
-                    <p className="font-display text-base italic text-mauve leading-tight">
+                  <div className="rounded-xl bg-card/70 px-3 py-2 min-w-0">
+                    <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Custo/fatia</p>
+                    <p className="font-display text-sm italic text-mauve leading-tight truncate">
                       {formatBRL(cost.perSlice)}
                     </p>
                   </div>
-                  <div className="rounded-xl bg-card/70 px-3 py-2">
-                    <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Lucro real/fatia</p>
+                  <div className="rounded-xl bg-card/70 px-3 py-2 min-w-0">
+                    <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Lucro/fatia</p>
                     {hasReal ? (
-                      <p className={`font-display text-base italic leading-tight ${profitNegative ? "text-destructive" : "text-mauve"}`}>
+                      <p className={`font-display text-sm italic leading-tight truncate ${profitNegative ? "text-destructive" : "text-mauve"}`}>
                         {formatBRL(realProfitSlice)}
                       </p>
                     ) : (
-                      <p className="font-display text-base italic text-muted-foreground leading-tight">—</p>
+                      <p className="font-display text-sm italic text-muted-foreground leading-tight">—</p>
                     )}
                   </div>
                 </div>
