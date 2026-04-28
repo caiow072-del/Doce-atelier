@@ -584,6 +584,8 @@ function EventosPage() {
               event={selected}
               products={eventProducts}
               recipes={recipes}
+              ingredients={ingredients}
+              recipeIngs={recipeIngs}
               shoppingList={shoppingList}
               showInsumos={showInsumos}
               setShowInsumos={setShowInsumos}
