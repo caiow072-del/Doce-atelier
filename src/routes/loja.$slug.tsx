@@ -341,6 +341,16 @@ function StorefrontPage() {
                   />
                 </div>
               )}
+              {!editing && categories.length > 0 && (
+                <div className="mb-4 flex flex-wrap gap-1.5">
+                  {(["all", ...categories] as const).map((c) => (
+                    <button key={c} onClick={() => setActiveCategory(c)}
+                      className={`rounded-full px-3 py-1 text-[11px] transition ${activeCategory === c ? "bg-mauve text-cream" : "bg-white border border-rose/30 text-mauve hover:border-rose"}`}>
+                      {c === "all" ? "Todos" : c}
+                    </button>
+                  ))}
+                </div>
+              )}
               {filtered.length === 0 ? (
                 <div className="card-soft p-10 text-center text-mauve/70">
                   <Cake className="mx-auto mb-3 h-10 w-10 text-mauve/30" strokeWidth={1.2} />
@@ -348,25 +358,43 @@ function StorefrontPage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {filtered.map((r) => (
-                    <article key={r.id} className="group flex flex-col overflow-hidden rounded-3xl border border-rose/30 bg-white shadow-sm transition hover:shadow-lg">
-                      <div className="relative aspect-[4/3] overflow-hidden bg-blush">
-                        {r.image_url ? (
-                          <img src={r.image_url} alt={r.name} loading="lazy" className="h-full w-full object-cover transition group-hover:scale-105" />
-                        ) : (<div className="grid h-full w-full place-items-center"><Cake className="h-12 w-12 text-mauve/40" /></div>)}
-                      </div>
-                      <div className="flex flex-1 flex-col gap-2 p-4">
-                        <h3 className="font-display text-lg italic text-mauve">{r.name}</h3>
-                        {r.description && <p className="line-clamp-2 text-xs text-mauve/70">{r.description}</p>}
-                        <div className="mt-auto flex items-center justify-between pt-2">
-                          <span className="text-base font-semibold text-mauve">{r.public_price != null ? brl(r.public_price) : "Sob consulta"}</span>
-                          <button onClick={() => addToCart(r)} disabled={editing} className="inline-flex items-center gap-1 rounded-full bg-mauve px-4 py-2 text-xs font-medium text-cream hover:opacity-90 disabled:opacity-50">
-                            <Plus className="h-3.5 w-3.5" /> Adicionar
-                          </button>
+                  {filtered.map((r) => {
+                    const promo = promoMap.get(r.id);
+                    const showPriceTo = promo?.price_to != null;
+                    const priceFrom = promo?.price_from ?? r.public_price;
+                    return (
+                      <article key={r.id} className="group flex flex-col overflow-hidden rounded-3xl border border-rose/30 bg-white shadow-sm transition hover:shadow-lg">
+                        <div className="relative aspect-[4/3] overflow-hidden bg-blush">
+                          {r.image_url ? (
+                            <img src={r.image_url} alt={r.name} loading="lazy" className="h-full w-full object-cover transition group-hover:scale-105" />
+                          ) : (<div className="grid h-full w-full place-items-center"><Cake className="h-12 w-12 text-mauve/40" /></div>)}
+                          {promo && (
+                            <span className="absolute left-2 top-2 rounded-full bg-rose px-2.5 py-0.5 text-[10px] font-semibold text-mauve shadow">PROMO</span>
+                          )}
+                          {r.category && (
+                            <span className="absolute right-2 top-2 rounded-full bg-white/90 px-2 py-0.5 text-[10px] text-mauve">{r.category}</span>
+                          )}
                         </div>
-                      </div>
-                    </article>
-                  ))}
+                        <div className="flex flex-1 flex-col gap-2 p-4">
+                          <h3 className="font-display text-lg italic text-mauve">{r.name}</h3>
+                          {r.description && <p className="line-clamp-2 text-xs text-mauve/70">{r.description}</p>}
+                          <div className="mt-auto flex items-center justify-between pt-2">
+                            <div className="flex items-baseline gap-1.5">
+                              {showPriceTo && priceFrom != null && (
+                                <span className="text-xs text-mauve/50 line-through">{brl(priceFrom)}</span>
+                              )}
+                              <span className="text-base font-semibold text-mauve">
+                                {showPriceTo ? brl(promo!.price_to!) : (r.public_price != null ? brl(r.public_price) : "Sob consulta")}
+                              </span>
+                            </div>
+                            <button onClick={() => addToCart(r)} disabled={editing} className="inline-flex items-center gap-1 rounded-full bg-mauve px-4 py-2 text-xs font-medium text-cream hover:opacity-90 disabled:opacity-50">
+                              <Plus className="h-3.5 w-3.5" /> Adicionar
+                            </button>
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })}
                 </div>
               )}
             </section>
