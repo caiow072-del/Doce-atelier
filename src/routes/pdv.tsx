@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
 import { toast } from "sonner";
+import { getOccurrences } from "@/lib/recurrence";
 
 export const Route = createFileRoute("/pdv")({
   head: () => ({
@@ -19,7 +20,7 @@ export const Route = createFileRoute("/pdv")({
 
 type Product = { id: string; label: string; price: number; icon: string; tone: string; position: number; active: boolean };
 type EventProduct = { id: string; event_id: string; name: string; unit_price: number; planned_qty: number; sold_qty: number; image_url: string | null };
-type EventLite = { id: string; name: string; date: string; closed_at: string | null };
+type EventLite = { id: string; name: string; date: string; closed_at: string | null; recurrence?: string; recurrence_until?: string | null; weekday?: number | null; day_of_month?: number | null };
 type Sale = { id: string; item: string; price: number; sold_at: string; payment_method: string };
 type CartItem = { id: string; name: string; price: number; qty: number; source: "pdv" | "event"; product_id: string | null; event_product_id: string | null };
 type PaymentMethod = "cash" | "pix" | "credit" | "debit" | "other";
