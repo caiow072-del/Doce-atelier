@@ -93,6 +93,7 @@ function StorefrontPage() {
 
   const [cart, setCart] = useState<CartItem[]>([]);
   const [search, setSearch] = useState("");
+  const [activeCategory, setActiveCategory] = useState<string>("all");
   const [cartOpen, setCartOpen] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
 
@@ -247,7 +248,25 @@ function StorefrontPage() {
 
   const total = useMemo(() => cart.reduce((s, i) => s + i.price * i.qty, 0), [cart]);
   const cartCount = cart.reduce((s, i) => s + i.qty, 0);
-  const filtered = recipes.filter((r) => r.name.toLowerCase().includes(search.toLowerCase()));
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    recipes.forEach((r) => r.category && set.add(r.category));
+    return Array.from(set).sort();
+  }, [recipes]);
+  const filtered = recipes.filter((r) => {
+    const okSearch = r.name.toLowerCase().includes(search.toLowerCase());
+    const okCat = activeCategory === "all" || r.category === activeCategory;
+    return okSearch && okCat;
+  });
+  const promoMap = useMemo(() => {
+    const m = new Map<string, Promotion>();
+    front.promotions.forEach((p) => {
+      // matching simples por nome (case-insensitive)
+      const r = recipes.find((x) => x.name.toLowerCase() === p.title.toLowerCase());
+      if (r) m.set(r.id, p);
+    });
+    return m;
+  }, [front.promotions, recipes]);
 
   if (loading) {
     return (
