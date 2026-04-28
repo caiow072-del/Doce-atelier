@@ -1,10 +1,12 @@
 import { Outlet, createRootRoute, HeadContent, Scripts, useNavigate, useLocation } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import appCss from "../styles.css?url";
 import { AppShell } from "@/components/AppShell";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { Toaster } from "@/components/ui/sonner";
+import { applyTheme, type ShopTheme } from "@/lib/theme";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createRootRoute({
   head: () => ({
