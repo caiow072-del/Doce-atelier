@@ -33,6 +33,8 @@ const PAY_METHODS: { key: PaymentMethod; label: string }[] = [
   { key: "cash", label: "Dinheiro" }, { key: "pix", label: "Pix" }, { key: "credit", label: "Crédito" }, { key: "debit", label: "Débito" }, { key: "other", label: "Outro" },
 ];
 
+type Period = "today" | "week" | "month" | "all";
+
 function PDVPage() {
   const { currentShop } = useAuth();
   const shopId = currentShop?.shop_id;
@@ -43,22 +45,28 @@ function PDVPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [payment, setPayment] = useState<PaymentMethod>("cash");
   const [sales, setSales] = useState<Sale[]>([]);
+  const [period, setPeriod] = useState<Period>("today");
   const [showManage, setShowManage] = useState(false);
   const [showCart, setShowCart] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // ============ Load ============
+  const periodStart = useMemo(() => {
+    const d = new Date();
+    if (period === "today") { d.setHours(0,0,0,0); return d; }
+    if (period === "week") { d.setDate(d.getDate() - 7); return d; }
+    if (period === "month") { d.setMonth(d.getMonth() - 1); return d; }
+    return null; // all
+  }, [period]);
+
+  // ============ Load (produtos + eventos) ============
   useEffect(() => {
     if (!shopId) return;
     setLoading(true);
-    const startOfDay = new Date(); startOfDay.setHours(0, 0, 0, 0);
     const today = new Date().toISOString().slice(0, 10);
     Promise.all([
       supabase.from("pdv_products").select("*").eq("shop_id", shopId).eq("active", true).order("position"),
-      // Pega todos os eventos abertos: não-recorrentes futuros + recorrentes (filtra em runtime)
       supabase.from("events").select("id, name, date, closed_at, recurrence, recurrence_until, weekday, day_of_month").eq("shop_id", shopId).is("closed_at", null),
-      supabase.from("sales").select("id, item, price, sold_at, payment_method").eq("shop_id", shopId).gte("sold_at", startOfDay.toISOString()).order("sold_at", { ascending: false }),
-    ]).then(async ([p, e, s]) => {
+    ]).then(async ([p, e]) => {
       let prods = (p.data ?? []) as Product[];
       if (prods.length === 0) {
         const seeds = [
@@ -71,9 +79,7 @@ function PDVPage() {
         prods = (inserted ?? []) as Product[];
       }
       setProducts(prods);
-      // Filtra eventos: futuros (até 7 dias) ou recorrentes com ocorrência nos próximos 7 dias
-      const now = new Date();
-      const horizon = new Date(now.getTime() + 7 * 86_400_000);
+      const horizon = new Date(Date.now() + 7 * 86_400_000);
       const todayStart = new Date(); todayStart.setHours(0,0,0,0);
       const evList = ((e.data ?? []) as EventLite[]).filter((ev) => {
         if (ev.recurrence && ev.recurrence !== "none") {
@@ -82,10 +88,19 @@ function PDVPage() {
         return new Date(ev.date) >= todayStart && new Date(ev.date).toISOString().slice(0,10) >= today;
       }).slice(0, 10);
       setEvents(evList);
-      setSales((s.data ?? []) as Sale[]);
       setLoading(false);
     });
   }, [shopId]);
+
+  // ============ Load sales (reage ao período) ============
+  useEffect(() => {
+    if (!shopId) return;
+    let q = supabase.from("sales").select("id, item, price, sold_at, payment_method").eq("shop_id", shopId);
+    if (periodStart) q = q.gte("sold_at", periodStart.toISOString());
+    q.order("sold_at", { ascending: false }).limit(500).then(({ data }) => {
+      setSales((data ?? []) as Sale[]);
+    });
+  }, [shopId, periodStart]);
 
   // Carrega produtos do evento selecionado
   useEffect(() => {
@@ -202,8 +217,23 @@ function PDVPage() {
       {/* Total + carrinho */}
       <div className="grid grid-cols-2 gap-3">
         <motion.div layout className="card-soft overflow-hidden bg-gradient-to-br from-blush/80 to-card p-4">
-          <p className="text-[11px] uppercase tracking-widest text-rose">Total de hoje</p>
-          <motion.p key={totalToday} initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="font-display text-3xl italic text-mauve mt-1">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[11px] uppercase tracking-widest text-rose">Total</p>
+            <div className="flex gap-0.5 rounded-full border border-border bg-card/70 p-0.5">
+              {([
+                { k: "today", l: "Hoje" },
+                { k: "week", l: "7d" },
+                { k: "month", l: "30d" },
+                { k: "all", l: "Tudo" },
+              ] as const).map((p) => (
+                <button key={p.k} onClick={() => setPeriod(p.k)}
+                  className={`rounded-full px-2 py-0.5 text-[10px] transition ${period === p.k ? "bg-mauve text-cream" : "text-mauve/70 hover:text-mauve"}`}>
+                  {p.l}
+                </button>
+              ))}
+            </div>
+          </div>
+          <motion.p key={`${totalToday}-${period}`} initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="font-display text-3xl italic text-mauve mt-1">
             {fmtBRL(totalToday)}
           </motion.p>
           <p className="text-[11px] text-muted-foreground">{sales.length} vendas</p>
@@ -352,7 +382,7 @@ function PDVPage() {
       {/* Últimas vendas */}
       <div className="card-soft overflow-hidden">
         <div className="border-b border-border/60 bg-blush/30 px-5 py-3">
-          <p className="text-sm font-medium text-mauve">Últimas vendas de hoje</p>
+          <p className="text-sm font-medium text-mauve">Últimas vendas {period === "today" ? "de hoje" : period === "week" ? "(7 dias)" : period === "month" ? "(30 dias)" : "(todas)"}</p>
         </div>
         {sales.length === 0 ? (
           <p className="px-5 py-8 text-center text-sm text-muted-foreground">Nenhuma venda ainda. 🌸</p>
