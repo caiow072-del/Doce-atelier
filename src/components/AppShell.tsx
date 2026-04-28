@@ -68,7 +68,7 @@ export function AppShell() {
               <Sparkles className="h-5 w-5 text-mauve" strokeWidth={1.6} />
             </div>
             <div className="leading-tight">
-              <p className="font-display text-xl italic text-mauve">Cakes Manager</p>
+              <p className="font-brand text-xl text-mauve">Cakes Manager</p>
               <p className="text-[11px] uppercase tracking-widest text-muted-foreground">Atelier doce</p>
             </div>
           </div>
@@ -131,7 +131,7 @@ export function AppShell() {
           {/* User card */}
           <div className="m-3 rounded-2xl border border-border/60 bg-background/60 p-3">
             <div className="flex items-center gap-3">
-              <div className="grid h-9 w-9 place-items-center rounded-full bg-rose/40 font-display text-sm italic text-mauve">
+              <div className="grid h-9 w-9 place-items-center rounded-full bg-rose/40 text-sm font-semibold text-mauve">
                 {(user?.email ?? "?").charAt(0).toUpperCase()}
               </div>
               <div className="min-w-0 flex-1">
@@ -164,9 +164,9 @@ export function AppShell() {
               <Menu className="h-5 w-5" />
             </button>
             <div className="text-center leading-tight">
-              <p className="font-display text-lg italic text-mauve">{currentShop?.shops.name ?? "Cakes Manager"}</p>
+              <p className="font-brand text-lg text-mauve">{currentShop?.shops.name ?? "Cakes Manager"}</p>
             </div>
-            <div className="grid h-10 w-10 place-items-center rounded-full bg-rose/40 font-display text-sm italic text-mauve">
+            <div className="grid h-10 w-10 place-items-center rounded-full bg-rose/40 text-sm font-semibold text-mauve">
               {(user?.email ?? "?").charAt(0).toUpperCase()}
             </div>
           </header>
@@ -215,7 +215,7 @@ export function AppShell() {
                 <div className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-blush to-rose">
                   <Sparkles className="h-5 w-5 text-mauve" strokeWidth={1.6} />
                 </div>
-                <p className="font-display text-xl italic text-mauve">Cakes Manager</p>
+                <p className="font-brand text-xl text-mauve">Cakes Manager</p>
               </div>
               <button onClick={() => setMobileOpen(false)} className="rounded-lg p-2 text-muted-foreground" aria-label="Fechar">
                 <X className="h-5 w-5" />

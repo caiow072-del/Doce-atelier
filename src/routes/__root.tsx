@@ -100,7 +100,7 @@ function AuthGate() {
       <div className="floral-bg flex min-h-screen items-center justify-center">
         <div className="flex flex-col items-center gap-3 text-mauve">
           <Loader2 className="h-7 w-7 animate-spin" />
-          <p className="font-display text-lg italic">Abrindo seu atelier...</p>
+          <p className="font-brand text-lg">Abrindo seu atelier...</p>
         </div>
       </div>
     );
@@ -116,7 +116,7 @@ function NotFound() {
   return (
     <div className="floral-bg flex min-h-screen items-center justify-center px-6 text-center">
       <div>
-        <h1 className="font-display text-7xl italic text-mauve">404</h1>
+        <h1 className="font-brand text-7xl text-mauve">404</h1>
         <p className="mt-2 text-muted-foreground">Esta página não está no cardápio.</p>
         <a href="/" className="mt-6 inline-flex rounded-full bg-rose px-6 py-3 text-sm font-medium text-mauve">
           Voltar ao início
