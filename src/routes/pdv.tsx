@@ -54,7 +54,8 @@ function PDVPage() {
     const today = new Date().toISOString().slice(0, 10);
     Promise.all([
       supabase.from("pdv_products").select("*").eq("shop_id", shopId).eq("active", true).order("position"),
-      supabase.from("events").select("id, name, date, closed_at").eq("shop_id", shopId).is("closed_at", null).gte("date", today).order("date").limit(10),
+      // Pega todos os eventos abertos: não-recorrentes futuros + recorrentes (filtra em runtime)
+      supabase.from("events").select("id, name, date, closed_at, recurrence, recurrence_until, weekday, day_of_month").eq("shop_id", shopId).is("closed_at", null),
       supabase.from("sales").select("id, item, price, sold_at, payment_method").eq("shop_id", shopId).gte("sold_at", startOfDay.toISOString()).order("sold_at", { ascending: false }),
     ]).then(async ([p, e, s]) => {
       let prods = (p.data ?? []) as Product[];
@@ -69,7 +70,17 @@ function PDVPage() {
         prods = (inserted ?? []) as Product[];
       }
       setProducts(prods);
-      setEvents((e.data ?? []) as EventLite[]);
+      // Filtra eventos: futuros (até 7 dias) ou recorrentes com ocorrência nos próximos 7 dias
+      const now = new Date();
+      const horizon = new Date(now.getTime() + 7 * 86_400_000);
+      const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+      const evList = ((e.data ?? []) as EventLite[]).filter((ev) => {
+        if (ev.recurrence && ev.recurrence !== "none") {
+          return getOccurrences(ev as any, todayStart, horizon).length > 0;
+        }
+        return new Date(ev.date) >= todayStart && new Date(ev.date).toISOString().slice(0,10) >= today;
+      }).slice(0, 10);
+      setEvents(evList);
       setSales((s.data ?? []) as Sale[]);
       setLoading(false);
     });
