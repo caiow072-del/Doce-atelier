@@ -830,7 +830,7 @@ function ProductsTab({
           ingredients={ingredients}
           recipeIngs={recipeIngs}
           onClose={() => setShowAdd(false)}
-          onAdd={(data) => { onAdd(data); setShowAdd(false); }}
+          onAdd={(data: Partial<EventProduct>) => { onAdd(data); setShowAdd(false); }}
         />
       )}
       {/* Insumos colapsável */}
