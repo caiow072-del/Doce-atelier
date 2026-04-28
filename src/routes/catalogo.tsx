@@ -256,7 +256,7 @@ function CatalogoPage() {
                       defaultValue={r.category ?? ""}
                       onBlur={(e) => {
                         const v = e.target.value.trim();
-                        if (v !== (r.category ?? "")) updateField(r, "category", v || null);
+                        if (v !== (r.category ?? "")) updateCategory(r, v || null);
                       }}
                       placeholder="Categoria"
                       className="w-28 rounded-lg border border-border bg-background px-2 py-1 text-xs"
@@ -266,7 +266,7 @@ function CatalogoPage() {
                       defaultValue={r.public_price ?? ""}
                       onBlur={(e) => {
                         const v = Number(e.target.value) || 0;
-                        if (v !== (r.public_price ?? 0)) updateField(r, "public_price", v);
+                        if (v !== (r.public_price ?? 0)) updatePrice(r, v);
                       }}
                       className="w-24 rounded-lg border border-border bg-background px-2 py-1 text-sm text-right"
                       placeholder="R$"
