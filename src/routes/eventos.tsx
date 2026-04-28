@@ -727,11 +727,13 @@ function Badge({ icon: Icon, label }: { icon: any; label: string }) {
 
 // ============ Products Tab ============
 function ProductsTab({
-  event, products, recipes, shoppingList, showInsumos, setShowInsumos, onAdd, onUpdate, onRemove,
+  event, products, recipes, ingredients, recipeIngs, shoppingList, showInsumos, setShowInsumos, onAdd, onUpdate, onRemove,
 }: {
   event: EventRow;
   products: EventProduct[];
   recipes: Recipe[];
+  ingredients: Ingredient[];
+  recipeIngs: RecipeIng[];
   shoppingList: { name: string; unit: string; qty: number }[];
   showInsumos: boolean;
   setShowInsumos: (v: boolean) => void;
@@ -739,107 +741,93 @@ function ProductsTab({
   onUpdate: (id: string, patch: Partial<EventProduct>) => void;
   onRemove: (id: string) => void;
 }) {
-  const [newName, setNewName] = useState("");
-  const [newRecipe, setNewRecipe] = useState("");
-  const [newPrice, setNewPrice] = useState("");
-  const [newQty, setNewQty] = useState("");
-
-  const handleAdd = () => {
-    const fromRecipe = recipes.find((r) => r.id === newRecipe);
-    const name = newName.trim() || fromRecipe?.name || "";
-    if (!name) return toast.error("Dê um nome ao produto");
-    onAdd({
-      name,
-      recipe_id: newRecipe || null,
-      unit_price: Number(newPrice) || 0,
-      planned_qty: Number(newQty) || 0,
-    });
-    setNewName(""); setNewRecipe(""); setNewPrice(""); setNewQty("");
-  };
-
+  const [showAdd, setShowAdd] = useState(false);
   const closed = !!event.closed_at;
+
+  // Custo unitário por produto (real se tiver receita)
+  const costOf = (p: EventProduct): number => {
+    if (!p.recipe_id) return Number(p.unit_price) * 0.35;
+    const r = recipes.find((x) => x.id === p.recipe_id);
+    if (!r) return Number(p.unit_price) * 0.35;
+    const c = recipeCostFor(r, recipeIngs, ingredients);
+    return p.sale_mode === "slice" ? c.perSlice : c.perWhole;
+  };
 
   return (
     <div className="space-y-4">
       <div className="card-soft overflow-hidden">
-        <div className="border-b border-border/60 bg-blush/30 px-5 py-3">
-          <p className="text-sm font-medium text-mauve">Produtos do evento</p>
-          <p className="text-[11px] text-muted-foreground">Cada produto aparece como botão no PDV quando este evento estiver selecionado.</p>
+        <div className="flex items-center justify-between border-b border-border/60 bg-blush/30 px-5 py-3">
+          <div>
+            <p className="text-sm font-medium text-mauve">Produtos do evento</p>
+            <p className="text-[11px] text-muted-foreground">Cada produto vira um botão no PDV deste evento.</p>
+          </div>
+          {!closed && (
+            <button onClick={() => setShowAdd(true)} className="inline-flex items-center gap-1 rounded-xl bg-mauve px-3 py-1.5 text-xs text-cream hover:opacity-90">
+              <Plus className="h-3.5 w-3.5" /> Adicionar
+            </button>
+          )}
         </div>
         {products.length === 0 ? (
-          <p className="px-5 py-6 text-center text-sm text-muted-foreground">Nenhum produto. Adicione abaixo.</p>
+          <p className="px-5 py-6 text-center text-sm text-muted-foreground">Nenhum produto. Toque em <strong>Adicionar</strong> para escolher uma receita.</p>
         ) : (
           <ul className="divide-y divide-border/60">
             {products.map((p) => {
               const sold = p.sold_qty;
               const left = Math.max(0, p.planned_qty - sold);
+              const cost = costOf(p);
+              const margin = p.unit_price > 0 ? ((p.unit_price - cost) / p.unit_price) * 100 : 0;
+              const recipe = p.recipe_id ? recipes.find((r) => r.id === p.recipe_id) : null;
               return (
-                <li key={p.id} className="grid grid-cols-12 items-center gap-2 px-4 py-3 text-sm">
-                  <input
-                    disabled={closed}
-                    value={p.name}
-                    onChange={(e) => onUpdate(p.id, { name: e.target.value })}
-                    className="col-span-12 sm:col-span-4 rounded-lg border border-border bg-background px-2 py-1.5 text-mauve disabled:opacity-60"
-                  />
-                  <select
-                    disabled={closed}
-                    value={p.recipe_id ?? ""}
-                    onChange={(e) => onUpdate(p.id, { recipe_id: e.target.value || null })}
-                    className="col-span-7 sm:col-span-3 rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-mauve disabled:opacity-60"
-                  >
-                    <option value="">— sem receita —</option>
-                    {recipes.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
-                  </select>
-                  <input
-                    disabled={closed}
-                    type="number" step="0.01" placeholder="R$"
-                    value={p.unit_price || ""}
-                    onChange={(e) => onUpdate(p.id, { unit_price: Number(e.target.value) || 0 })}
-                    className="col-span-3 sm:col-span-2 rounded-lg border border-border bg-background px-2 py-1.5 text-right text-mauve disabled:opacity-60"
-                  />
-                  <input
-                    disabled={closed}
-                    type="number" placeholder="qtd"
-                    value={p.planned_qty || ""}
-                    onChange={(e) => onUpdate(p.id, { planned_qty: Number(e.target.value) || 0 })}
-                    className="col-span-2 sm:col-span-1 rounded-lg border border-border bg-background px-2 py-1.5 text-right text-mauve disabled:opacity-60"
-                  />
-                  <div className="col-span-9 sm:col-span-1 text-[11px] text-muted-foreground text-center">
-                    <span className={left === 0 && p.planned_qty > 0 ? "text-success font-medium" : ""}>{sold}/{p.planned_qty}</span>
+                <li key={p.id} className="px-4 py-3 text-sm">
+                  <div className="flex items-start gap-3">
+                    {(p.image_url || recipe?.image_url) && (
+                      <img src={p.image_url || recipe?.image_url || ""} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" loading="lazy" />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-baseline gap-2">
+                        <span className="font-medium text-mauve">{p.name}</span>
+                        {recipe && (
+                          <span className="text-[10px] uppercase tracking-wider text-rose">
+                            {recipe.name} · {p.sale_mode === "slice" ? "por fatia" : "inteiro"}
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-1 flex flex-wrap gap-3 text-[11px] text-muted-foreground">
+                        <span>Preço: <strong className="text-mauve">{formatBRL(Number(p.unit_price))}</strong></span>
+                        <span>Custo: <strong className={cost > p.unit_price ? "text-destructive" : "text-mauve"}>{formatBRL(cost)}</strong></span>
+                        <span>Margem: <strong className={margin >= 30 ? "text-success" : margin >= 15 ? "text-warning" : "text-destructive"}>{margin.toFixed(0)}%</strong></span>
+                        <span className={left === 0 && p.planned_qty > 0 ? "text-success font-medium" : ""}>Vendas: {sold}/{p.planned_qty}</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      <input
+                        disabled={closed}
+                        type="number" placeholder="qtd"
+                        value={p.planned_qty || ""}
+                        onChange={(e) => onUpdate(p.id, { planned_qty: Number(e.target.value) || 0 })}
+                        className="w-16 rounded-lg border border-border bg-background px-2 py-1 text-right text-xs text-mauve disabled:opacity-60"
+                      />
+                      <button disabled={closed} onClick={() => onRemove(p.id)} className="rounded-lg p-1 text-destructive hover:bg-destructive/10 disabled:opacity-30">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </div>
-                  <button disabled={closed} onClick={() => onRemove(p.id)} className="col-span-1 justify-self-end rounded-lg p-1.5 text-destructive hover:bg-destructive/10 disabled:opacity-30">
-                    <Trash2 className="h-4 w-4" />
-                  </button>
                 </li>
               );
             })}
           </ul>
         )}
-
-        {!closed && (
-          <div className="border-t border-border/60 bg-background/60 p-3">
-            <p className="mb-2 text-[10px] uppercase tracking-widest text-rose">Adicionar produto</p>
-            <div className="grid grid-cols-12 gap-2">
-              <input
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                placeholder="Nome (ou puxa da receita)"
-                className="col-span-12 sm:col-span-4 input-base"
-              />
-              <select value={newRecipe} onChange={(e) => setNewRecipe(e.target.value)} className="col-span-12 sm:col-span-3 input-base">
-                <option value="">— receita opcional —</option>
-                {recipes.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
-              </select>
-              <input value={newPrice} onChange={(e) => setNewPrice(e.target.value)} type="number" step="0.01" placeholder="R$ unitário" className="col-span-6 sm:col-span-2 input-base" />
-              <input value={newQty} onChange={(e) => setNewQty(e.target.value)} type="number" placeholder="qtd planejada" className="col-span-6 sm:col-span-2 input-base" />
-              <button onClick={handleAdd} className="col-span-12 sm:col-span-1 rounded-xl bg-mauve px-2 py-2 text-cream hover:opacity-90">
-                <Plus className="mx-auto h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        )}
       </div>
 
+      {showAdd && (
+        <AddProductModal
+          recipes={recipes}
+          ingredients={ingredients}
+          recipeIngs={recipeIngs}
+          onClose={() => setShowAdd(false)}
+          onAdd={(data) => { onAdd(data); setShowAdd(false); }}
+        />
+      )}
       {/* Insumos colapsável */}
       <div className="card-soft overflow-hidden">
         <button
