@@ -365,46 +365,66 @@ function PDVPage() {
               const Icon = iconMap[p.icon] ?? Cake;
               const bg = toneMap[p.tone] ?? toneMap.rose;
               const inC = cart.find((c) => c.product_id === p.id)?.qty ?? 0;
+              const cartItemId = `pdv-${p.id}`;
+              const addOne = () => addToCart({
+                id: cartItemId, name: p.label, price: Number(p.price),
+                source: "pdv", product_id: p.id, event_product_id: null,
+              });
               return (
-                <motion.button
+                <div
                   key={p.id}
-                  whileTap={{ scale: 0.96 }}
-                  onClick={() => addToCart({
-                    id: `pdv-${p.id}`,
-                    name: p.label,
-                    price: Number(p.price),
-                    source: "pdv",
-                    product_id: p.id,
-                    event_product_id: null,
-                  })}
-                  className={`card-soft group relative flex flex-col overflow-hidden text-left min-h-[110px] ${p.image_url ? "" : `items-center justify-center gap-1.5 bg-gradient-to-br ${bg} px-3 py-3 text-center`}`}
+                  className="card-soft group relative flex flex-col overflow-hidden text-left"
                 >
                   {p.image_url ? (
-                    <>
-                      <div className="relative aspect-[4/3] w-full overflow-hidden bg-gradient-to-br from-blush/60 to-card">
-                        <img src={p.image_url} alt={p.label} className="h-full w-full object-cover transition-transform group-hover:scale-105" loading="lazy" />
-                        {inC > 0 && (
-                          <span className="absolute left-1.5 top-1.5 grid h-6 min-w-6 place-items-center rounded-full bg-mauve px-1.5 text-[10px] font-semibold text-cream">{inC}</span>
-                        )}
-                      </div>
-                      <div className="flex flex-1 flex-col justify-between gap-1 px-2.5 py-2">
-                        <p className="line-clamp-2 text-xs font-medium leading-tight text-mauve">{p.label}</p>
-                        <p className="text-sm font-semibold text-mauve">{fmtBRL(Number(p.price))}</p>
-                      </div>
-                    </>
+                    <button
+                      type="button"
+                      onClick={addOne}
+                      className="relative aspect-[4/3] w-full overflow-hidden bg-gradient-to-br from-blush/60 to-card"
+                    >
+                      <img src={p.image_url} alt={p.label} className="h-full w-full object-cover transition-transform group-hover:scale-105" loading="lazy" />
+                    </button>
                   ) : (
-                    <>
+                    <button
+                      type="button"
+                      onClick={addOne}
+                      className={`flex aspect-[4/3] w-full flex-col items-center justify-center gap-1.5 bg-gradient-to-br ${bg} px-3 py-3 text-center`}
+                    >
                       <div className="grid h-9 w-9 place-items-center rounded-xl bg-card/70">
                         <Icon className="h-5 w-5 text-mauve" strokeWidth={1.4} />
                       </div>
-                      <p className="line-clamp-2 text-xs font-medium leading-tight text-mauve">{p.label}</p>
-                      <p className="text-sm font-semibold text-mauve">{fmtBRL(Number(p.price))}</p>
-                      {inC > 0 && (
-                        <span className="absolute left-1.5 top-1.5 grid h-6 min-w-6 place-items-center rounded-full bg-mauve px-1.5 text-[10px] font-semibold text-cream">{inC}</span>
-                      )}
-                    </>
+                    </button>
                   )}
-                </motion.button>
+                  <div className="flex flex-1 flex-col gap-1.5 px-2.5 py-2">
+                    <p className="line-clamp-2 text-xs font-medium leading-tight text-mauve">{p.label}</p>
+                    <p className="text-sm font-semibold text-mauve">{fmtBRL(Number(p.price))}</p>
+                    {inC > 0 ? (
+                      <div className="mt-1 flex items-center justify-between gap-1 rounded-lg bg-blush/50 p-1">
+                        <button
+                          onClick={() => changeQty(cartItemId, -1)}
+                          className="grid h-7 w-7 place-items-center rounded-md bg-card text-mauve hover:bg-card/70"
+                          aria-label="Remover um"
+                        >
+                          <Minus className="h-3.5 w-3.5" />
+                        </button>
+                        <span className="text-sm font-bold text-mauve tabular-nums">{inC}</span>
+                        <button
+                          onClick={addOne}
+                          className="grid h-7 w-7 place-items-center rounded-md bg-mauve text-cream hover:opacity-90"
+                          aria-label="Adicionar mais um"
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={addOne}
+                        className="mt-1 inline-flex items-center justify-center gap-1 rounded-lg bg-mauve px-2 py-1.5 text-xs font-medium text-cream hover:opacity-90"
+                      >
+                        <Plus className="h-3.5 w-3.5" /> Adicionar
+                      </button>
+                    )}
+                  </div>
+                </div>
               );
             })}
           </div>
