@@ -78,11 +78,11 @@ function LoginPage() {
               <div className="grid h-12 w-12 place-items-center rounded-2xl bg-card shadow-soft">
                 <ChefHat className="h-6 w-6 text-mauve" strokeWidth={1.5} />
               </div>
-              <p className="font-display text-2xl italic text-mauve">Cakes Manager</p>
+              <p className="font-brand text-2xl text-mauve">Cakes Manager</p>
             </div>
 
             <div className="mt-auto">
-              <h1 className="font-display text-5xl italic leading-tight text-mauve">
+              <h1 className="font-brand text-5xl leading-tight text-mauve">
                 Sua confeitaria,<br />no seu controle.
               </h1>
               <p className="mt-4 max-w-sm text-sm text-mauve/80">
@@ -102,10 +102,10 @@ function LoginPage() {
             <div className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-blush to-rose">
               <Sparkles className="h-5 w-5 text-mauve" />
             </div>
-            <p className="font-display text-xl italic text-mauve">Cakes Manager</p>
+            <p className="font-brand text-xl text-mauve">Cakes Manager</p>
           </div>
 
-          <h2 className="font-display text-3xl italic text-mauve">
+          <h2 className="text-2xl font-semibold tracking-tight text-mauve">
             {mode === "signin" ? "Bem-vinda de volta" : "Criar sua conta"}
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
