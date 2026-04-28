@@ -66,6 +66,7 @@ type Storefront = {
 type PublicRecipe = {
   id: string; name: string; description: string | null;
   image_url: string | null; public_price: number | null; servings: number | null;
+  category: string | null;
 };
 
 type CartItem = {
@@ -129,8 +130,8 @@ function StorefrontPage() {
 
       const [recsRes, sfRes] = await Promise.all([
         supabase.from("recipes")
-          .select("id, name, description, image_url, public_price, servings")
-          .eq("shop_id", shopData.id).eq("show_in_catalog", true).order("name"),
+          .select("id, name, description, image_url, public_price, servings, category")
+          .eq("shop_id", shopData.id).eq("show_in_catalog", true).order("catalog_position").order("name"),
         supabase.from("shop_storefront").select("*").eq("shop_id", shopData.id).maybeSingle(),
       ]);
       if (cancelled) return;
