@@ -291,7 +291,7 @@ function CatalogoPage() {
                 : "Nenhum produto com esses filtros."}
             </div>
           ) : (
-            <div className="grid w-full grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            <div className="grid w-full grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
               {filteredRecipes.map((r) => (
                 <ProductCard
                   key={r.id} r={r}
@@ -837,7 +837,7 @@ function EventProductsPanel({ eventId, eventName, eventUrl, shopRecipes, shopId,
       ) : filtered.length === 0 ? (
         <p className="py-4 text-center text-xs text-mauve/60">Nenhum produto com esses filtros.</p>
       ) : (
-        <div className="grid w-full grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        <div className="grid w-full grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {filtered.map((p) => (
             <EventProductCard
               key={p.id} p={p}
