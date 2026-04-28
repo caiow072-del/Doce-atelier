@@ -67,7 +67,7 @@ type Storefront = {
 type PublicRecipe = {
   id: string; name: string; description: string | null;
   image_url: string | null; public_price: number | null; servings: number | null;
-  category: string | null;
+  category: string | null; promo_price: number | null; is_featured: boolean;
 };
 
 type CartItem = {
