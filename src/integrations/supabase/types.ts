@@ -100,13 +100,17 @@ export type Database = {
       event_products: {
         Row: {
           batches: number
+          category: string | null
           created_at: string
+          description: string | null
           event_id: string
           id: string
           image_url: string | null
+          is_featured: boolean
           name: string
           planned_qty: number
           position: number
+          promo_price: number | null
           recipe_id: string | null
           sale_mode: string
           sold_qty: number
@@ -115,13 +119,17 @@ export type Database = {
         }
         Insert: {
           batches?: number
+          category?: string | null
           created_at?: string
+          description?: string | null
           event_id: string
           id?: string
           image_url?: string | null
+          is_featured?: boolean
           name: string
           planned_qty?: number
           position?: number
+          promo_price?: number | null
           recipe_id?: string | null
           sale_mode?: string
           sold_qty?: number
@@ -130,13 +138,17 @@ export type Database = {
         }
         Update: {
           batches?: number
+          category?: string | null
           created_at?: string
+          description?: string | null
           event_id?: string
           id?: string
           image_url?: string | null
+          is_featured?: boolean
           name?: string
           planned_qty?: number
           position?: number
+          promo_price?: number | null
           recipe_id?: string | null
           sale_mode?: string
           sold_qty?: number
