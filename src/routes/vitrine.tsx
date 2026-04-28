@@ -173,7 +173,7 @@ function VitrinePage() {
     <div className="space-y-6">
       <PageHeader eyebrow="Sua marca" title="Minha vitrine" subtitle="Personalize sua loja virtual e a vitrine de cada evento." />
 
-      {/* Public URL */}
+      {/* Public URL + live editor CTA */}
       <div className="card-soft flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <div className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-blush to-rose">
@@ -184,15 +184,22 @@ function VitrinePage() {
             <p className="break-all text-sm text-mauve">{publicUrl || "—"}</p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button onClick={copy} className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-xs text-mauve hover:border-rose/50">
             {copied ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
             {copied ? "Copiado" : "Copiar"}
           </button>
           <a href={publicUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-xl bg-mauve px-3 py-2 text-xs text-cream hover:opacity-90">
-            <ExternalLink className="h-3.5 w-3.5" /> Abrir
+            <Sparkles className="h-3.5 w-3.5" /> Abrir e editar ao vivo
           </a>
         </div>
+      </div>
+
+      <div className="card-soft flex items-start gap-3 border-l-4 border-rose/60 bg-blush/20 p-4">
+        <Sparkles className="mt-0.5 h-4 w-4 flex-none text-rose" />
+        <p className="text-xs text-mauve">
+          <strong>Novo:</strong> personalize tema, banner, título e textos <em>direto na própria vitrine</em>. Abra sua loja e clique em "Editar vitrine" no canto superior direito.
+        </p>
       </div>
 
       {/* Tabs */}
