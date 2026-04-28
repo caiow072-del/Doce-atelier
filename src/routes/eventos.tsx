@@ -72,8 +72,8 @@ type EventRow = {
   closed_at: string | null;
   payment_summary: PaymentSummary | null;
 };
-type Recipe = { id: string; name: string; servings: number };
-type Ingredient = { id: string; name: string; unit: string };
+type Recipe = { id: string; name: string; servings: number; image_url?: string | null; labor_cost?: number; packaging_cost?: number; waste_pct?: number };
+type Ingredient = { id: string; name: string; unit: string; package_qty?: number; price_paid?: number; stock_qty?: number };
 type RecipeIng = { recipe_id: string; ingredient_id: string; quantity: number };
 type EventProduct = {
   id: string;
@@ -85,6 +85,8 @@ type EventProduct = {
   sold_qty: number;
   image_url: string | null;
   position: number;
+  sale_mode: "unit" | "slice";
+  batches: number;
 };
 type EventTask = { id: string; day_key: string; task: string; done: boolean; position: number };
 type Sale = {
