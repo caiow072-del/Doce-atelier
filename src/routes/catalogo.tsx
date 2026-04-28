@@ -818,7 +818,11 @@ function EventProductsPanel({ eventId, shopRecipes, shopId }: {
                     className="w-16 rounded-md border border-border bg-background px-1.5 py-0.5 text-right" />
                 </div>
               </div>
-              <button onClick={() => removeItem(p.id)}
+              <button onClick={() => pushToShop(p)} title="Enviar para vitrine da loja"
+                className="grid h-7 w-7 place-items-center rounded-lg text-mauve/60 hover:bg-rose/20 hover:text-mauve">
+                <ArrowLeftRight className="h-3.5 w-3.5" />
+              </button>
+              <button onClick={() => removeItem(p.id)} title="Remover"
                 className="grid h-7 w-7 place-items-center rounded-lg text-mauve/60 hover:bg-red-100 hover:text-red-600">
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
