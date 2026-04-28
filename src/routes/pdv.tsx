@@ -302,6 +302,7 @@ function PDVPage() {
             {products.map((p) => {
               const Icon = iconMap[p.icon] ?? Cake;
               const bg = toneMap[p.tone] ?? toneMap.rose;
+              const inC = cart.find((c) => c.product_id === p.id)?.qty ?? 0;
               return (
                 <motion.button
                   key={p.id}
@@ -314,13 +315,33 @@ function PDVPage() {
                     product_id: p.id,
                     event_product_id: null,
                   })}
-                  className={`card-soft flex flex-col items-center justify-center gap-1.5 bg-gradient-to-br ${bg} px-3 py-3 text-center min-h-[110px]`}
+                  className={`card-soft group relative flex flex-col overflow-hidden text-left min-h-[110px] ${p.image_url ? "" : `items-center justify-center gap-1.5 bg-gradient-to-br ${bg} px-3 py-3 text-center`}`}
                 >
-                  <div className="grid h-9 w-9 place-items-center rounded-xl bg-card/70">
-                    <Icon className="h-5 w-5 text-mauve" strokeWidth={1.4} />
-                  </div>
-                  <p className="line-clamp-2 text-xs font-medium leading-tight text-mauve">{p.label}</p>
-                  <p className="text-sm font-semibold text-mauve">{fmtBRL(Number(p.price))}</p>
+                  {p.image_url ? (
+                    <>
+                      <div className="relative aspect-[4/3] w-full overflow-hidden bg-gradient-to-br from-blush/60 to-card">
+                        <img src={p.image_url} alt={p.label} className="h-full w-full object-cover transition-transform group-hover:scale-105" loading="lazy" />
+                        {inC > 0 && (
+                          <span className="absolute left-1.5 top-1.5 grid h-6 min-w-6 place-items-center rounded-full bg-mauve px-1.5 text-[10px] font-semibold text-cream">{inC}</span>
+                        )}
+                      </div>
+                      <div className="flex flex-1 flex-col justify-between gap-1 px-2.5 py-2">
+                        <p className="line-clamp-2 text-xs font-medium leading-tight text-mauve">{p.label}</p>
+                        <p className="text-sm font-semibold text-mauve">{fmtBRL(Number(p.price))}</p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="grid h-9 w-9 place-items-center rounded-xl bg-card/70">
+                        <Icon className="h-5 w-5 text-mauve" strokeWidth={1.4} />
+                      </div>
+                      <p className="line-clamp-2 text-xs font-medium leading-tight text-mauve">{p.label}</p>
+                      <p className="text-sm font-semibold text-mauve">{fmtBRL(Number(p.price))}</p>
+                      {inC > 0 && (
+                        <span className="absolute left-1.5 top-1.5 grid h-6 min-w-6 place-items-center rounded-full bg-mauve px-1.5 text-[10px] font-semibold text-cream">{inC}</span>
+                      )}
+                    </>
+                  )}
                 </motion.button>
               );
             })}
