@@ -6,7 +6,7 @@ import {
   ShoppingBag,
   Package,
   Store,
-  Menu,
+  
   LogOut,
   ChevronDown,
   Sparkles,
