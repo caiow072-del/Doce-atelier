@@ -438,6 +438,34 @@ function PDVPage() {
       {showManage && shopId && (
         <ManageProductsSheet shopId={shopId} products={products} onClose={() => setShowManage(false)} onChange={setProducts} />
       )}
+
+      {/* FAB carrinho flutuante */}
+      <AnimatePresence>
+        {cartCount > 0 && !showCart && (
+          <motion.button
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            whileTap={{ scale: 0.92 }}
+            onClick={() => setShowCart(true)}
+            className="fixed bottom-20 right-4 z-40 inline-flex items-center gap-2 rounded-full bg-mauve px-5 py-3.5 text-cream shadow-petal sm:bottom-6"
+            aria-label={`Abrir carrinho com ${cartCount} itens`}
+          >
+            <div className="relative">
+              <ShoppingCart className="h-5 w-5" />
+              <motion.span
+                key={cartCount}
+                initial={{ scale: 1.4 }}
+                animate={{ scale: 1 }}
+                className="absolute -right-2 -top-2 grid h-5 min-w-5 place-items-center rounded-full bg-rose px-1 text-[10px] font-semibold text-mauve"
+              >
+                {cartCount}
+              </motion.span>
+            </div>
+            <span className="text-sm font-semibold tabular-nums">{fmtBRL(cartTotal)}</span>
+          </motion.button>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
