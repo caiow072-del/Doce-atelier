@@ -36,7 +36,7 @@ import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
 import { formatBRL } from "@/lib/store";
 import { toast } from "sonner";
-import { nextOccurrence, WEEKDAYS } from "@/lib/recurrence";
+import { nextOccurrence, WEEKDAYS, parseLocalDate } from "@/lib/recurrence";
 import { recipeCost } from "@/lib/costs";
 
 export const Route = createFileRoute("/eventos")({
