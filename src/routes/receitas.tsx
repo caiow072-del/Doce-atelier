@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
+import { PageContainer } from "@/components/PageContainer";
 import { formatBRL } from "@/lib/store";
 import {
   SUGGESTED_RECIPES,
@@ -142,35 +143,37 @@ function RecipesPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <PageContainer width="default">
       <PageHeader
         eyebrow="Ficha técnica"
         title="Receitas"
-        subtitle="Cadastre receitas com seus insumos e o sistema calcula o preço sugerido."
+        subtitle="Cadastre receitas e o sistema calcula custo e preço sugerido."
+        actions={
+          <button
+            onClick={() => {
+              if (ingredients.length === 0) {
+                toast.error("Cadastre pelo menos um insumo antes de criar uma receita.");
+                return;
+              }
+              setCreating(true);
+            }}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-mauve px-3 py-2 text-xs font-medium text-cream hover:opacity-90 sm:text-sm"
+          >
+            <Plus className="h-4 w-4" /> Nova receita
+          </button>
+        }
       />
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative max-w-md flex-1">
+      <div className="mb-4">
+        <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar receita..."
-            className="w-full rounded-2xl border border-border bg-card py-2.5 pl-9 pr-3 text-sm text-mauve outline-none focus:border-rose"
+            className="w-full rounded-xl border border-border bg-card py-2 pl-9 pr-3 text-sm text-mauve outline-none focus:border-rose"
           />
         </div>
-        <button
-          onClick={() => {
-            if (ingredients.length === 0) {
-              toast.error("Cadastre pelo menos um insumo antes de criar uma receita.");
-              return;
-            }
-            setCreating(true);
-          }}
-          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-mauve px-4 py-2.5 text-sm font-medium text-cream hover:opacity-90"
-        >
-          <Plus className="h-4 w-4" /> Nova receita
-        </button>
       </div>
 
       {loading ? (
@@ -180,7 +183,7 @@ function RecipesPage() {
       ) : recipes.length === 0 ? (
         <EmptyState onCreate={() => ingredients.length ? setCreating(true) : toast.error("Cadastre insumos antes.")} />
       ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid-cards-md">
           {filtered.map((r) => {
             const cost = fullCost(r, ingredients);
             const realPrice = r.public_price ?? 0;
