@@ -273,22 +273,25 @@ function PDVPage() {
               const left = p.planned_qty > 0 ? Math.max(0, p.planned_qty - p.sold_qty - inC) : Infinity;
               const sold_out = p.planned_qty > 0 && left === 0;
               const maxAvail = p.planned_qty > 0 ? p.planned_qty - p.sold_qty : undefined;
+              const cartItemId = `ep-${p.id}`;
               return (
-                <motion.button
+                <div
                   key={p.id}
-                  whileTap={{ scale: 0.96 }}
-                  disabled={sold_out}
-                  onClick={() => addToCart({
-                    id: `ep-${p.id}`,
-                    name: p.name,
-                    price: Number(p.unit_price),
-                    source: "event",
-                    product_id: null,
-                    event_product_id: p.id,
-                  }, maxAvail)}
-                  className="card-soft group relative flex flex-col overflow-hidden text-left disabled:opacity-50"
+                  className={`card-soft group relative flex flex-col overflow-hidden text-left ${sold_out ? "opacity-50" : ""}`}
                 >
-                  <div className="relative aspect-[4/3] w-full overflow-hidden bg-gradient-to-br from-blush/60 to-card">
+                  <button
+                    type="button"
+                    disabled={sold_out}
+                    onClick={() => addToCart({
+                      id: cartItemId,
+                      name: p.name,
+                      price: Number(p.unit_price),
+                      source: "event",
+                      product_id: null,
+                      event_product_id: p.id,
+                    }, maxAvail)}
+                    className="relative aspect-[4/3] w-full overflow-hidden bg-gradient-to-br from-blush/60 to-card disabled:cursor-not-allowed"
+                  >
                     {p.image_url ? (
                       <img src={p.image_url} alt={p.name} className="h-full w-full object-cover transition-transform group-hover:scale-105" loading="lazy" />
                     ) : (
@@ -301,17 +304,46 @@ function PDVPage() {
                         {sold_out ? "Esgotado" : `${left} restam`}
                       </span>
                     )}
-                    {inC > 0 && !sold_out && (
-                      <span className="absolute left-1.5 top-1.5 grid h-6 min-w-6 place-items-center rounded-full bg-mauve px-1.5 text-[10px] font-semibold text-cream">
-                        {inC}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex flex-1 flex-col justify-between gap-1 px-2.5 py-2">
+                  </button>
+                  <div className="flex flex-1 flex-col gap-1.5 px-2.5 py-2">
                     <p className="line-clamp-2 text-xs font-medium leading-tight text-mauve">{p.name}</p>
                     <p className="text-sm font-semibold text-mauve">{fmtBRL(Number(p.unit_price))}</p>
+                    {inC > 0 ? (
+                      <div className="mt-1 flex items-center justify-between gap-1 rounded-lg bg-blush/50 p-1">
+                        <button
+                          onClick={() => changeQty(cartItemId, -1)}
+                          className="grid h-7 w-7 place-items-center rounded-md bg-card text-mauve hover:bg-card/70"
+                          aria-label="Remover um"
+                        >
+                          <Minus className="h-3.5 w-3.5" />
+                        </button>
+                        <span className="text-sm font-bold text-mauve tabular-nums">{inC}</span>
+                        <button
+                          onClick={() => addToCart({
+                            id: cartItemId, name: p.name, price: Number(p.unit_price),
+                            source: "event", product_id: null, event_product_id: p.id,
+                          }, maxAvail)}
+                          disabled={sold_out}
+                          className="grid h-7 w-7 place-items-center rounded-md bg-mauve text-cream hover:opacity-90 disabled:opacity-50"
+                          aria-label="Adicionar mais um"
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => addToCart({
+                          id: cartItemId, name: p.name, price: Number(p.unit_price),
+                          source: "event", product_id: null, event_product_id: p.id,
+                        }, maxAvail)}
+                        disabled={sold_out}
+                        className="mt-1 inline-flex items-center justify-center gap-1 rounded-lg bg-mauve px-2 py-1.5 text-xs font-medium text-cream hover:opacity-90 disabled:opacity-50"
+                      >
+                        <Plus className="h-3.5 w-3.5" /> Adicionar
+                      </button>
+                    )}
                   </div>
-                </motion.button>
+                </div>
               );
             })}
           </div>
