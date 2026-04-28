@@ -134,12 +134,13 @@ function CalendarioPage() {
                   {dayItems.slice(0, 2).map((it) => (
                     <div
                       key={it.id}
-                      className={`truncate rounded px-1 text-[9px] ${
+                      className={`truncate rounded px-1 text-[9px] flex items-center gap-0.5 ${
                         it.kind === "evento" ? "bg-rose/40 text-mauve" : "bg-sage/40 text-mauve"
                       }`}
                       title={it.title}
                     >
-                      {it.title}
+                      {it.recurring && <Repeat className="h-2 w-2 shrink-0" />}
+                      <span className="truncate">{it.title}</span>
                     </div>
                   ))}
                   {dayItems.length > 2 && (
