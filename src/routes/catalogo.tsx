@@ -7,7 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Globe, ExternalLink, Eye, EyeOff, ChevronUp, ChevronDown,
   Tag, Sparkles, Calendar, ShoppingBag, Cake, Copy, Check, Plus,
-  Pencil, Trash2, Star, Image as ImageIcon, X, QrCode, Upload, ArrowRight,
+  Pencil, Trash2, Star, Image as ImageIcon, X, QrCode, Upload,
   ArrowLeftRight, Loader2, Search,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
