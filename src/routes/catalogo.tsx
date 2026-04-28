@@ -210,43 +210,36 @@ function CatalogoPage() {
 
       {tab === "loja" && (
         <>
-          {/* Card de link/QR/abrir */}
-          <div className="card-soft p-4">
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-blush to-rose">
-                  <Globe className="h-6 w-6 text-mauve" strokeWidth={1.4} />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm text-mauve font-medium">
-                    {visible} {visible === 1 ? "produto visível" : "produtos visíveis"}
-                    {featured > 0 && <span className="ml-2 text-xs text-mauve/60">· {featured} em destaque</span>}
-                  </p>
-                  <p className="text-xs text-muted-foreground break-all">{lojaUrl || "Sem loja selecionada"}</p>
-                </div>
-              </div>
-              {lojaUrl && (
-                <div className="flex flex-wrap gap-2">
-                  <button onClick={() => copy(lojaUrl, "loja")}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-white px-3 py-2 text-xs text-mauve hover:border-rose/50">
-                    {copied === "loja" ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
-                    Copiar link
-                  </button>
-                  <button onClick={() => setQrTarget({ url: lojaUrl, label: "Vitrine da loja" })}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-white px-3 py-2 text-xs text-mauve hover:border-rose/50">
-                    <QrCode className="h-3.5 w-3.5" /> QR Code
-                  </button>
-                  <Link to="/vitrine"
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-white px-3 py-2 text-xs text-mauve hover:border-rose/50">
-                    <Sparkles className="h-3.5 w-3.5 text-rose" /> Personalizar
-                  </Link>
-                  <a href={lojaUrl} target="_blank" rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-mauve px-4 py-2 text-xs text-cream hover:opacity-90">
-                    <ExternalLink className="h-3.5 w-3.5" /> Abrir
-                  </a>
-                </div>
+          {/* Barra compacta de status + ações */}
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border/60 bg-white px-3 py-2 text-sm">
+            <div className="flex items-center gap-2 text-mauve">
+              <Globe className="h-4 w-4 text-rose" />
+              <span className="font-medium">{visible}</span>
+              <span className="text-mauve/60">{visible === 1 ? "produto visível" : "produtos visíveis"}</span>
+              {featured > 0 && (
+                <span className="hidden sm:inline text-xs text-mauve/50">· {featured} em destaque</span>
               )}
             </div>
+            {lojaUrl && (
+              <div className="flex flex-wrap gap-1">
+                <button onClick={() => copy(lojaUrl, "loja")} title="Copiar link da vitrine"
+                  className="grid h-8 w-8 place-items-center rounded-lg border border-border bg-white text-mauve hover:border-rose/50">
+                  {copied === "loja" ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
+                </button>
+                <button onClick={() => setQrTarget({ url: lojaUrl, label: "Vitrine da loja" })} title="QR Code"
+                  className="grid h-8 w-8 place-items-center rounded-lg border border-border bg-white text-mauve hover:border-rose/50">
+                  <QrCode className="h-3.5 w-3.5" />
+                </button>
+                <Link to="/vitrine" title="Personalizar vitrine"
+                  className="grid h-8 w-8 place-items-center rounded-lg border border-border bg-white text-mauve hover:border-rose/50">
+                  <Sparkles className="h-3.5 w-3.5 text-rose" />
+                </Link>
+                <a href={lojaUrl} target="_blank" rel="noreferrer" title="Abrir vitrine"
+                  className="inline-flex h-8 items-center gap-1 rounded-lg bg-mauve px-2.5 text-xs text-cream hover:opacity-90">
+                  <ExternalLink className="h-3.5 w-3.5" /> Abrir
+                </a>
+              </div>
+            )}
           </div>
 
           {/* Filtros */}
