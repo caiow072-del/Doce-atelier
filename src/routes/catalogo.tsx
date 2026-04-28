@@ -752,7 +752,7 @@ function EventProductsPanel({ eventId, shopRecipes, shopId }: {
     toast.success("Adicionado à vitrine da loja");
   };
 
-
+  const copyAllFromShop = async () => {
     const visible = shopRecipes.filter((r) => r.show_in_catalog);
     if (visible.length === 0) return toast.error("Nenhum produto visível na vitrine da loja");
     if (!confirm(`Copiar ${visible.length} produto(s) da vitrine da loja para este evento?`)) return;
