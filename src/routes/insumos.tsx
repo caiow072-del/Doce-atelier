@@ -156,6 +156,35 @@ function InsumosPage() {
           onCreate={() => setCreating(true)}
           onShowSuggestions={() => setShowSuggestions(true)}
         />
+      ) : view === "grid" ? (
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          {filtered.map((i) => {
+            const unitCost = i.package_qty > 0 ? i.price_paid / i.package_qty : 0;
+            const low = i.stock_qty <= 0;
+            return (
+              <div key={i.id} className="card-soft group relative flex flex-col gap-1 p-3">
+                <span className={`absolute right-2 top-2 rounded-md px-1.5 py-0.5 text-[10px] font-medium tabular-nums ${low ? "bg-destructive/15 text-destructive" : "bg-blush/40 text-mauve"}`}>
+                  {i.stock_qty}{i.unit}
+                </span>
+                <p className="pr-12 truncate text-sm font-semibold text-mauve" title={i.name}>{i.name}</p>
+                <p className="text-[11px] text-muted-foreground tabular-nums">
+                  {i.package_qty}{i.unit} · {formatBRL(i.price_paid)}
+                </p>
+                <p className="text-[11px] tabular-nums text-rose">
+                  {formatBRL(unitCost)}/{i.unit}
+                </p>
+                <div className="mt-1 flex justify-end gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                  <button onClick={() => setEditing(i)} className="rounded-md p-1.5 text-mauve hover:bg-blush/60" aria-label="Editar">
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
+                  <button onClick={() => setToDelete(i)} className="rounded-md p-1.5 text-destructive hover:bg-destructive/10" aria-label="Excluir">
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       ) : (
         <>
           {/* Desktop table — compact */}
