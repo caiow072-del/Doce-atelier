@@ -160,7 +160,7 @@ function InsumosPage() {
           onShowSuggestions={() => setShowSuggestions(true)}
         />
       ) : view === "grid" ? (
-        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        <div className="grid-cards-sm">
           {filtered.map((i) => {
             const unitCost = i.package_qty > 0 ? i.price_paid / i.package_qty : 0;
             const low = i.stock_qty <= 0;
