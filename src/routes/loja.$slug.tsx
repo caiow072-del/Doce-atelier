@@ -412,6 +412,16 @@ function StorefrontPage() {
       <footer className="mx-auto max-w-5xl px-6 pb-8 pt-4 text-center text-xs text-mauve/50">
         Pedidos enviados via WhatsApp — sujeitos à confirmação da loja.
       </footer>
+
+      {editing && isOwner && (
+        <StorefrontEditor
+          shopId={shop.id}
+          initialTheme={(shop.theme ?? {}) as ShopTheme}
+          initialDraft={draft}
+          onDraftChange={onDraftChange}
+          onClose={() => setEditing(false)}
+        />
+      )}
     </div>
   );
 }
