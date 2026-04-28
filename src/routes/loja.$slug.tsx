@@ -411,9 +411,17 @@ function StorefrontPage() {
       <>
         {storefrontBody}
         {isOwner && session && (
-          <button onClick={() => setEditing(true)} className="fixed right-4 top-4 z-40 inline-flex items-center gap-1.5 rounded-full bg-mauve px-4 py-2 text-xs font-medium text-cream shadow-lg hover:opacity-90">
-            <Pencil className="h-3.5 w-3.5" /> Editar vitrine
-          </button>
+          <div className="fixed right-4 top-4 z-40 flex items-center gap-2">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-white/90 px-3 py-2 text-xs font-medium text-mauve shadow-sm backdrop-blur hover:border-rose/50"
+            >
+              ← Painel
+            </Link>
+            <button onClick={() => setEditing(true)} className="inline-flex items-center gap-1.5 rounded-full bg-mauve px-4 py-2 text-xs font-medium text-cream shadow-lg hover:opacity-90">
+              <Pencil className="h-3.5 w-3.5" /> Editar vitrine
+            </button>
+          </div>
         )}
         {cartOpen && (
           <CartDrawer cart={cart} total={total} updateQty={updateQty} onClose={() => setCartOpen(false)} onCheckout={() => { setCartOpen(false); setCheckoutOpen(true); }} />
@@ -440,7 +448,27 @@ function StorefrontPage() {
             <button onClick={() => setDevice("mobile")} className={`rounded-full p-1.5 ${device === "mobile" ? "bg-mauve text-cream" : "text-mauve"}`} title="Mobile"><Smartphone className="h-3.5 w-3.5" /></button>
             <button onClick={() => setDevice("desktop")} className={`rounded-full p-1.5 ${device === "desktop" ? "bg-mauve text-cream" : "text-mauve"}`} title="Desktop"><Monitor className="h-3.5 w-3.5" /></button>
           </div>
-          <button onClick={() => setEditing(false)} className="rounded-full border border-border bg-white px-3 py-1.5 text-xs text-mauve hover:border-rose/50">Sair</button>
+          <button
+            onClick={() => {
+              setEditing(false);
+              if (typeof window !== "undefined") {
+                const url = new URL(window.location.href);
+                url.searchParams.delete("edit");
+                window.history.replaceState({}, "", url.pathname + url.search);
+              }
+            }}
+            className="rounded-full border border-border bg-white px-3 py-1.5 text-xs text-mauve hover:border-rose/50"
+            title="Ver vitrine como cliente"
+          >
+            <Eye className="inline h-3 w-3 mr-1" /> Ver pública
+          </button>
+          <Link
+            to="/"
+            className="rounded-full border border-border bg-white px-3 py-1.5 text-xs text-mauve hover:border-rose/50"
+            title="Voltar ao painel"
+          >
+            ← Painel
+          </Link>
           <button onClick={save} disabled={saving || !dirty} className="inline-flex items-center gap-1.5 rounded-full bg-mauve px-4 py-1.5 text-xs font-semibold text-cream disabled:opacity-50">
             {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
             Publicar
