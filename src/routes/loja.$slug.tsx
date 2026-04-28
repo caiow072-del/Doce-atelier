@@ -657,6 +657,52 @@ function StorefrontPage() {
           </div>
         </div>
       </div>
+      {shareOpen && (
+        <ShareModal
+          url={typeof window !== "undefined" ? `${window.location.origin}/loja/${shop.slug}` : ""}
+          shopName={shop.name}
+          onClose={() => setShareOpen(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+function ShareModal({ url, shopName, onClose }: { url: string; shopName: string; onClose: () => void }) {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+      toast.success("Link copiado");
+    } catch { toast.error("Não foi possível copiar"); }
+  };
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-mauve/40 backdrop-blur-sm p-4" onClick={onClose}>
+      <div className="w-full max-w-sm rounded-3xl bg-cream p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-display text-xl italic text-mauve">Compartilhar vitrine</h2>
+          <button onClick={onClose} className="rounded-full p-1.5 hover:bg-rose/30"><X className="h-4 w-4 text-mauve" /></button>
+        </div>
+        <div className="grid place-items-center rounded-2xl bg-white p-6 shadow-sm">
+          <QRCodeSVG value={url} size={192} bgColor="transparent" fgColor="#5b3a4a" />
+        </div>
+        <p className="mt-4 text-center text-xs text-mauve/70">Aponte a câmera para visitar <strong className="text-mauve">{shopName}</strong></p>
+        <div className="mt-3 flex items-center gap-2 rounded-xl bg-white border border-border px-3 py-2 text-xs text-mauve">
+          <span className="truncate flex-1">{url}</span>
+          <button onClick={copy} className="inline-flex items-center gap-1 rounded-lg bg-mauve px-2.5 py-1 text-cream hover:opacity-90">
+            {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+            {copied ? "Copiado" : "Copiar"}
+          </button>
+        </div>
+        <a
+          href={url} target="_blank" rel="noreferrer"
+          className="mt-3 flex items-center justify-center gap-1.5 rounded-full border border-border bg-white py-2.5 text-xs text-mauve hover:border-rose/50"
+        >
+          <Eye className="h-3.5 w-3.5" /> Abrir em nova aba
+        </a>
+      </div>
     </div>
   );
 }
