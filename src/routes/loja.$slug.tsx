@@ -8,8 +8,9 @@ import {
   ShoppingBag, Plus, Minus, X, MapPin, Phone, User, MessageCircle,
   Loader2, Search, ChevronRight, Cake, Pencil, Instagram, Clock,
   Save, Sparkles, LayoutTemplate, Eye, EyeOff, GripVertical, Smartphone, Monitor,
-  Quote, ImagePlus, ChevronDown, ChevronUp, Check, Palette, Type,
+  Quote, ImagePlus, ChevronDown, ChevronUp, Check, Palette, Type, QrCode, Copy,
 } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -66,6 +67,7 @@ type Storefront = {
 type PublicRecipe = {
   id: string; name: string; description: string | null;
   image_url: string | null; public_price: number | null; servings: number | null;
+  category: string | null;
 };
 
 type CartItem = {
@@ -92,6 +94,7 @@ function StorefrontPage() {
 
   const [cart, setCart] = useState<CartItem[]>([]);
   const [search, setSearch] = useState("");
+  const [activeCategory, setActiveCategory] = useState<string>("all");
   const [cartOpen, setCartOpen] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
 
@@ -100,6 +103,7 @@ function StorefrontPage() {
   const [editorTab, setEditorTab] = useState<"template" | "sections" | "design">("template");
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
 
   const isOwner = !!shop && shops.some((m) => m.shop_id === shop.id && (m.role === "owner" || m.role === "manager"));
 
@@ -129,8 +133,8 @@ function StorefrontPage() {
 
       const [recsRes, sfRes] = await Promise.all([
         supabase.from("recipes")
-          .select("id, name, description, image_url, public_price, servings")
-          .eq("shop_id", shopData.id).eq("show_in_catalog", true).order("name"),
+          .select("id, name, description, image_url, public_price, servings, category")
+          .eq("shop_id", shopData.id).eq("show_in_catalog", true).order("catalog_position").order("name"),
         supabase.from("shop_storefront").select("*").eq("shop_id", shopData.id).maybeSingle(),
       ]);
       if (cancelled) return;
@@ -246,7 +250,25 @@ function StorefrontPage() {
 
   const total = useMemo(() => cart.reduce((s, i) => s + i.price * i.qty, 0), [cart]);
   const cartCount = cart.reduce((s, i) => s + i.qty, 0);
-  const filtered = recipes.filter((r) => r.name.toLowerCase().includes(search.toLowerCase()));
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    recipes.forEach((r) => r.category && set.add(r.category));
+    return Array.from(set).sort();
+  }, [recipes]);
+  const filtered = recipes.filter((r) => {
+    const okSearch = r.name.toLowerCase().includes(search.toLowerCase());
+    const okCat = activeCategory === "all" || r.category === activeCategory;
+    return okSearch && okCat;
+  });
+  const promoMap = useMemo(() => {
+    const m = new Map<string, Promotion>();
+    front.promotions.forEach((p) => {
+      // matching simples por nome (case-insensitive)
+      const r = recipes.find((x) => x.name.toLowerCase() === p.title.toLowerCase());
+      if (r) m.set(r.id, p);
+    });
+    return m;
+  }, [front.promotions, recipes]);
 
   if (loading) {
     return (
@@ -321,6 +343,16 @@ function StorefrontPage() {
                   />
                 </div>
               )}
+              {!editing && categories.length > 0 && (
+                <div className="mb-4 flex flex-wrap gap-1.5">
+                  {(["all", ...categories] as const).map((c) => (
+                    <button key={c} onClick={() => setActiveCategory(c)}
+                      className={`rounded-full px-3 py-1 text-[11px] transition ${activeCategory === c ? "bg-mauve text-cream" : "bg-white border border-rose/30 text-mauve hover:border-rose"}`}>
+                      {c === "all" ? "Todos" : c}
+                    </button>
+                  ))}
+                </div>
+              )}
               {filtered.length === 0 ? (
                 <div className="card-soft p-10 text-center text-mauve/70">
                   <Cake className="mx-auto mb-3 h-10 w-10 text-mauve/30" strokeWidth={1.2} />
@@ -328,25 +360,43 @@ function StorefrontPage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {filtered.map((r) => (
-                    <article key={r.id} className="group flex flex-col overflow-hidden rounded-3xl border border-rose/30 bg-white shadow-sm transition hover:shadow-lg">
-                      <div className="relative aspect-[4/3] overflow-hidden bg-blush">
-                        {r.image_url ? (
-                          <img src={r.image_url} alt={r.name} loading="lazy" className="h-full w-full object-cover transition group-hover:scale-105" />
-                        ) : (<div className="grid h-full w-full place-items-center"><Cake className="h-12 w-12 text-mauve/40" /></div>)}
-                      </div>
-                      <div className="flex flex-1 flex-col gap-2 p-4">
-                        <h3 className="font-display text-lg italic text-mauve">{r.name}</h3>
-                        {r.description && <p className="line-clamp-2 text-xs text-mauve/70">{r.description}</p>}
-                        <div className="mt-auto flex items-center justify-between pt-2">
-                          <span className="text-base font-semibold text-mauve">{r.public_price != null ? brl(r.public_price) : "Sob consulta"}</span>
-                          <button onClick={() => addToCart(r)} disabled={editing} className="inline-flex items-center gap-1 rounded-full bg-mauve px-4 py-2 text-xs font-medium text-cream hover:opacity-90 disabled:opacity-50">
-                            <Plus className="h-3.5 w-3.5" /> Adicionar
-                          </button>
+                  {filtered.map((r) => {
+                    const promo = promoMap.get(r.id);
+                    const showPriceTo = promo?.price_to != null;
+                    const priceFrom = promo?.price_from ?? r.public_price;
+                    return (
+                      <article key={r.id} className="group flex flex-col overflow-hidden rounded-3xl border border-rose/30 bg-white shadow-sm transition hover:shadow-lg">
+                        <div className="relative aspect-[4/3] overflow-hidden bg-blush">
+                          {r.image_url ? (
+                            <img src={r.image_url} alt={r.name} loading="lazy" className="h-full w-full object-cover transition group-hover:scale-105" />
+                          ) : (<div className="grid h-full w-full place-items-center"><Cake className="h-12 w-12 text-mauve/40" /></div>)}
+                          {promo && (
+                            <span className="absolute left-2 top-2 rounded-full bg-rose px-2.5 py-0.5 text-[10px] font-semibold text-mauve shadow">PROMO</span>
+                          )}
+                          {r.category && (
+                            <span className="absolute right-2 top-2 rounded-full bg-white/90 px-2 py-0.5 text-[10px] text-mauve">{r.category}</span>
+                          )}
                         </div>
-                      </div>
-                    </article>
-                  ))}
+                        <div className="flex flex-1 flex-col gap-2 p-4">
+                          <h3 className="font-display text-lg italic text-mauve">{r.name}</h3>
+                          {r.description && <p className="line-clamp-2 text-xs text-mauve/70">{r.description}</p>}
+                          <div className="mt-auto flex items-center justify-between pt-2">
+                            <div className="flex items-baseline gap-1.5">
+                              {showPriceTo && priceFrom != null && (
+                                <span className="text-xs text-mauve/50 line-through">{brl(priceFrom)}</span>
+                              )}
+                              <span className="text-base font-semibold text-mauve">
+                                {showPriceTo ? brl(promo!.price_to!) : (r.public_price != null ? brl(r.public_price) : "Sob consulta")}
+                              </span>
+                            </div>
+                            <button onClick={() => addToCart(r)} disabled={editing} className="inline-flex items-center gap-1 rounded-full bg-mauve px-4 py-2 text-xs font-medium text-cream hover:opacity-90 disabled:opacity-50">
+                              <Plus className="h-3.5 w-3.5" /> Adicionar
+                            </button>
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })}
                 </div>
               )}
             </section>
@@ -461,6 +511,13 @@ function StorefrontPage() {
             title="Ver vitrine como cliente"
           >
             <Eye className="inline h-3 w-3 mr-1" /> Ver pública
+          </button>
+          <button
+            onClick={() => setShareOpen(true)}
+            className="rounded-full border border-border bg-white px-3 py-1.5 text-xs text-mauve hover:border-rose/50"
+            title="Compartilhar com QR Code"
+          >
+            <QrCode className="inline h-3 w-3 mr-1" /> Compartilhar
           </button>
           <Link
             to="/"
@@ -600,6 +657,52 @@ function StorefrontPage() {
           </div>
         </div>
       </div>
+      {shareOpen && (
+        <ShareModal
+          url={typeof window !== "undefined" ? `${window.location.origin}/loja/${shop.slug}` : ""}
+          shopName={shop.name}
+          onClose={() => setShareOpen(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+function ShareModal({ url, shopName, onClose }: { url: string; shopName: string; onClose: () => void }) {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+      toast.success("Link copiado");
+    } catch { toast.error("Não foi possível copiar"); }
+  };
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-mauve/40 backdrop-blur-sm p-4" onClick={onClose}>
+      <div className="w-full max-w-sm rounded-3xl bg-cream p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-display text-xl italic text-mauve">Compartilhar vitrine</h2>
+          <button onClick={onClose} className="rounded-full p-1.5 hover:bg-rose/30"><X className="h-4 w-4 text-mauve" /></button>
+        </div>
+        <div className="grid place-items-center rounded-2xl bg-white p-6 shadow-sm">
+          <QRCodeSVG value={url} size={192} bgColor="transparent" fgColor="#5b3a4a" />
+        </div>
+        <p className="mt-4 text-center text-xs text-mauve/70">Aponte a câmera para visitar <strong className="text-mauve">{shopName}</strong></p>
+        <div className="mt-3 flex items-center gap-2 rounded-xl bg-white border border-border px-3 py-2 text-xs text-mauve">
+          <span className="truncate flex-1">{url}</span>
+          <button onClick={copy} className="inline-flex items-center gap-1 rounded-lg bg-mauve px-2.5 py-1 text-cream hover:opacity-90">
+            {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+            {copied ? "Copiado" : "Copiar"}
+          </button>
+        </div>
+        <a
+          href={url} target="_blank" rel="noreferrer"
+          className="mt-3 flex items-center justify-center gap-1.5 rounded-full border border-border bg-white py-2.5 text-xs text-mauve hover:border-rose/50"
+        >
+          <Eye className="h-3.5 w-3.5" /> Abrir em nova aba
+        </a>
+      </div>
     </div>
   );
 }
@@ -686,18 +789,38 @@ function PromotionsSection({
     <Section title="Promoções">
       <div className="grid gap-2 sm:grid-cols-2">
         {promotions.map((p) => (
-          <div key={p.id} className="flex items-center justify-between gap-3 rounded-2xl border border-rose/30 bg-white p-3">
-            <div className="flex-1 min-w-0">
-              <EditableText editing={editing} value={p.title} onChange={(v) => onChange(promotions.map((x) => x.id === p.id ? { ...x, title: v } : x))} className="text-sm font-medium text-mauve" placeholder="Promoção" />
-              {(p.price_from || p.price_to) && (
-                <p className="text-xs text-mauve/60">
-                  {p.price_from ? brl(p.price_from) : ""}
-                  {p.price_to ? ` → ${brl(p.price_to)}` : ""}
-                </p>
+          <div key={p.id} className="rounded-2xl border border-rose/30 bg-white p-3">
+            <div className="flex items-start justify-between gap-2">
+              <EditableText editing={editing} value={p.title} onChange={(v) => onChange(promotions.map((x) => x.id === p.id ? { ...x, title: v } : x))} className="text-sm font-medium text-mauve flex-1" placeholder="Nome do produto em promoção" />
+              {editing && (
+                <button onClick={() => onChange(promotions.filter((x) => x.id !== p.id))} className="text-rose hover:text-rose/70"><X className="h-4 w-4" /></button>
               )}
             </div>
+            {editing ? (
+              <div className="mt-2 flex items-center gap-2 text-xs">
+                <label className="text-mauve/60">De</label>
+                <input
+                  type="number" step="0.01" defaultValue={p.price_from ?? ""}
+                  onBlur={(e) => onChange(promotions.map((x) => x.id === p.id ? { ...x, price_from: Number(e.target.value) || undefined } : x))}
+                  className="w-20 rounded-lg border border-rose/30 bg-white px-2 py-1 text-right"
+                />
+                <label className="text-mauve/60">Por</label>
+                <input
+                  type="number" step="0.01" defaultValue={p.price_to ?? ""}
+                  onBlur={(e) => onChange(promotions.map((x) => x.id === p.id ? { ...x, price_to: Number(e.target.value) || undefined } : x))}
+                  className="w-20 rounded-lg border border-rose/30 bg-white px-2 py-1 text-right"
+                />
+              </div>
+            ) : (
+              (p.price_from || p.price_to) && (
+                <p className="text-xs text-mauve/70 mt-1">
+                  {p.price_from && <span className="line-through opacity-70 mr-1">{brl(p.price_from)}</span>}
+                  {p.price_to && <span className="font-semibold text-mauve">{brl(p.price_to)}</span>}
+                </p>
+              )
+            )}
             {editing && (
-              <button onClick={() => onChange(promotions.filter((x) => x.id !== p.id))} className="text-rose hover:text-rose/70"><X className="h-4 w-4" /></button>
+              <p className="mt-1.5 text-[10px] text-mauve/50">Dica: use o nome exato do produto do catálogo para aparecer com selo PROMO no card.</p>
             )}
           </div>
         ))}
