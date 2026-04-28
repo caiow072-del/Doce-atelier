@@ -36,6 +36,8 @@ import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
 import { formatBRL } from "@/lib/store";
 import { toast } from "sonner";
+import { nextOccurrence, WEEKDAYS } from "@/lib/recurrence";
+import { recipeCost } from "@/lib/costs";
 
 export const Route = createFileRoute("/eventos")({
   head: () => ({
@@ -66,11 +68,13 @@ type EventRow = {
   recurrence: string;
   recurrence_until: string | null;
   parent_event_id: string | null;
+  weekday: number | null;
+  day_of_month: number | null;
   closed_at: string | null;
   payment_summary: PaymentSummary | null;
 };
-type Recipe = { id: string; name: string; servings: number };
-type Ingredient = { id: string; name: string; unit: string };
+type Recipe = { id: string; name: string; servings: number; image_url?: string | null; labor_cost?: number; packaging_cost?: number; waste_pct?: number };
+type Ingredient = { id: string; name: string; unit: string; package_qty?: number; price_paid?: number; stock_qty?: number };
 type RecipeIng = { recipe_id: string; ingredient_id: string; quantity: number };
 type EventProduct = {
   id: string;
@@ -82,6 +86,8 @@ type EventProduct = {
   sold_qty: number;
   image_url: string | null;
   position: number;
+  sale_mode: "unit" | "slice";
+  batches: number;
 };
 type EventTask = { id: string; day_key: string; task: string; done: boolean; position: number };
 type Sale = {
@@ -210,8 +216,8 @@ function EventosPage() {
       const [tRes, eRes, rRes, iRes, riRes] = await Promise.all([
         supabase.from("event_types").select("*").eq("shop_id", shopId).order("name"),
         supabase.from("events").select("*").eq("shop_id", shopId).order("date", { ascending: false }),
-        supabase.from("recipes").select("id, name, servings").eq("shop_id", shopId).order("name"),
-        supabase.from("ingredients").select("id, name, unit").eq("shop_id", shopId),
+        supabase.from("recipes").select("id, name, servings, image_url, labor_cost, packaging_cost, waste_pct").eq("shop_id", shopId).order("name"),
+        supabase.from("ingredients").select("id, name, unit, package_qty, price_paid, stock_qty").eq("shop_id", shopId),
         supabase.from("recipe_ingredients").select("recipe_id, ingredient_id, quantity"),
       ]);
 
@@ -347,6 +353,9 @@ function EventosPage() {
         recipe_id: data.recipe_id ?? null,
         unit_price: data.unit_price ?? 0,
         planned_qty: data.planned_qty ?? 0,
+        sale_mode: data.sale_mode ?? "unit",
+        batches: data.batches ?? 0,
+        image_url: data.image_url ?? null,
         position: eventProducts.length,
       })
       .select("*")
@@ -506,11 +515,21 @@ function EventosPage() {
                     <p className="text-[11px] text-muted-foreground">
                       {fmtDate(e.date)}
                       {e.start_time ? ` · ${e.start_time}` : ""}
-                      {e.recurrence !== "none" && (
-                        <span className="ml-1 inline-flex items-center gap-0.5 text-rose">
-                          <Repeat className="h-3 w-3" /> {e.recurrence === "weekly" ? "semanal" : "mensal"}
-                        </span>
-                      )}
+                      {e.recurrence !== "none" && (() => {
+                        const next = nextOccurrence({
+                          date: e.date,
+                          recurrence: e.recurrence,
+                          recurrence_until: e.recurrence_until,
+                          weekday: e.weekday,
+                          day_of_month: e.day_of_month,
+                        });
+                        return (
+                          <span className="ml-1 inline-flex items-center gap-0.5 text-rose">
+                            <Repeat className="h-3 w-3" /> {e.recurrence === "weekly" ? "semanal" : "mensal"}
+                            {next && <span className="ml-1 text-muted-foreground">· próx: {fmtDate(next.toISOString())}</span>}
+                          </span>
+                        );
+                      })()}
                     </p>
                   </div>
                   {closed && <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
@@ -566,6 +585,8 @@ function EventosPage() {
               event={selected}
               products={eventProducts}
               recipes={recipes}
+              ingredients={ingredients}
+              recipeIngs={recipeIngs}
               shoppingList={shoppingList}
               showInsumos={showInsumos}
               setShowInsumos={setShowInsumos}
@@ -707,11 +728,13 @@ function Badge({ icon: Icon, label }: { icon: any; label: string }) {
 
 // ============ Products Tab ============
 function ProductsTab({
-  event, products, recipes, shoppingList, showInsumos, setShowInsumos, onAdd, onUpdate, onRemove,
+  event, products, recipes, ingredients, recipeIngs, shoppingList, showInsumos, setShowInsumos, onAdd, onUpdate, onRemove,
 }: {
   event: EventRow;
   products: EventProduct[];
   recipes: Recipe[];
+  ingredients: Ingredient[];
+  recipeIngs: RecipeIng[];
   shoppingList: { name: string; unit: string; qty: number }[];
   showInsumos: boolean;
   setShowInsumos: (v: boolean) => void;
@@ -719,107 +742,97 @@ function ProductsTab({
   onUpdate: (id: string, patch: Partial<EventProduct>) => void;
   onRemove: (id: string) => void;
 }) {
-  const [newName, setNewName] = useState("");
-  const [newRecipe, setNewRecipe] = useState("");
-  const [newPrice, setNewPrice] = useState("");
-  const [newQty, setNewQty] = useState("");
-
-  const handleAdd = () => {
-    const fromRecipe = recipes.find((r) => r.id === newRecipe);
-    const name = newName.trim() || fromRecipe?.name || "";
-    if (!name) return toast.error("Dê um nome ao produto");
-    onAdd({
-      name,
-      recipe_id: newRecipe || null,
-      unit_price: Number(newPrice) || 0,
-      planned_qty: Number(newQty) || 0,
-    });
-    setNewName(""); setNewRecipe(""); setNewPrice(""); setNewQty("");
-  };
-
+  const [showAdd, setShowAdd] = useState(false);
   const closed = !!event.closed_at;
+
+  // Custo unitário por produto (real se tiver receita)
+  const costOf = (p: EventProduct): number => {
+    if (!p.recipe_id) return Number(p.unit_price) * 0.35;
+    const r = recipes.find((x) => x.id === p.recipe_id);
+    if (!r) return Number(p.unit_price) * 0.35;
+    const c = recipeCost(
+      { id: r.id, servings: r.servings, labor_cost: Number(r.labor_cost ?? 0), packaging_cost: Number(r.packaging_cost ?? 0), waste_pct: Number(r.waste_pct ?? 0) },
+      recipeIngs,
+      ingredients.map((i) => ({ id: i.id, package_qty: Number(i.package_qty ?? 1), price_paid: Number(i.price_paid ?? 0) })),
+    );
+    return p.sale_mode === "slice" ? c.perSlice : c.perWhole;
+  };
 
   return (
     <div className="space-y-4">
       <div className="card-soft overflow-hidden">
-        <div className="border-b border-border/60 bg-blush/30 px-5 py-3">
-          <p className="text-sm font-medium text-mauve">Produtos do evento</p>
-          <p className="text-[11px] text-muted-foreground">Cada produto aparece como botão no PDV quando este evento estiver selecionado.</p>
+        <div className="flex items-center justify-between border-b border-border/60 bg-blush/30 px-5 py-3">
+          <div>
+            <p className="text-sm font-medium text-mauve">Produtos do evento</p>
+            <p className="text-[11px] text-muted-foreground">Cada produto vira um botão no PDV deste evento.</p>
+          </div>
+          {!closed && (
+            <button onClick={() => setShowAdd(true)} className="inline-flex items-center gap-1 rounded-xl bg-mauve px-3 py-1.5 text-xs text-cream hover:opacity-90">
+              <Plus className="h-3.5 w-3.5" /> Adicionar
+            </button>
+          )}
         </div>
         {products.length === 0 ? (
-          <p className="px-5 py-6 text-center text-sm text-muted-foreground">Nenhum produto. Adicione abaixo.</p>
+          <p className="px-5 py-6 text-center text-sm text-muted-foreground">Nenhum produto. Toque em <strong>Adicionar</strong> para escolher uma receita.</p>
         ) : (
           <ul className="divide-y divide-border/60">
             {products.map((p) => {
               const sold = p.sold_qty;
               const left = Math.max(0, p.planned_qty - sold);
+              const cost = costOf(p);
+              const margin = p.unit_price > 0 ? ((p.unit_price - cost) / p.unit_price) * 100 : 0;
+              const recipe = p.recipe_id ? recipes.find((r) => r.id === p.recipe_id) : null;
               return (
-                <li key={p.id} className="grid grid-cols-12 items-center gap-2 px-4 py-3 text-sm">
-                  <input
-                    disabled={closed}
-                    value={p.name}
-                    onChange={(e) => onUpdate(p.id, { name: e.target.value })}
-                    className="col-span-12 sm:col-span-4 rounded-lg border border-border bg-background px-2 py-1.5 text-mauve disabled:opacity-60"
-                  />
-                  <select
-                    disabled={closed}
-                    value={p.recipe_id ?? ""}
-                    onChange={(e) => onUpdate(p.id, { recipe_id: e.target.value || null })}
-                    className="col-span-7 sm:col-span-3 rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-mauve disabled:opacity-60"
-                  >
-                    <option value="">— sem receita —</option>
-                    {recipes.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
-                  </select>
-                  <input
-                    disabled={closed}
-                    type="number" step="0.01" placeholder="R$"
-                    value={p.unit_price || ""}
-                    onChange={(e) => onUpdate(p.id, { unit_price: Number(e.target.value) || 0 })}
-                    className="col-span-3 sm:col-span-2 rounded-lg border border-border bg-background px-2 py-1.5 text-right text-mauve disabled:opacity-60"
-                  />
-                  <input
-                    disabled={closed}
-                    type="number" placeholder="qtd"
-                    value={p.planned_qty || ""}
-                    onChange={(e) => onUpdate(p.id, { planned_qty: Number(e.target.value) || 0 })}
-                    className="col-span-2 sm:col-span-1 rounded-lg border border-border bg-background px-2 py-1.5 text-right text-mauve disabled:opacity-60"
-                  />
-                  <div className="col-span-9 sm:col-span-1 text-[11px] text-muted-foreground text-center">
-                    <span className={left === 0 && p.planned_qty > 0 ? "text-success font-medium" : ""}>{sold}/{p.planned_qty}</span>
+                <li key={p.id} className="px-4 py-3 text-sm">
+                  <div className="flex items-start gap-3">
+                    {(p.image_url || recipe?.image_url) && (
+                      <img src={p.image_url || recipe?.image_url || ""} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" loading="lazy" />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-baseline gap-2">
+                        <span className="font-medium text-mauve">{p.name}</span>
+                        {recipe && (
+                          <span className="text-[10px] uppercase tracking-wider text-rose">
+                            {recipe.name} · {p.sale_mode === "slice" ? "por fatia" : "inteiro"}
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-1 flex flex-wrap gap-3 text-[11px] text-muted-foreground">
+                        <span>Preço: <strong className="text-mauve">{formatBRL(Number(p.unit_price))}</strong></span>
+                        <span>Custo: <strong className={cost > p.unit_price ? "text-destructive" : "text-mauve"}>{formatBRL(cost)}</strong></span>
+                        <span>Margem: <strong className={margin >= 30 ? "text-success" : margin >= 15 ? "text-warning" : "text-destructive"}>{margin.toFixed(0)}%</strong></span>
+                        <span className={left === 0 && p.planned_qty > 0 ? "text-success font-medium" : ""}>Vendas: {sold}/{p.planned_qty}</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      <input
+                        disabled={closed}
+                        type="number" placeholder="qtd"
+                        value={p.planned_qty || ""}
+                        onChange={(e) => onUpdate(p.id, { planned_qty: Number(e.target.value) || 0 })}
+                        className="w-16 rounded-lg border border-border bg-background px-2 py-1 text-right text-xs text-mauve disabled:opacity-60"
+                      />
+                      <button disabled={closed} onClick={() => onRemove(p.id)} className="rounded-lg p-1 text-destructive hover:bg-destructive/10 disabled:opacity-30">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </div>
-                  <button disabled={closed} onClick={() => onRemove(p.id)} className="col-span-1 justify-self-end rounded-lg p-1.5 text-destructive hover:bg-destructive/10 disabled:opacity-30">
-                    <Trash2 className="h-4 w-4" />
-                  </button>
                 </li>
               );
             })}
           </ul>
         )}
-
-        {!closed && (
-          <div className="border-t border-border/60 bg-background/60 p-3">
-            <p className="mb-2 text-[10px] uppercase tracking-widest text-rose">Adicionar produto</p>
-            <div className="grid grid-cols-12 gap-2">
-              <input
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                placeholder="Nome (ou puxa da receita)"
-                className="col-span-12 sm:col-span-4 input-base"
-              />
-              <select value={newRecipe} onChange={(e) => setNewRecipe(e.target.value)} className="col-span-12 sm:col-span-3 input-base">
-                <option value="">— receita opcional —</option>
-                {recipes.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
-              </select>
-              <input value={newPrice} onChange={(e) => setNewPrice(e.target.value)} type="number" step="0.01" placeholder="R$ unitário" className="col-span-6 sm:col-span-2 input-base" />
-              <input value={newQty} onChange={(e) => setNewQty(e.target.value)} type="number" placeholder="qtd planejada" className="col-span-6 sm:col-span-2 input-base" />
-              <button onClick={handleAdd} className="col-span-12 sm:col-span-1 rounded-xl bg-mauve px-2 py-2 text-cream hover:opacity-90">
-                <Plus className="mx-auto h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        )}
       </div>
 
+      {showAdd && (
+        <AddProductModal
+          recipes={recipes}
+          ingredients={ingredients}
+          recipeIngs={recipeIngs}
+          onClose={() => setShowAdd(false)}
+          onAdd={(data: Partial<EventProduct>) => { onAdd(data); setShowAdd(false); }}
+        />
+      )}
       {/* Insumos colapsável */}
       <div className="card-soft overflow-hidden">
         <button
@@ -1065,6 +1078,9 @@ function EditMeta({
   const [fee, setFee] = useState(event.fee?.toString() ?? "0");
   const [openingCash, setOpeningCash] = useState(event.opening_cash?.toString() ?? "0");
   const [recurrence, setRecurrence] = useState(event.recurrence ?? "none");
+  const [weekday, setWeekday] = useState<string>(event.weekday != null ? String(event.weekday) : "");
+  const [dayOfMonth, setDayOfMonth] = useState<string>(event.day_of_month != null ? String(event.day_of_month) : "");
+  const [recurrenceUntil, setRecurrenceUntil] = useState<string>(event.recurrence_until ?? "");
 
   return (
     <div className="space-y-3">
@@ -1081,7 +1097,7 @@ function EditMeta({
           </select>
         </div>
         <div>
-          <label className="text-[10px] uppercase tracking-widest text-rose">Data</label>
+          <label className="text-[10px] uppercase tracking-widest text-rose">Data {recurrence !== "none" ? "inicial" : ""}</label>
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="input-base mt-1" />
         </div>
         <div>
@@ -1092,13 +1108,30 @@ function EditMeta({
           <label className="text-[10px] uppercase tracking-widest text-rose">Local / endereço</label>
           <input value={location} onChange={(e) => setLocation(e.target.value)} className="input-base mt-1" />
         </div>
-        <div>
-          <label className="text-[10px] uppercase tracking-widest text-rose">Recorrência</label>
-          <select value={recurrence} onChange={(e) => setRecurrence(e.target.value)} className="input-base mt-1">
-            <option value="none">Não se repete</option>
-            <option value="weekly">Toda semana</option>
-            <option value="monthly">Todo mês</option>
-          </select>
+        <div className="md:col-span-2 rounded-xl border border-border bg-blush/20 p-3">
+          <p className="text-[10px] uppercase tracking-widest text-rose mb-2 flex items-center gap-1"><Repeat className="h-3 w-3" /> Recorrência</p>
+          <div className="grid grid-cols-2 gap-2">
+            <select value={recurrence} onChange={(e) => setRecurrence(e.target.value)} className="input-base">
+              <option value="none">Não se repete</option>
+              <option value="weekly">Toda semana</option>
+              <option value="monthly">Todo mês</option>
+            </select>
+            {recurrence === "weekly" && (
+              <select value={weekday} onChange={(e) => setWeekday(e.target.value)} className="input-base">
+                <option value="">Mesmo dia da semana da data</option>
+                {WEEKDAYS.map((w) => <option key={w.v} value={w.v}>{w.label}</option>)}
+              </select>
+            )}
+            {recurrence === "monthly" && (
+              <input type="number" min="1" max="31" value={dayOfMonth} onChange={(e) => setDayOfMonth(e.target.value)} placeholder="Dia do mês (ex: 15)" className="input-base" />
+            )}
+          </div>
+          {recurrence !== "none" && (
+            <div className="mt-2">
+              <label className="text-[10px] uppercase tracking-widest text-rose">Até quando (opcional)</label>
+              <input type="date" value={recurrenceUntil} onChange={(e) => setRecurrenceUntil(e.target.value)} className="input-base mt-1" />
+            </div>
+          )}
         </div>
         {(kind === "party" || kind === "wedding") && (
           <>
@@ -1147,6 +1180,9 @@ function EditMeta({
               fee: Number(fee) || 0,
               opening_cash: Number(openingCash) || 0,
               recurrence,
+              weekday: recurrence === "weekly" ? (weekday !== "" ? Number(weekday) : new Date(date).getDay()) : null,
+              day_of_month: recurrence === "monthly" ? (dayOfMonth ? Number(dayOfMonth) : new Date(date).getDate()) : null,
+              recurrence_until: recurrence !== "none" && recurrenceUntil ? recurrenceUntil : null,
             })
           }
           className="inline-flex items-center gap-1.5 rounded-xl bg-mauve px-4 py-2 text-sm text-cream hover:opacity-90"
@@ -1172,7 +1208,9 @@ function NewEventSheet({
   const [customerName, setCustomerName] = useState("");
   const [guests, setGuests] = useState("");
   const [recurrence, setRecurrence] = useState<"none" | "weekly" | "monthly">("none");
-  const [recurrenceCount, setRecurrenceCount] = useState("4");
+  const [weekday, setWeekday] = useState<string>("");
+  const [dayOfMonth, setDayOfMonth] = useState<string>("");
+  const [recurrenceUntil, setRecurrenceUntil] = useState<string>("");
   const [saving, setSaving] = useState(false);
 
   const selectedType = types.find((t) => t.id === typeId);
@@ -1193,62 +1231,31 @@ function NewEventSheet({
     if (!name.trim()) return toast.error("Dê um nome");
     setSaving(true);
 
-    // Gera datas de recorrência
-    const dates: Date[] = [new Date(date)];
-    if (recurrence !== "none") {
-      const n = Math.min(52, Math.max(1, Number(recurrenceCount) || 1));
-      for (let i = 1; i < n; i++) {
-        const d = new Date(date);
-        if (recurrence === "weekly") d.setDate(d.getDate() + 7 * i);
-        else d.setMonth(d.getMonth() + i);
-        dates.push(d);
-      }
-    }
-
-    // Cria evento-pai
-    const { data: parent, error: pErr } = await supabase
+    const anchor = new Date(date);
+    const { data: row, error } = await supabase
       .from("events")
       .insert({
         shop_id: shopId,
         name: name.trim(),
-        date: dates[0].toISOString(),
+        date: anchor.toISOString(),
         start_time: startTime || null,
         location: location || null,
         event_type_id: typeId || null,
         customer_name: customerName || null,
         guests: guests ? Number(guests) : null,
         recurrence,
+        weekday: recurrence === "weekly" ? (weekday !== "" ? Number(weekday) : anchor.getDay()) : null,
+        day_of_month: recurrence === "monthly" ? (dayOfMonth ? Number(dayOfMonth) : anchor.getDate()) : null,
+        recurrence_until: recurrence !== "none" && recurrenceUntil ? recurrenceUntil : null,
       })
       .select("*")
       .single();
-    if (pErr || !parent) {
-      setSaving(false);
-      return toast.error("Erro ao criar evento");
-    }
-
-    let inserted: EventRow[] = [parent as EventRow];
-
-    // Cria filhos se recorrente
-    if (dates.length > 1) {
-      const children = dates.slice(1).map((d) => ({
-        shop_id: shopId,
-        name: name.trim(),
-        date: d.toISOString(),
-        start_time: startTime || null,
-        location: location || null,
-        event_type_id: typeId || null,
-        customer_name: customerName || null,
-        guests: guests ? Number(guests) : null,
-        recurrence,
-        parent_event_id: parent.id,
-      }));
-      const { data: kids } = await supabase.from("events").insert(children).select("*");
-      if (kids) inserted = [...inserted, ...(kids as EventRow[])];
-    }
 
     setSaving(false);
-    toast.success(dates.length > 1 ? `${dates.length} eventos criados` : "Evento criado");
-    onCreated(inserted.sort((a, b) => +new Date(b.date) - +new Date(a.date)));
+    if (error || !row) return toast.error("Erro ao criar evento");
+
+    toast.success(recurrence !== "none" ? "Evento recorrente criado" : "Evento criado");
+    onCreated([row as EventRow]);
   };
 
   return (
@@ -1323,20 +1330,31 @@ function NewEventSheet({
 
             {/* Recorrência (festival, fair, generic) */}
             {(kind === "festival" || kind === "fair" || kind === "generic") && (
-              <div className="rounded-xl border border-border bg-blush/20 p-3">
-                <p className="text-[10px] uppercase tracking-widest text-rose mb-2 flex items-center gap-1"><Repeat className="h-3 w-3" /> Repetir</p>
+              <div className="rounded-xl border border-border bg-blush/20 p-3 space-y-2">
+                <p className="text-[10px] uppercase tracking-widest text-rose flex items-center gap-1"><Repeat className="h-3 w-3" /> Repetir</p>
                 <div className="grid grid-cols-2 gap-2">
                   <select value={recurrence} onChange={(e) => setRecurrence(e.target.value as any)} className="input-base">
                     <option value="none">Não repetir</option>
                     <option value="weekly">Toda semana</option>
                     <option value="monthly">Todo mês</option>
                   </select>
-                  {recurrence !== "none" && (
-                    <input type="number" min="1" max="52" value={recurrenceCount} onChange={(e) => setRecurrenceCount(e.target.value)}
-                      placeholder="qtas vezes" className="input-base" />
+                  {recurrence === "weekly" && (
+                    <select value={weekday} onChange={(e) => setWeekday(e.target.value)} className="input-base">
+                      <option value="">Mesmo dia da data</option>
+                      {WEEKDAYS.map((w) => <option key={w.v} value={w.v}>{w.label}</option>)}
+                    </select>
+                  )}
+                  {recurrence === "monthly" && (
+                    <input type="number" min="1" max="31" value={dayOfMonth} onChange={(e) => setDayOfMonth(e.target.value)} placeholder="Dia do mês" className="input-base" />
                   )}
                 </div>
-                {recurrence !== "none" && <p className="mt-1 text-[10px] text-muted-foreground">Cria {recurrenceCount} ocorrências, uma por {recurrence === "weekly" ? "semana" : "mês"}.</p>}
+                {recurrence !== "none" && (
+                  <div>
+                    <label className="text-[10px] uppercase tracking-widest text-rose">Até quando (opcional)</label>
+                    <input type="date" value={recurrenceUntil} onChange={(e) => setRecurrenceUntil(e.target.value)} className="input-base mt-1" />
+                    <p className="mt-1 text-[10px] text-muted-foreground">Um único evento que se repete {recurrence === "weekly" ? "toda semana" : "todo mês"} — sem duplicar no banco.</p>
+                  </div>
+                )}
               </div>
             )}
 
@@ -1424,6 +1442,215 @@ function TypesSheet({
             <Plus className="mr-1 inline h-4 w-4" /> Adicionar
           </button>
         </form>
+      </div>
+    </div>
+  );
+}
+
+// ============ Add Product Modal (recipe-driven) ============
+function AddProductModal({
+  recipes, ingredients, recipeIngs, onClose, onAdd,
+}: {
+  recipes: Recipe[];
+  ingredients: Ingredient[];
+  recipeIngs: RecipeIng[];
+  onClose: () => void;
+  onAdd: (data: Partial<EventProduct>) => void;
+}) {
+  const [recipeId, setRecipeId] = useState<string>("");
+  const [search, setSearch] = useState("");
+  const [saleMode, setSaleMode] = useState<"unit" | "slice">("unit");
+  const [name, setName] = useState("");
+  const [unitPrice, setUnitPrice] = useState("");
+  const [batches, setBatches] = useState("1");
+  const [plannedQty, setPlannedQty] = useState("");
+
+  const recipe = useMemo(() => recipes.find((r) => r.id === recipeId) ?? null, [recipes, recipeId]);
+  const filteredRecipes = useMemo(
+    () => (search.trim() ? recipes.filter((r) => r.name.toLowerCase().includes(search.toLowerCase())) : recipes),
+    [recipes, search],
+  );
+
+  const cost = useMemo(() => {
+    if (!recipe) return null;
+    return recipeCost(
+      { id: recipe.id, servings: recipe.servings, labor_cost: Number(recipe.labor_cost ?? 0), packaging_cost: Number(recipe.packaging_cost ?? 0), waste_pct: Number(recipe.waste_pct ?? 0) },
+      recipeIngs,
+      ingredients.map((i) => ({ id: i.id, package_qty: Number(i.package_qty ?? 1), price_paid: Number(i.price_paid ?? 0) })),
+    );
+  }, [recipe, recipeIngs, ingredients]);
+
+  // Auto-calc planejado: batches * servings (slice) ou batches (unit)
+  useEffect(() => {
+    if (!recipe) return;
+    const b = Number(batches) || 0;
+    const calc = saleMode === "slice" ? b * recipe.servings : b;
+    if (!plannedQty || Number(plannedQty) === 0) setPlannedQty(String(calc));
+    if (!name) setName(recipe.name);
+    if (!unitPrice && cost) setUnitPrice((saleMode === "slice" ? cost.perSlice : cost.perWhole).toFixed(2));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recipeId, saleMode, batches]);
+
+  // Insumos faltando: precisa quantity * batches mas tem stock < isso
+  const missing = useMemo(() => {
+    if (!recipe) return [];
+    const b = Number(batches) || 0;
+    const need: { name: string; needed: number; stock: number; unit: string }[] = [];
+    recipeIngs.filter((ri) => ri.recipe_id === recipe.id).forEach((ri) => {
+      const ing = ingredients.find((x) => x.id === ri.ingredient_id);
+      if (!ing) return;
+      const needed = ri.quantity * b;
+      if (Number(ing.stock_qty ?? 0) < needed) {
+        need.push({ name: ing.name, needed, stock: Number(ing.stock_qty ?? 0), unit: ing.unit });
+      }
+    });
+    return need;
+  }, [recipe, batches, recipeIngs, ingredients]);
+
+  const handleSave = () => {
+    const finalName = name.trim() || recipe?.name || "";
+    if (!finalName) return toast.error("Dê um nome ao produto");
+    onAdd({
+      name: finalName,
+      recipe_id: recipeId || null,
+      sale_mode: saleMode,
+      batches: Number(batches) || 0,
+      unit_price: Number(unitPrice) || 0,
+      planned_qty: Number(plannedQty) || 0,
+      image_url: recipe?.image_url ?? null,
+    });
+  };
+
+  const margin = cost && Number(unitPrice) > 0
+    ? ((Number(unitPrice) - (saleMode === "slice" ? cost.perSlice : cost.perWhole)) / Number(unitPrice)) * 100
+    : null;
+
+  return (
+    <div className="fixed inset-0 z-50 bg-mauve/40 backdrop-blur-sm" onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} className="absolute right-0 top-0 h-full w-full max-w-md overflow-y-auto bg-card p-6 shadow-petal">
+        <div className="flex items-center justify-between">
+          <h2 className="font-display text-2xl italic text-mauve">Adicionar produto</h2>
+          <button onClick={onClose} className="rounded-lg p-2 text-muted-foreground"><X className="h-5 w-5" /></button>
+        </div>
+
+        <div className="mt-4 space-y-4">
+          <div>
+            <label className="text-[10px] uppercase tracking-widest text-rose">Receita base</label>
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar receita..." className="input-base mt-1" />
+            <div className="mt-2 max-h-44 overflow-y-auto rounded-xl border border-border">
+              {filteredRecipes.length === 0 ? (
+                <p className="px-3 py-3 text-center text-xs text-muted-foreground">Nenhuma receita.</p>
+              ) : (
+                <ul>
+                  {filteredRecipes.map((r) => (
+                    <li key={r.id}>
+                      <button
+                        type="button"
+                        onClick={() => setRecipeId(r.id)}
+                        className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-blush/30 ${recipeId === r.id ? "bg-blush/50 text-mauve" : "text-mauve/80"}`}
+                      >
+                        {r.image_url && <img src={r.image_url} alt="" className="h-7 w-7 rounded object-cover" />}
+                        <span className="flex-1 truncate">{r.name}</span>
+                        <span className="text-[10px] text-muted-foreground">{r.servings} fatias</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <button
+                type="button"
+                onClick={() => { setRecipeId(""); }}
+                className={`w-full border-t border-border px-3 py-2 text-left text-xs ${!recipeId ? "bg-blush/30 text-mauve" : "text-muted-foreground hover:bg-blush/20"}`}
+              >
+                — sem receita (produto avulso) —
+              </button>
+            </div>
+          </div>
+
+          {recipe && (
+            <div className="rounded-xl border border-border bg-blush/20 p-3">
+              <p className="text-[10px] uppercase tracking-widest text-rose mb-2">Modo de venda</p>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSaleMode("unit")}
+                  className={`rounded-xl border px-3 py-2 text-xs ${saleMode === "unit" ? "border-rose bg-card text-mauve font-medium" : "border-border text-muted-foreground"}`}
+                >
+                  Inteiro<br /><span className="text-[10px]">({recipe.servings} fatias cada)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSaleMode("slice")}
+                  className={`rounded-xl border px-3 py-2 text-xs ${saleMode === "slice" ? "border-rose bg-card text-mauve font-medium" : "border-border text-muted-foreground"}`}
+                >
+                  Por fatia<br /><span className="text-[10px]">(1/{recipe.servings} da receita)</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-[10px] uppercase tracking-widest text-rose">Nome no PDV</label>
+              <input value={name} onChange={(e) => setName(e.target.value)} placeholder={recipe?.name ?? "Produto"} className="input-base mt-1" />
+            </div>
+            <div>
+              <label className="text-[10px] uppercase tracking-widest text-rose">Preço unitário</label>
+              <input type="number" step="0.01" value={unitPrice} onChange={(e) => setUnitPrice(e.target.value)} className="input-base mt-1" />
+            </div>
+            {recipe && (
+              <div>
+                <label className="text-[10px] uppercase tracking-widest text-rose">Lotes da receita</label>
+                <input type="number" step="0.5" min="0" value={batches} onChange={(e) => setBatches(e.target.value)} className="input-base mt-1" />
+              </div>
+            )}
+            <div>
+              <label className="text-[10px] uppercase tracking-widest text-rose">Qtd planejada</label>
+              <input type="number" value={plannedQty} onChange={(e) => setPlannedQty(e.target.value)} className="input-base mt-1" />
+            </div>
+          </div>
+
+          {cost && (
+            <div className="rounded-xl border border-border bg-card p-3 space-y-1 text-xs">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Custo {saleMode === "slice" ? "por fatia" : "por unidade"}</span>
+                <strong className="text-mauve">{formatBRL(saleMode === "slice" ? cost.perSlice : cost.perWhole)}</strong>
+              </div>
+              {margin != null && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Margem prevista</span>
+                  <strong className={margin >= 30 ? "text-success" : margin >= 15 ? "text-warning" : "text-destructive"}>{margin.toFixed(0)}%</strong>
+                </div>
+              )}
+              {Number(batches) > 0 && (
+                <div className="flex justify-between border-t border-border/60 pt-1">
+                  <span className="text-muted-foreground">Custo total ({batches} lote{Number(batches) === 1 ? "" : "s"})</span>
+                  <strong className="text-mauve">{formatBRL(cost.totalRecipe * Number(batches))}</strong>
+                </div>
+              )}
+            </div>
+          )}
+
+          {missing.length > 0 && (
+            <div className="rounded-xl border border-warning/30 bg-warning/10 p-3 text-xs">
+              <p className="flex items-center gap-1 font-medium text-warning"><AlertCircle className="h-3.5 w-3.5" /> Insumos insuficientes</p>
+              <ul className="mt-1 space-y-0.5 text-mauve">
+                {missing.map((m) => (
+                  <li key={m.name}>
+                    <strong>{m.name}</strong>: precisa {m.needed.toLocaleString("pt-BR", { maximumFractionDigits: 2 })} {m.unit}, em estoque {m.stock} {m.unit}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <button
+            onClick={handleSave}
+            className="w-full rounded-xl bg-mauve px-4 py-3 text-sm font-medium text-cream hover:opacity-90"
+          >
+            <Plus className="mr-1 inline h-4 w-4" /> Adicionar ao evento
+          </button>
+        </div>
       </div>
     </div>
   );

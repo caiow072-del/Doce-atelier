@@ -33,19 +33,22 @@
 - [x] Indicador "% estimado" quando venda não bate com receita
 - [ ] (futuro Onda D) Substituir match por nome → `pdv_products.recipe_id` direto
 
-### Onda C — Eventos: recorrência única + ocorrências
-- [ ] UI de recorrência: dropdown semanal/mensal + dia da semana + "até quando"
-- [ ] Parar de duplicar eventos no banco — gerar via `getOccurrences()` em runtime
-- [ ] Calendário, dashboard e PDV consumindo ocorrências calculadas
-- [ ] Fechamento de caixa grava em `event_occurrences` (uma linha por data)
-- [ ] Migrar eventos antigos duplicados para o novo modelo (script seguro)
+### Onda C — Eventos: recorrência única + ocorrências ✅
+- [x] UI de recorrência: dropdown semanal/mensal + dia da semana + "até quando"
+- [x] Não duplica mais eventos no banco — uma única linha com weekday/day_of_month/recurrence_until
+- [x] Calendário consome `getOccurrences()` para expandir recorrentes em runtime
+- [x] PDV inclui eventos recorrentes com ocorrência nos próximos 7 dias
+- [x] Card da lista mostra "próx: dd/mm" para recorrentes
+- [ ] (futuro) Script de migração para colapsar eventos antigos duplicados (parent_event_id)
+- [ ] (futuro) Fechamento de caixa por ocorrência em `event_occurrences`
 
-### Onda D — Produtos do evento ligados à receita
-- [ ] Modal "Adicionar produto" com seletor de receita (autocomplete)
-- [ ] Modo de venda: inteiro / fatia (puxa `servings` e calcula preço/fatia automaticamente)
-- [ ] Mostra custo real, margem prevista, alerta de insumos faltando
-- [ ] Quantidade em **lotes da receita** (com conversão para unidades)
-- [ ] Imagem puxa de `recipes.image_url` por padrão
+### Onda D — Produtos do evento ligados à receita ✅
+- [x] Modal "Adicionar produto" com busca de receita
+- [x] Modo de venda inteiro/fatia (auto-calcula preço sugerido e qtd planejada)
+- [x] Custo real, margem prevista colorida e alerta de insumos faltando
+- [x] Quantidade em lotes da receita (com conversão automática)
+- [x] Imagem puxa de `recipes.image_url` por padrão
+- [x] Lista de produtos mostra custo/margem por linha
 
 ### Onda E — PDV polido
 - [ ] FAB de carrinho flutuante com badge de itens e total

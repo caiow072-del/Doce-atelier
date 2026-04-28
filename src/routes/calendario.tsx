@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
+import { ChevronLeft, ChevronRight, CalendarDays, Repeat } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
+import { getOccurrences } from "@/lib/recurrence";
 
 export const Route = createFileRoute("/calendario")({
   head: () => ({
@@ -15,7 +16,7 @@ export const Route = createFileRoute("/calendario")({
   component: CalendarioPage,
 });
 
-type Item = { id: string; title: string; date: string; kind: "evento" | "encomenda"; status?: string };
+type Item = { id: string; title: string; date: string; kind: "evento" | "encomenda"; status?: string; recurring?: boolean };
 
 const monthNames = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 const dayNames = ["D", "S", "T", "Q", "Q", "S", "S"];
@@ -31,16 +32,30 @@ function CalendarioPage() {
 
   useEffect(() => {
     if (!shopId) return;
-    const start = new Date(cursor.getFullYear(), cursor.getMonth(), 1).toISOString();
-    const end = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1).toISOString();
+    const monthStart = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
+    const monthEnd = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0, 23, 59, 59);
+    const startISO = monthStart.toISOString();
+    const endISO = monthEnd.toISOString();
     Promise.all([
-      supabase.from("events").select("id, name, date").eq("shop_id", shopId).gte("date", start).lt("date", end),
-      supabase.from("orders").select("id, customer_name, description, delivery_at, status").eq("shop_id", shopId).gte("delivery_at", start).lt("delivery_at", end),
+      // Eventos não recorrentes que caem no mês + TODOS os recorrentes (para expandir)
+      supabase.from("events").select("id, name, date, recurrence, recurrence_until, weekday, day_of_month").eq("shop_id", shopId),
+      supabase.from("orders").select("id, customer_name, description, delivery_at, status").eq("shop_id", shopId).gte("delivery_at", startISO).lt("delivery_at", endISO),
     ]).then(([ev, od]) => {
       const all: Item[] = [];
-      (ev.data ?? []).forEach((e: { id: string; name: string; date: string }) =>
-        all.push({ id: e.id, title: e.name, date: e.date, kind: "evento" }),
-      );
+      (ev.data ?? []).forEach((e: any) => {
+        if (!e.recurrence || e.recurrence === "none") {
+          // Só inclui se estiver no mês visível
+          const d = new Date(e.date);
+          if (d >= monthStart && d <= monthEnd) {
+            all.push({ id: e.id, title: e.name, date: e.date, kind: "evento" });
+          }
+        } else {
+          const occs = getOccurrences(e, monthStart, monthEnd);
+          occs.forEach((o, idx) => {
+            all.push({ id: `${e.id}-${idx}`, title: e.name, date: o.toISOString(), kind: "evento", recurring: true });
+          });
+        }
+      });
       (od.data ?? []).forEach((o: { id: string; customer_name: string; description: string; delivery_at: string; status: string }) =>
         all.push({ id: o.id, title: `${o.customer_name} — ${o.description}`, date: o.delivery_at, kind: "encomenda", status: o.status }),
       );
@@ -119,12 +134,13 @@ function CalendarioPage() {
                   {dayItems.slice(0, 2).map((it) => (
                     <div
                       key={it.id}
-                      className={`truncate rounded px-1 text-[9px] ${
+                      className={`truncate rounded px-1 text-[9px] flex items-center gap-0.5 ${
                         it.kind === "evento" ? "bg-rose/40 text-mauve" : "bg-sage/40 text-mauve"
                       }`}
                       title={it.title}
                     >
-                      {it.title}
+                      {it.recurring && <Repeat className="h-2 w-2 shrink-0" />}
+                      <span className="truncate">{it.title}</span>
                     </div>
                   ))}
                   {dayItems.length > 2 && (
