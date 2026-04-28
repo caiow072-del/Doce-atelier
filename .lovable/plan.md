@@ -50,17 +50,17 @@
 - [x] Imagem puxa de `recipes.image_url` por padrão
 - [x] Lista de produtos mostra custo/margem por linha
 
-### Onda E — PDV polido
-- [ ] FAB de carrinho flutuante com badge de itens e total
-- [ ] Trava de estoque: `addToCart` impede passar de `planned − sold − inCart`
-- [ ] Botão "Esgotado" no card quando acabar
-- [ ] Upload de imagem para `pdv_products` + modal de edição completo
-- [ ] Mini animação de confirmação ao adicionar
+### Onda E — PDV polido ✅
+- [x] FAB de carrinho flutuante com badge de itens e total
+- [x] Trava de estoque: `addToCart` impede passar de `planned − sold − inCart`
+- [x] Badge "Esgotado" no card quando acabar (e contador no canto quando há no carrinho)
+- [x] Upload de imagem para `pdv_products` + edição completa em `ManageProductsSheet`
+- [x] Mini animação de confirmação ao adicionar (badge anima e FAB salta)
 
-### Onda F — Insumos densos
-- [ ] Grid 3 colunas com cards compactos (nome, embalagem · preço · custo/un, badge de estoque)
-- [ ] Toggle lista/grade
-- [ ] Alerta visual em estoque ≤ 0
+### Onda F — Insumos densos ✅
+- [x] Grid 3+ colunas com cards compactos (nome, embalagem · preço · custo/un, badge de estoque)
+- [x] Toggle lista/grade com persistência em localStorage
+- [x] Alerta visual em estoque ≤ 0 (badge destrutivo)
 
 ### Onda G+ — Catálogo & vitrine (completar)
 - [ ] `/catalogo` com 2 abas: vitrine da loja | vitrines de eventos
