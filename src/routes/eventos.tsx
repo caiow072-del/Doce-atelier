@@ -1169,7 +1169,7 @@ function EditMeta({
           onClick={() =>
             onSave({
               name: name.trim() || event.name,
-              date: new Date(date).toISOString(),
+              date: parseLocalDate(date).toISOString(),
               start_time: startTime || null,
               location: location || null,
               notes: notes || null,
@@ -1180,8 +1180,8 @@ function EditMeta({
               fee: Number(fee) || 0,
               opening_cash: Number(openingCash) || 0,
               recurrence,
-              weekday: recurrence === "weekly" ? (weekday !== "" ? Number(weekday) : new Date(date).getDay()) : null,
-              day_of_month: recurrence === "monthly" ? (dayOfMonth ? Number(dayOfMonth) : new Date(date).getDate()) : null,
+              weekday: recurrence === "weekly" ? (weekday !== "" ? Number(weekday) : parseLocalDate(date).getDay()) : null,
+              day_of_month: recurrence === "monthly" ? (dayOfMonth ? Number(dayOfMonth) : parseLocalDate(date).getDate()) : null,
               recurrence_until: recurrence !== "none" && recurrenceUntil ? recurrenceUntil : null,
             })
           }
