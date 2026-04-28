@@ -646,7 +646,8 @@ function EventsTab({
         const isOpen = expandedEvent === ev.id;
         return (
           <div key={ev.id} className="card-soft overflow-hidden">
-            <div className="flex flex-wrap items-center gap-3 px-4 py-3">
+            <button onClick={() => setExpandedEvent(isOpen ? null : ev.id)}
+              className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-rose/5 transition">
               <div className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-blush to-rose">
                 <Calendar className="h-4 w-4 text-mauve" />
               </div>
@@ -654,30 +655,19 @@ function EventsTab({
                 <p className="text-sm font-medium text-mauve truncate">{ev.name}</p>
                 <p className="text-[11px] text-muted-foreground">{date}{ev.location ? ` · ${ev.location}` : ""}</p>
               </div>
-              {url && (
-                <div className="flex flex-wrap gap-1.5">
-                  <button onClick={() => copy(url, ev.id)}
-                    className="inline-flex items-center gap-1 rounded-lg border border-border bg-white px-2.5 py-1.5 text-[11px] text-mauve hover:border-rose/50">
-                    {copied === ev.id ? <Check className="h-3 w-3 text-success" /> : <Copy className="h-3 w-3" />}
-                    Copiar
-                  </button>
-                  <button onClick={() => openQr(url, ev.name)}
-                    className="inline-flex items-center gap-1 rounded-lg border border-border bg-white px-2.5 py-1.5 text-[11px] text-mauve hover:border-rose/50">
-                    <QrCode className="h-3 w-3" /> QR
-                  </button>
-                  <a href={url} target="_blank" rel="noreferrer"
-                    className="inline-flex items-center gap-1 rounded-lg bg-mauve px-2.5 py-1.5 text-[11px] text-cream hover:opacity-90">
-                    <ExternalLink className="h-3 w-3" /> Abrir
-                  </a>
-                </div>
-              )}
-              <button onClick={() => setExpandedEvent(isOpen ? null : ev.id)}
-                className="grid h-8 w-8 place-items-center rounded-lg text-mauve hover:bg-rose/20">
-                {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-              </button>
-            </div>
+              {isOpen ? <ChevronUp className="h-4 w-4 text-mauve/60" /> : <ChevronDown className="h-4 w-4 text-mauve/60" />}
+            </button>
             {isOpen && shopId && (
-              <EventProductsPanel eventId={ev.id} shopRecipes={recipes} shopId={shopId} />
+              <EventProductsPanel
+                eventId={ev.id}
+                eventName={ev.name}
+                eventUrl={url}
+                shopRecipes={recipes}
+                shopId={shopId}
+                copy={copy}
+                copied={copied}
+                openQr={openQr}
+              />
             )}
           </div>
         );
