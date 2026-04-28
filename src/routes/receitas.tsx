@@ -203,9 +203,9 @@ function RecipesPage() {
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
-                    <p className="font-display text-xl italic text-mauve truncate">{r.name}</p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      {r.servings} fatias · {(r.target_margin * 100).toFixed(0)}% lucro desejado
+                    <p className="text-base font-semibold text-mauve truncate">{r.name}</p>
+                    <p className="mt-0.5 text-[11px] text-muted-foreground">
+                      {r.servings} fatias · meta {(r.target_margin * 100).toFixed(0)}%
                     </p>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
@@ -233,66 +233,61 @@ function RecipesPage() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="rounded-xl bg-blush/30 px-3 py-2 min-w-0">
+                  <div className="rounded-lg bg-blush/30 px-2.5 py-1.5 min-w-0">
                     <p className="text-[10px] uppercase tracking-widest text-rose">Preço real</p>
-                    <p className="font-display text-base italic text-mauve leading-tight truncate">
+                    <p className="text-sm font-semibold text-mauve num truncate">
                       {hasReal ? formatBRL(realPrice) : "—"}
                     </p>
                   </div>
-                  <div className={`rounded-xl px-3 py-2 min-w-0 ${profitNegative ? "bg-destructive/10" : "bg-blush/30"}`}>
-                    <p className="text-[10px] uppercase tracking-widest text-rose">Lucro real total</p>
+                  <div className={`rounded-lg px-2.5 py-1.5 min-w-0 ${profitNegative ? "bg-destructive/10" : "bg-blush/30"}`}>
+                    <p className="text-[10px] uppercase tracking-widest text-rose">Lucro total</p>
                     {hasReal ? (
-                      <>
-                        <p className={`font-display text-base italic leading-tight truncate ${profitNegative ? "text-destructive" : "text-mauve"}`}>
-                          {formatBRL(realProfitTotal)}
-                        </p>
-                        <p className="text-[10px] text-mauve/70 leading-tight mt-0.5 truncate">
-                          Recebe: <span className="font-medium text-mauve">{formatBRL(realProfitTotal + (r.labor_cost ?? 0))}</span>
-                        </p>
-                      </>
+                      <p className={`text-sm font-semibold num truncate ${profitNegative ? "text-destructive" : "text-mauve"}`}>
+                        {formatBRL(realProfitTotal)}
+                      </p>
                     ) : (
-                      <p className="text-xs text-muted-foreground italic">Defina o preço real</p>
+                      <p className="text-[11px] text-muted-foreground italic">defina o preço</p>
                     )}
                   </div>
-                  <div className="rounded-xl bg-card/70 px-3 py-2 min-w-0">
+                  <div className="rounded-lg bg-card/70 px-2.5 py-1.5 min-w-0">
                     <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Custo/fatia</p>
-                    <p className="font-display text-sm italic text-mauve leading-tight truncate">
+                    <p className="text-xs font-medium text-mauve num truncate">
                       {formatBRL(cost.perSlice)}
                     </p>
                   </div>
-                  <div className="rounded-xl bg-card/70 px-3 py-2 min-w-0">
+                  <div className="rounded-lg bg-card/70 px-2.5 py-1.5 min-w-0">
                     <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Lucro/fatia</p>
                     {hasReal ? (
-                      <p className={`font-display text-sm italic leading-tight truncate ${profitNegative ? "text-destructive" : "text-mauve"}`}>
+                      <p className={`text-xs font-medium num truncate ${profitNegative ? "text-destructive" : "text-mauve"}`}>
                         {formatBRL(realProfitSlice)}
                       </p>
                     ) : (
-                      <p className="font-display text-sm italic text-muted-foreground leading-tight">—</p>
+                      <p className="text-xs text-muted-foreground">—</p>
                     )}
                   </div>
                 </div>
 
                 {hasReal && (
-                  <div className="rounded-xl bg-card/70 p-3">
-                    <p className="text-center text-[10px] uppercase tracking-widest text-rose">
-                      Considerando apenas os insumos
+                  <div className="rounded-lg bg-card/70 p-2">
+                    <p className="text-center text-[9px] uppercase tracking-widest text-rose">
+                      Só insumos
                     </p>
-                    <div className="mt-2 grid grid-cols-3 gap-2 text-center">
-                      <div className="flex flex-col gap-0.5 min-w-0">
-                        <p className="text-[10px] leading-tight text-muted-foreground">Custo/fatia</p>
-                        <p className="font-display text-xs italic text-mauve leading-tight truncate">
+                    <div className="mt-1 grid grid-cols-3 gap-1.5 text-center">
+                      <div className="min-w-0">
+                        <p className="text-[9px] text-muted-foreground">Custo/f.</p>
+                        <p className="text-[11px] font-medium text-mauve num truncate">
                           {formatBRL(ingCostSlice)}
                         </p>
                       </div>
-                      <div className="flex flex-col gap-0.5 min-w-0">
-                        <p className="text-[10px] leading-tight text-muted-foreground">Lucro/fatia</p>
-                        <p className={`font-display text-xs italic leading-tight truncate ${ingProfitSlice <= 0 ? "text-destructive" : "text-mauve"}`}>
+                      <div className="min-w-0">
+                        <p className="text-[9px] text-muted-foreground">Lucro/f.</p>
+                        <p className={`text-[11px] font-medium num truncate ${ingProfitSlice <= 0 ? "text-destructive" : "text-mauve"}`}>
                           {formatBRL(ingProfitSlice)}
                         </p>
                       </div>
-                      <div className="flex flex-col gap-0.5 min-w-0">
-                        <p className="text-[10px] leading-tight text-muted-foreground">Lucro total</p>
-                        <p className={`font-display text-xs italic leading-tight truncate ${ingProfitTotal <= 0 ? "text-destructive" : "text-mauve"}`}>
+                      <div className="min-w-0">
+                        <p className="text-[9px] text-muted-foreground">Total</p>
+                        <p className={`text-[11px] font-medium num truncate ${ingProfitTotal <= 0 ? "text-destructive" : "text-mauve"}`}>
                           {formatBRL(ingProfitTotal)}
                         </p>
                       </div>
