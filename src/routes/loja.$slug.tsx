@@ -134,8 +134,8 @@ function StorefrontPage() {
 
       const [recsRes, sfRes] = await Promise.all([
         supabase.from("recipes")
-          .select("id, name, description, image_url, public_price, servings, category")
-          .eq("shop_id", shopData.id).eq("show_in_catalog", true).order("catalog_position").order("name"),
+          .select("id, name, description, image_url, public_price, servings, category, promo_price, is_featured")
+          .eq("shop_id", shopData.id).eq("show_in_catalog", true).order("is_featured", { ascending: false }).order("catalog_position").order("name"),
         supabase.from("shop_storefront").select("*").eq("shop_id", shopData.id).maybeSingle(),
       ]);
       if (cancelled) return;
