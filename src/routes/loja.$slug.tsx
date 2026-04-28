@@ -534,130 +534,143 @@ function StorefrontPage() {
         </div>
       </header>
 
-      <div className="grid gap-4 p-4 lg:grid-cols-[320px,1fr]">
-        {/* Editor side rail */}
-        <aside className="space-y-3">
-          <div className="card-soft overflow-hidden p-0">
-            <div className="flex border-b border-border">
-              {([
-                { k: "template", l: "Template", i: <LayoutTemplate className="h-3.5 w-3.5" /> },
-                { k: "sections", l: "Seções", i: <Eye className="h-3.5 w-3.5" /> },
-                { k: "design", l: "Design", i: <Palette className="h-3.5 w-3.5" /> },
-              ] as const).map((t) => (
-                <button key={t.k} onClick={() => setEditorTab(t.k)}
-                  className={`flex flex-1 items-center justify-center gap-1 px-2 py-2.5 text-[11px] font-medium transition ${editorTab === t.k ? "bg-mauve text-cream" : "text-mauve hover:bg-rose/10"}`}>
-                  {t.i}{t.l}
-                </button>
-              ))}
-            </div>
-            <div className="max-h-[calc(100vh-200px)] overflow-y-auto p-3">
-              {editorTab === "template" && (
-                <div className="grid gap-2">
-                  <p className="text-[10px] uppercase tracking-widest text-rose mb-1">Escolha um ponto de partida</p>
-                  {Object.values(TEMPLATES).map((tpl) => {
-                    const active = front.template === tpl.key;
-                    const p = PRESETS[tpl.theme.preset];
-                    return (
-                      <button key={tpl.key} onClick={() => applyTemplate(tpl.key)}
-                        className={`flex items-center gap-3 rounded-2xl border p-2.5 text-left transition ${active ? "border-mauve bg-blush/30" : "border-border hover:border-rose/40 bg-white"}`}>
-                        <div className="flex flex-col gap-1">
-                          <span className="block h-4 w-4 rounded-full" style={{ background: p.primary }} />
-                          <span className="block h-4 w-4 rounded-full" style={{ background: p.accent }} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold text-mauve" style={{ fontFamily: FONTS[tpl.theme.font].family }}>{tpl.label}</p>
-                          <p className="text-[10px] text-mauve/60 truncate">{tpl.description}</p>
-                        </div>
-                        {active && <Check className="h-4 w-4 text-mauve flex-none" />}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-
-              {editorTab === "sections" && (
-                <div className="space-y-1.5">
-                  <p className="text-[10px] uppercase tracking-widest text-rose mb-1">Mostre, esconda e reordene</p>
-                  {front.sections_config.map((s, idx) => (
-                    <div key={s.key} className="flex items-center gap-2 rounded-xl border border-border bg-white px-2 py-1.5">
-                      <GripVertical className="h-3.5 w-3.5 text-mauve/40" />
-                      <span className="flex-1 text-xs text-mauve">{SECTION_LABELS[s.key]}</span>
-                      <div className="flex gap-0.5">
-                        <button disabled={idx === 0} onClick={() => {
-                          const next = [...front.sections_config]; [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]]; update("sections_config", next);
-                        }} className="grid h-6 w-6 place-items-center rounded text-mauve hover:bg-rose/20 disabled:opacity-30"><ChevronUp className="h-3 w-3" /></button>
-                        <button disabled={idx === front.sections_config.length - 1} onClick={() => {
-                          const next = [...front.sections_config]; [next[idx + 1], next[idx]] = [next[idx], next[idx + 1]]; update("sections_config", next);
-                        }} className="grid h-6 w-6 place-items-center rounded text-mauve hover:bg-rose/20 disabled:opacity-30"><ChevronDown className="h-3 w-3" /></button>
-                        <button onClick={() => {
-                          const next = front.sections_config.map((x, i) => i === idx ? { ...x, visible: !x.visible } : x);
-                          update("sections_config", next);
-                        }} className={`grid h-6 w-6 place-items-center rounded ${s.visible ? "text-mauve hover:bg-rose/20" : "text-mauve/30 hover:bg-rose/10"}`}>
-                          {s.visible ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {editorTab === "design" && (
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-[10px] uppercase tracking-widest text-rose mb-2">Paleta</p>
-                    <div className="grid grid-cols-3 gap-1.5">
-                      {(Object.keys(PRESETS) as ThemePresetKey[]).map((k) => {
-                        const p = PRESETS[k];
-                        const active = (theme.preset ?? "rose") === k;
-                        return (
-                          <button key={k} onClick={() => updateTheme({ ...theme, preset: k, primary: undefined, accent: undefined, background: undefined })}
-                            className={`flex flex-col items-start gap-1 rounded-xl border p-2 ${active ? "border-mauve" : "border-border hover:border-rose/40"}`}>
-                            <div className="flex gap-0.5">
-                              <span className="h-3.5 w-3.5 rounded-full" style={{ background: p.primary }} />
-                              <span className="h-3.5 w-3.5 rounded-full" style={{ background: p.accent }} />
-                            </div>
-                            <span className="text-[10px] font-medium text-mauve">{p.label}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-widest text-rose mb-2 flex items-center gap-1"><Type className="h-3 w-3" /> Fonte de títulos</p>
-                    <div className="grid grid-cols-2 gap-1.5">
-                      {(Object.keys(FONTS) as FontKey[]).map((k) => {
-                        const f = FONTS[k];
-                        const active = (theme.font ?? "playfair") === k;
-                        return (
-                          <button key={k} onClick={() => updateTheme({ ...theme, font: k })}
-                            className={`rounded-xl border p-2 text-center ${active ? "border-mauve" : "border-border hover:border-rose/40"}`}
-                            style={{ fontFamily: f.family }}>
-                            <p className="text-base italic text-mauve leading-none">Aa</p>
-                            <p className="mt-0.5 text-[9px] text-muted-foreground">{f.label}</p>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-          <div className="card-soft flex items-start gap-2 border-l-4 border-rose/60 bg-blush/20 p-3">
-            <Sparkles className="mt-0.5 h-3 w-3 flex-none text-rose" />
-            <p className="text-[11px] text-mauve leading-snug">
-              Clique em qualquer <strong>texto</strong>, <strong>imagem</strong> ou <strong>banner</strong> da vitrine ao lado para editar no lugar.
-            </p>
-          </div>
-        </aside>
-
-        {/* Preview frame */}
+      {/* Preview ocupa toda largura disponível */}
+      <div className="p-3 sm:p-4">
         <div className="overflow-hidden rounded-3xl border border-border bg-white">
-          <div className={`mx-auto h-[calc(100vh-160px)] overflow-y-auto bg-cream ${device === "mobile" ? "max-w-[420px] border-x border-border" : "w-full"}`}>
+          <div className={`mx-auto h-[calc(100vh-110px)] overflow-y-auto bg-cream ${device === "mobile" ? "max-w-[420px] border-x border-border" : "w-full"}`}>
             {storefrontBody}
           </div>
         </div>
       </div>
+
+      {/* Painel flutuante de edição (fixo na tela) */}
+      <aside
+        className={`fixed bottom-4 right-4 z-40 w-[320px] max-w-[calc(100vw-2rem)] transition-transform duration-300 ${panelOpen ? "translate-y-0" : "translate-y-[calc(100%+1rem)]"}`}
+      >
+        <div className="card-soft overflow-hidden p-0 shadow-2xl border border-border">
+          <div className="flex items-center border-b border-border bg-cream/95 backdrop-blur">
+            {([
+              { k: "template", l: "Template", i: <LayoutTemplate className="h-3.5 w-3.5" /> },
+              { k: "sections", l: "Seções", i: <Eye className="h-3.5 w-3.5" /> },
+              { k: "design", l: "Design", i: <Palette className="h-3.5 w-3.5" /> },
+            ] as const).map((t) => (
+              <button key={t.k} onClick={() => setEditorTab(t.k)}
+                className={`flex flex-1 items-center justify-center gap-1 px-2 py-2.5 text-[11px] font-medium transition ${editorTab === t.k ? "bg-mauve text-cream" : "text-mauve hover:bg-rose/10"}`}>
+                {t.i}{t.l}
+              </button>
+            ))}
+            <button
+              onClick={() => setPanelOpen(false)}
+              className="px-2 py-2.5 text-mauve/70 hover:text-mauve hover:bg-rose/10"
+              title="Recolher painel"
+            >
+              <ChevronDown className="h-3.5 w-3.5" />
+            </button>
+          </div>
+          <div className="max-h-[60vh] overflow-y-auto p-3 bg-white">
+            {editorTab === "template" && (
+              <div className="grid gap-2">
+                <p className="text-[10px] uppercase tracking-widest text-rose mb-1">Escolha um ponto de partida</p>
+                {Object.values(TEMPLATES).map((tpl) => {
+                  const active = front.template === tpl.key;
+                  const p = PRESETS[tpl.theme.preset];
+                  return (
+                    <button key={tpl.key} onClick={() => applyTemplate(tpl.key)}
+                      className={`flex items-center gap-3 rounded-2xl border p-2.5 text-left transition ${active ? "border-mauve bg-blush/30" : "border-border hover:border-rose/40 bg-white"}`}>
+                      <div className="flex flex-col gap-1">
+                        <span className="block h-4 w-4 rounded-full" style={{ background: p.primary }} />
+                        <span className="block h-4 w-4 rounded-full" style={{ background: p.accent }} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-mauve" style={{ fontFamily: FONTS[tpl.theme.font].family }}>{tpl.label}</p>
+                        <p className="text-[10px] text-mauve/60 truncate">{tpl.description}</p>
+                      </div>
+                      {active && <Check className="h-4 w-4 text-mauve flex-none" />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {editorTab === "sections" && (
+              <div className="space-y-1.5">
+                <p className="text-[10px] uppercase tracking-widest text-rose mb-1">Mostre, esconda e reordene</p>
+                {front.sections_config.map((s, idx) => (
+                  <div key={s.key} className="flex items-center gap-2 rounded-xl border border-border bg-white px-2 py-1.5">
+                    <GripVertical className="h-3.5 w-3.5 text-mauve/40" />
+                    <span className="flex-1 text-xs text-mauve">{SECTION_LABELS[s.key]}</span>
+                    <div className="flex gap-0.5">
+                      <button disabled={idx === 0} onClick={() => {
+                        const next = [...front.sections_config]; [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]]; update("sections_config", next);
+                      }} className="grid h-6 w-6 place-items-center rounded text-mauve hover:bg-rose/20 disabled:opacity-30"><ChevronUp className="h-3 w-3" /></button>
+                      <button disabled={idx === front.sections_config.length - 1} onClick={() => {
+                        const next = [...front.sections_config]; [next[idx + 1], next[idx]] = [next[idx], next[idx + 1]]; update("sections_config", next);
+                      }} className="grid h-6 w-6 place-items-center rounded text-mauve hover:bg-rose/20 disabled:opacity-30"><ChevronDown className="h-3 w-3" /></button>
+                      <button onClick={() => {
+                        const next = front.sections_config.map((x, i) => i === idx ? { ...x, visible: !x.visible } : x);
+                        update("sections_config", next);
+                      }} className={`grid h-6 w-6 place-items-center rounded ${s.visible ? "text-mauve hover:bg-rose/20" : "text-mauve/30 hover:bg-rose/10"}`}>
+                        {s.visible ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {editorTab === "design" && (
+              <div className="space-y-4">
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest text-rose mb-2">Paleta</p>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {(Object.keys(PRESETS) as ThemePresetKey[]).map((k) => {
+                      const p = PRESETS[k];
+                      const active = (theme.preset ?? "rose") === k;
+                      return (
+                        <button key={k} onClick={() => updateTheme({ ...theme, preset: k, primary: undefined, accent: undefined, background: undefined })}
+                          className={`flex flex-col items-start gap-1 rounded-xl border p-2 ${active ? "border-mauve" : "border-border hover:border-rose/40"}`}>
+                          <div className="flex gap-0.5">
+                            <span className="h-3.5 w-3.5 rounded-full" style={{ background: p.primary }} />
+                            <span className="h-3.5 w-3.5 rounded-full" style={{ background: p.accent }} />
+                          </div>
+                          <span className="text-[10px] font-medium text-mauve">{p.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest text-rose mb-2 flex items-center gap-1"><Type className="h-3 w-3" /> Fonte de títulos</p>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {(Object.keys(FONTS) as FontKey[]).map((k) => {
+                      const f = FONTS[k];
+                      const active = (theme.font ?? "playfair") === k;
+                      return (
+                        <button key={k} onClick={() => updateTheme({ ...theme, font: k })}
+                          className={`rounded-xl border p-2 text-center ${active ? "border-mauve" : "border-border hover:border-rose/40"}`}
+                          style={{ fontFamily: f.family }}>
+                          <p className="text-base italic text-mauve leading-none">Aa</p>
+                          <p className="mt-0.5 text-[9px] text-muted-foreground">{f.label}</p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </aside>
+
+      {/* FAB para reabrir painel quando recolhido */}
+      {!panelOpen && (
+        <button
+          onClick={() => setPanelOpen(true)}
+          className="fixed bottom-4 right-4 z-40 inline-flex items-center gap-1.5 rounded-full bg-mauve px-4 py-3 text-xs font-semibold text-cream shadow-2xl hover:opacity-90"
+        >
+          <Palette className="h-3.5 w-3.5" /> Editar
+        </button>
+      )}
       {shareOpen && (
         <ShareModal
           url={typeof window !== "undefined" ? `${window.location.origin}/loja/${shop.slug}` : ""}
