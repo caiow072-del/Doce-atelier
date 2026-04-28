@@ -145,7 +145,7 @@ function CatalogoPage() {
   const quickToggle = async (r: Recipe, key: "show_in_catalog" | "is_featured") => {
     const next = !r[key];
     setRecipes((prev) => prev.map((x) => (x.id === r.id ? { ...x, [key]: next } : x)));
-    const { error } = await supabase.from("recipes").update({ [key]: next }).eq("id", r.id);
+    const { error } = await supabase.from("recipes").update({ [key]: next } as any).eq("id", r.id);
     if (error) {
       toast.error("Erro ao salvar");
       setRecipes((prev) => prev.map((x) => (x.id === r.id ? { ...x, [key]: !next } : x)));
