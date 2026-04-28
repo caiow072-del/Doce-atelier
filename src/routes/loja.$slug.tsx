@@ -103,6 +103,7 @@ function StorefrontPage() {
   const [editorTab, setEditorTab] = useState<"template" | "sections" | "design">("template");
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
 
   const isOwner = !!shop && shops.some((m) => m.shop_id === shop.id && (m.role === "owner" || m.role === "manager"));
 
