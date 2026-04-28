@@ -239,8 +239,10 @@ function PDVPage() {
         ) : (
           <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {eventProducts.map((p) => {
-              const left = Math.max(0, p.planned_qty - p.sold_qty);
+              const inC = inCart(p.id);
+              const left = p.planned_qty > 0 ? Math.max(0, p.planned_qty - p.sold_qty - inC) : Infinity;
               const sold_out = p.planned_qty > 0 && left === 0;
+              const maxAvail = p.planned_qty > 0 ? p.planned_qty - p.sold_qty : undefined;
               return (
                 <motion.button
                   key={p.id}
@@ -253,8 +255,8 @@ function PDVPage() {
                     source: "event",
                     product_id: null,
                     event_product_id: p.id,
-                  })}
-                  className="card-soft group flex flex-col overflow-hidden text-left disabled:opacity-50"
+                  }, maxAvail)}
+                  className="card-soft group relative flex flex-col overflow-hidden text-left disabled:opacity-50"
                 >
                   <div className="relative aspect-[4/3] w-full overflow-hidden bg-gradient-to-br from-blush/60 to-card">
                     {p.image_url ? (
@@ -267,6 +269,11 @@ function PDVPage() {
                     {p.planned_qty > 0 && (
                       <span className={`absolute right-1.5 top-1.5 rounded-full px-1.5 py-0.5 text-[10px] tabular-nums backdrop-blur ${sold_out ? "bg-destructive/80 text-white" : "bg-card/85 text-mauve"}`}>
                         {sold_out ? "Esgotado" : `${left} restam`}
+                      </span>
+                    )}
+                    {inC > 0 && !sold_out && (
+                      <span className="absolute left-1.5 top-1.5 grid h-6 min-w-6 place-items-center rounded-full bg-mauve px-1.5 text-[10px] font-semibold text-cream">
+                        {inC}
                       </span>
                     )}
                   </div>
