@@ -98,7 +98,24 @@ function StorefrontPage() {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [editing, setEditing] = useState(false);
 
-  const isOwner = !!shop && shops.some((m) => m.shop_id === shop.id && (m.role === "owner" || m.role === "manager"));
+  // Preview mode: embedded inside /vitrine via iframe with ?preview=1
+  const isPreview = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("preview");
+  const isOwner = !isPreview && !!shop && shops.some((m) => m.shop_id === shop.id && (m.role === "owner" || m.role === "manager"));
+
+  // Listen for live updates from parent editor
+  useEffect(() => {
+    if (!isPreview) return;
+    const onMsg = (ev: MessageEvent) => {
+      const data = ev.data;
+      if (!data || data.type !== "vitrine-preview") return;
+      if (data.theme !== undefined) applyTheme(data.theme as ShopTheme | null);
+      if (data.draft) setDraft((prev) => ({ ...prev, ...data.draft, social: { ...prev.social, ...(data.draft.social ?? {}) } }));
+    };
+    window.addEventListener("message", onMsg);
+    // Tell parent we are ready
+    window.parent?.postMessage({ type: "vitrine-preview-ready" }, "*");
+    return () => window.removeEventListener("message", onMsg);
+  }, [isPreview]);
 
   useEffect(() => {
     let cancelled = false;
