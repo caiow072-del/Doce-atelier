@@ -99,9 +99,17 @@ function PDVPage() {
   const cartTotal = useMemo(() => cart.reduce((s, x) => s + x.price * x.qty, 0), [cart]);
   const cartCount = useMemo(() => cart.reduce((s, x) => s + x.qty, 0), [cart]);
 
-  const addToCart = (item: Omit<CartItem, "qty">) => {
+  const inCart = (eventProductId: string) =>
+    cart.find((c) => c.event_product_id === eventProductId)?.qty ?? 0;
+
+  const addToCart = (item: Omit<CartItem, "qty">, maxAvailable?: number) => {
     setCart((prev) => {
       const idx = prev.findIndex((c) => c.id === item.id);
+      const currentQty = idx >= 0 ? prev[idx].qty : 0;
+      if (typeof maxAvailable === "number" && currentQty + 1 > maxAvailable) {
+        toast.error("Sem estoque suficiente");
+        return prev;
+      }
       if (idx >= 0) {
         const copy = [...prev]; copy[idx] = { ...copy[idx], qty: copy[idx].qty + 1 }; return copy;
       }
