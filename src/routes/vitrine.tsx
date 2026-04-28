@@ -70,14 +70,14 @@ function VitrinePage() {
       supabase.from("shop_storefront").select("*").eq("shop_id", shopId).maybeSingle(),
       supabase.from("events").select("id, name, date, closed_at").eq("shop_id", shopId).is("closed_at", null).order("date").limit(20),
     ]).then(async ([sf, ev]) => {
-      let row = sf.data as unknown as Storefront | null;
+      let row = (sf.data as unknown) as Storefront | null;
       if (!row) {
         const { data } = await supabase.from("shop_storefront").insert({
           shop_id: shopId,
           hero_title: currentShop?.shops.name ?? "Bem-vindo",
           hero_subtitle: "Doces feitos com carinho",
         }).select("*").single();
-        row = data as Storefront;
+        row = (data as unknown) as Storefront;
       }
       setFront(row);
       setEvents((ev.data ?? []) as any);
