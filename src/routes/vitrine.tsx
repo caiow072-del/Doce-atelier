@@ -70,7 +70,7 @@ function VitrinePage() {
       supabase.from("shop_storefront").select("*").eq("shop_id", shopId).maybeSingle(),
       supabase.from("events").select("id, name, date, closed_at").eq("shop_id", shopId).is("closed_at", null).order("date").limit(20),
     ]).then(async ([sf, ev]) => {
-      let row = sf.data as Storefront | null;
+      let row = sf.data as unknown as Storefront | null;
       if (!row) {
         const { data } = await supabase.from("shop_storefront").insert({
           shop_id: shopId,
