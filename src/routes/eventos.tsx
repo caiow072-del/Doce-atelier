@@ -1231,7 +1231,7 @@ function NewEventSheet({
     if (!name.trim()) return toast.error("Dê um nome");
     setSaving(true);
 
-    const anchor = new Date(date);
+    const anchor = parseLocalDate(date);
     const { data: row, error } = await supabase
       .from("events")
       .insert({
