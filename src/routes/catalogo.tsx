@@ -620,9 +620,16 @@ function EventsTab({
     </div>;
   }
   if (events.length === 0) {
-    return <div className="card-soft p-10 text-center text-sm text-muted-foreground">
-      Nenhum evento cadastrado. <Link to="/eventos" className="underline text-mauve">Criar evento</Link>.
-    </div>;
+    return (
+      <div className="card-soft p-10 text-center text-sm text-muted-foreground space-y-3">
+        <Calendar className="mx-auto h-10 w-10 text-mauve/30" strokeWidth={1.2} />
+        <p>Você ainda não tem eventos cadastrados.</p>
+        <p className="text-xs">Cada evento ganha sua própria vitrine pública para os clientes encomendarem antes do dia.</p>
+        <Link to="/eventos" className="inline-flex items-center gap-1.5 rounded-xl bg-mauve px-4 py-2 text-xs text-cream hover:opacity-90">
+          <Plus className="h-3.5 w-3.5" /> Criar evento
+        </Link>
+      </div>
+    );
   }
   return (
     <div className="space-y-3">
