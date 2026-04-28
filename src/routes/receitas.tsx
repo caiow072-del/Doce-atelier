@@ -1143,10 +1143,10 @@ function RecipeForm({
 
 function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
-    <div>
-      <label className="inline-flex items-center gap-1 text-[10px] uppercase tracking-widest text-rose" title={hint}>
-        {label}
-        {hint && <HelpCircle className="h-3 w-3 opacity-60" />}
+    <div className="flex flex-col">
+      <label className="inline-flex min-h-[14px] items-center gap-1 text-[10px] uppercase leading-tight tracking-widest text-rose" title={hint}>
+        <span className="line-clamp-2">{label}</span>
+        {hint && <HelpCircle className="h-3 w-3 shrink-0 opacity-60" />}
       </label>
       <div className="mt-1">{children}</div>
     </div>
