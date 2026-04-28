@@ -733,7 +733,26 @@ function EventProductsPanel({ eventId, shopRecipes, shopId }: {
     setItems((prev) => [...prev, data as EventProduct]);
   };
 
-  const copyAllFromShop = async () => {
+  const pushToShop = async (p: EventProduct) => {
+    if (p.recipe_id) {
+      const { error } = await supabase
+        .from("recipes")
+        .update({ show_in_catalog: true, public_price: p.unit_price })
+        .eq("id", p.recipe_id);
+      if (error) return toast.error("Erro: " + error.message);
+      toast.success(`"${p.name}" agora aparece na vitrine da loja`);
+      return;
+    }
+    if (!confirm(`Criar "${p.name}" como produto na vitrine da loja?`)) return;
+    const { error } = await supabase.from("recipes").insert({
+      shop_id: shopId, name: p.name, public_price: p.unit_price,
+      image_url: p.image_url, show_in_catalog: true, servings: 1,
+    } as any);
+    if (error) return toast.error("Erro: " + error.message);
+    toast.success("Adicionado à vitrine da loja");
+  };
+
+
     const visible = shopRecipes.filter((r) => r.show_in_catalog);
     if (visible.length === 0) return toast.error("Nenhum produto visível na vitrine da loja");
     if (!confirm(`Copiar ${visible.length} produto(s) da vitrine da loja para este evento?`)) return;
