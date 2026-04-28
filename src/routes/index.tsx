@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   TrendingUp,
   Wallet,
@@ -14,9 +14,12 @@ import {
   ClipboardList,
   Lock,
   Clock,
+  TrendingDown,
+  Target,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
+import { recipeCost, type IngredientLite, type RecipeIngredientLite, type RecipeLite } from "@/lib/costs";
 import heroCake from "@/assets/hero-cake.jpg";
 
 const formatBRL = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -32,13 +35,18 @@ export const Route = createFileRoute("/")({
 });
 
 type Recipe = { id: string; name: string; servings: number };
+type ProductPerf = { name: string; revenue: number; cost: number; profit: number; qty: number; estimated: boolean };
 
 function Dashboard() {
   const { user, currentShop } = useAuth();
   const shopId = currentShop?.shop_id;
+  const targetMargin = Number((currentShop?.shops as any)?.target_margin ?? 0.30);
 
   const [revenue, setRevenue] = useState(0);
   const [salesCount, setSalesCount] = useState(0);
+  const [realCost, setRealCost] = useState(0);
+  const [estimatedPortion, setEstimatedPortion] = useState(0);
+  const [perfList, setPerfList] = useState<ProductPerf[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [ingredientsCount, setIngredientsCount] = useState(0);
   const [pendingOrders, setPendingOrders] = useState(0);
@@ -53,32 +61,85 @@ function Dashboard() {
     startOfMonth.setHours(0, 0, 0, 0);
     const today = new Date().toISOString();
     Promise.all([
-      supabase.from("sales").select("price").eq("shop_id", shopId).gte("sold_at", startOfMonth.toISOString()),
+      supabase.from("sales").select("price, qty, item, product_id").eq("shop_id", shopId).gte("sold_at", startOfMonth.toISOString()),
       supabase.from("recipes").select("id, name, servings").eq("shop_id", shopId).order("name").limit(6),
       supabase.from("ingredients").select("id", { count: "exact", head: true }).eq("shop_id", shopId),
       supabase.from("orders").select("id", { count: "exact", head: true }).eq("shop_id", shopId).in("status", ["orcamento", "confirmado", "produzindo", "pronto"]),
       supabase.from("events").select("id, name, date").eq("shop_id", shopId).is("closed_at", null).gte("date", today).order("date").limit(1).maybeSingle(),
       supabase.from("events").select("id, name, closed_at, payment_summary").eq("shop_id", shopId).not("closed_at", "is", null).order("closed_at", { ascending: false }).limit(1).maybeSingle(),
       supabase.from("orders").select("id", { count: "exact", head: true }).eq("shop_id", shopId).eq("source", "storefront").eq("status", "orcamento"),
-    ]).then(([s, r, i, o, ne, lc, sp]) => {
-      const sales = (s.data ?? []) as { price: number }[];
-      setRevenue(sales.reduce((sum, x) => sum + Number(x.price), 0));
-      setSalesCount(sales.length);
+      supabase.from("pdv_products").select("id, name, recipe_id, sale_mode").eq("shop_id", shopId),
+      supabase.from("recipes").select("id, servings, labor_cost, packaging_cost, waste_pct").eq("shop_id", shopId),
+      supabase.from("recipe_ingredients").select("recipe_id, ingredient_id, quantity").eq("shop_id", shopId),
+      supabase.from("ingredients").select("id, package_qty, price_paid").eq("shop_id", shopId),
+    ]).then(([s, r, i, o, ne, lc, sp, prods, allRecipes, recIngs, ings]) => {
+      const sales = (s.data ?? []) as { price: number; qty: number; item: string; product_id: string | null }[];
+      const totalRev = sales.reduce((sum, x) => sum + Number(x.price), 0);
+      const totalQty = sales.reduce((sum, x) => sum + Number(x.qty ?? 1), 0);
+      setRevenue(totalRev);
+      setSalesCount(totalQty);
       setRecipes((r.data ?? []) as Recipe[]);
       setIngredientsCount(i.count ?? 0);
       setPendingOrders(o.count ?? 0);
       setNextEvent(ne.data as any);
       setLastClosed(lc.data as any);
       setStorefrontPending(sp.count ?? 0);
+
+      // ====== Real cost calculation ======
+      const products = (prods.data ?? []) as { id: string; name: string; recipe_id: string | null; sale_mode: string }[];
+      const recipesFull = (allRecipes.data ?? []) as RecipeLite[];
+      const recipeIngs = (recIngs.data ?? []) as RecipeIngredientLite[];
+      const ingredients = (ings.data ?? []) as IngredientLite[];
+      const productMap = new Map(products.map((p) => [p.id, p]));
+
+      const perPerf = new Map<string, ProductPerf>();
+      let totalCost = 0;
+      let estPart = 0;
+      const FALLBACK_RATIO = 0.35;
+      for (const sale of sales) {
+        const qty = Number(sale.qty ?? 1);
+        const rev = Number(sale.price);
+        const prod = sale.product_id ? productMap.get(sale.product_id) : null;
+        const recipe = prod?.recipe_id ? recipesFull.find((x) => x.id === prod.recipe_id) : null;
+        let cost = 0;
+        let estimated = false;
+        if (recipe) {
+          const c = recipeCost(recipe, recipeIngs, ingredients);
+          const unit = prod?.sale_mode === "slice" ? c.perSlice : c.perWhole;
+          cost = unit * qty;
+        } else {
+          cost = rev * FALLBACK_RATIO;
+          estPart += cost;
+          estimated = true;
+        }
+        totalCost += cost;
+        const key = sale.product_id || sale.item;
+        const cur = perPerf.get(key) ?? { name: prod?.name || sale.item, revenue: 0, cost: 0, profit: 0, qty: 0, estimated: false };
+        cur.revenue += rev;
+        cur.cost += cost;
+        cur.profit = cur.revenue - cur.cost;
+        cur.qty += qty;
+        cur.estimated = cur.estimated || estimated;
+        perPerf.set(key, cur);
+      }
+      setRealCost(totalCost);
+      setEstimatedPortion(estPart);
+      setPerfList(Array.from(perPerf.values()).sort((a, b) => b.profit - a.profit));
     });
   }, [shopId]);
 
-  const estCost = salesCount * 7.5;
-  const profit = revenue - estCost;
-  const costRatio = revenue > 0 ? estCost / revenue : 0;
-  const costsHigh = costRatio >= 0.6;
-  const profitNegative = profit < 0;
+  const profit = revenue - realCost;
+  const costRatio = revenue > 0 ? realCost / revenue : 0;
   const margin = revenue > 0 ? (profit / revenue) * 100 : 0;
+  const targetMarginPct = targetMargin * 100;
+  const meetingTarget = margin >= targetMarginPct;
+  const profitNegative = profit < 0;
+  const costsHigh = costRatio >= 1 - targetMargin;
+  const estRatio = realCost > 0 ? estimatedPortion / realCost : 0;
+
+  const topProfit = useMemo(() => perfList.slice(0, 3), [perfList]);
+  const lossMakers = useMemo(() => perfList.filter((p) => p.profit < 0).slice(0, 3), [perfList]);
+
   const firstName = (user?.user_metadata?.full_name as string | undefined)?.split(" ")[0]
     ?? user?.email?.split("@")[0]
     ?? "confeiteira";
