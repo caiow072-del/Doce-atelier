@@ -785,7 +785,7 @@ function Hero({
             value={heroTitle}
             onChange={onTitle}
             as="h1"
-            className="font-display text-4xl italic text-mauve md:text-5xl"
+            className="font-brand text-4xl text-mauve md:text-5xl"
             placeholder="Nome da sua loja"
           />
           <EditableText
