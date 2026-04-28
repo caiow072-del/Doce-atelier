@@ -65,24 +65,61 @@ function VitrinePage() {
 
   useEffect(() => {
     if (!shopId) return;
+    let cancelled = false;
     setLoading(true);
-    Promise.all([
-      supabase.from("shop_storefront").select("*").eq("shop_id", shopId).maybeSingle(),
-      supabase.from("events").select("id, name, date, closed_at").eq("shop_id", shopId).is("closed_at", null).order("date").limit(20),
-    ]).then(async ([sf, ev]) => {
-      let row = (sf.data as unknown) as Storefront | null;
-      if (!row) {
-        const { data } = await supabase.from("shop_storefront").insert({
-          shop_id: shopId,
-          hero_title: currentShop?.shops.name ?? "Bem-vindo",
-          hero_subtitle: "Doces feitos com carinho",
-        }).select("*").single();
-        row = (data as unknown) as Storefront;
+
+    const fallback: Storefront = {
+      shop_id: shopId,
+      hero_title: currentShop?.shops.name ?? "Bem-vindo",
+      hero_subtitle: "Doces feitos com carinho",
+      banner_url: null,
+      promotions: [],
+      social: {},
+    };
+
+    (async () => {
+      try {
+        const [sfRes, evRes] = await Promise.all([
+          supabase.from("shop_storefront").select("*").eq("shop_id", shopId).maybeSingle(),
+          supabase
+            .from("events")
+            .select("id, name, date, closed_at")
+            .eq("shop_id", shopId)
+            .is("closed_at", null)
+            .order("date")
+            .limit(20),
+        ]);
+
+        let row = (sfRes.data as unknown) as Storefront | null;
+        if (!row) {
+          const ins = await supabase
+            .from("shop_storefront")
+            .insert({
+              shop_id: shopId,
+              hero_title: fallback.hero_title,
+              hero_subtitle: fallback.hero_subtitle,
+            })
+            .select("*")
+            .maybeSingle();
+          row = ((ins.data as unknown) as Storefront | null) ?? fallback;
+        }
+        if (cancelled) return;
+        setFront({ ...fallback, ...row, social: row?.social ?? {}, promotions: row?.promotions ?? [] });
+        setEvents((evRes.data ?? []) as any);
+      } catch (err) {
+        console.error("vitrine load error", err);
+        if (!cancelled) {
+          setFront(fallback);
+          toast.error("Não foi possível carregar a vitrine completa.");
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-      setFront(row);
-      setEvents((ev.data ?? []) as any);
-      setLoading(false);
-    });
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [shopId]);
 
   // Live preview
