@@ -184,6 +184,29 @@
       radial-gradient(circle at 10% 0%, oklch(0.93 0.04 18 / 0.5), transparent 40%),
       radial-gradient(circle at 90% 100%, oklch(0.93 0.04 18 / 0.4), transparent 45%);
   }
+
+  /* ===== Responsive card grids — auto-fill prevents stretching on wide screens ===== */
+  .grid-cards-sm {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  }
+  .grid-cards-md {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  }
+  .grid-cards-lg {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+
+  /* Tabular numbers for money/quantity columns */
+  .num {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
 }
 
 @layer components {
