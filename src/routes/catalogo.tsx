@@ -107,6 +107,13 @@ function CatalogoPage() {
 
   useEffect(() => { reload(); /* eslint-disable-next-line */ }, [currentShop?.shop_id]);
 
+  // Auto-expandir o primeiro evento ao abrir a aba quando ainda não houver seleção
+  useEffect(() => {
+    if (tab === "eventos" && !expandedEvent && events.length > 0) {
+      setExpandedEvent(events[0].id);
+    }
+  }, [tab, events, expandedEvent]);
+
   const categories = useMemo(() => {
     const set = new Set<string>();
     recipes.forEach((r) => r.category && set.add(r.category));
