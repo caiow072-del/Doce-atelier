@@ -676,8 +676,11 @@ function EventsTab({
   );
 }
 
-function EventProductsPanel({ eventId, shopRecipes, shopId }: {
-  eventId: string; shopRecipes: Recipe[]; shopId: string;
+function EventProductsPanel({ eventId, eventName, eventUrl, shopRecipes, shopId, copy, copied, openQr }: {
+  eventId: string; eventName: string; eventUrl: string;
+  shopRecipes: Recipe[]; shopId: string;
+  copy: (url: string, key: string) => void; copied: string | null;
+  openQr: (url: string, label: string) => void;
 }) {
   const [items, setItems] = useState<EventProduct[]>([]);
   const [loading, setLoading] = useState(true);
