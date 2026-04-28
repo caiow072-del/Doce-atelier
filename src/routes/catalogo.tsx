@@ -238,8 +238,8 @@ function CatalogoPage() {
                   <QrCode className="h-3.5 w-3.5" />
                 </button>
                 <Link to="/vitrine" title="Personalizar vitrine"
-                  className="grid h-8 w-8 place-items-center rounded-lg border border-border bg-white text-mauve hover:border-rose/50">
-                  <Sparkles className="h-3.5 w-3.5 text-rose" />
+                  className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-white px-2.5 text-xs text-mauve hover:border-rose/50">
+                  <Sparkles className="h-3.5 w-3.5 text-rose" /> Personalizar vitrine
                 </Link>
                 <a href={lojaUrl} target="_blank" rel="noreferrer" title="Abrir vitrine"
                   className="inline-flex h-8 items-center gap-1 rounded-lg bg-mauve px-2.5 text-xs text-cream hover:opacity-90">
