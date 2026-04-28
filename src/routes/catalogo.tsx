@@ -92,10 +92,15 @@ function CatalogoPage() {
     setRecipes((prev) => prev.map((x) => (x.id === r.id ? { ...x, show_in_catalog: !x.show_in_catalog } : x)));
   };
 
-  const updateField = async (r: Recipe, field: "public_price" | "category", value: any) => {
-    const { error } = await supabase.from("recipes").update({ [field]: value }).eq("id", r.id);
+  const updatePrice = async (r: Recipe, value: number) => {
+    const { error } = await supabase.from("recipes").update({ public_price: value }).eq("id", r.id);
     if (error) return toast.error("Erro");
-    setRecipes((prev) => prev.map((x) => (x.id === r.id ? { ...x, [field]: value } : x)));
+    setRecipes((prev) => prev.map((x) => (x.id === r.id ? { ...x, public_price: value } : x)));
+  };
+  const updateCategory = async (r: Recipe, value: string | null) => {
+    const { error } = await supabase.from("recipes").update({ category: value }).eq("id", r.id);
+    if (error) return toast.error("Erro");
+    setRecipes((prev) => prev.map((x) => (x.id === r.id ? { ...x, category: value } : x)));
   };
 
   const move = async (idx: number, dir: -1 | 1) => {
