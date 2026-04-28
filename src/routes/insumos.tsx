@@ -116,6 +116,22 @@ function InsumosPage() {
           />
         </div>
         <div className="flex gap-2">
+          <div className="inline-flex items-center rounded-2xl border border-border bg-card p-0.5">
+            <button
+              onClick={() => setView("grid")}
+              aria-label="Visualizar em grade"
+              className={`grid h-9 w-9 place-items-center rounded-xl ${view === "grid" ? "bg-blush/60 text-mauve" : "text-muted-foreground hover:text-mauve"}`}
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setView("list")}
+              aria-label="Visualizar em lista"
+              className={`grid h-9 w-9 place-items-center rounded-xl ${view === "list" ? "bg-blush/60 text-mauve" : "text-muted-foreground hover:text-mauve"}`}
+            >
+              <List className="h-4 w-4" />
+            </button>
+          </div>
           <button
             onClick={() => setShowSuggestions(true)}
             className="inline-flex items-center justify-center gap-2 rounded-2xl border border-rose/40 bg-blush/30 px-3 py-2.5 text-sm font-medium text-mauve hover:bg-blush/50"
