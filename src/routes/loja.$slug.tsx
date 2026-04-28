@@ -204,29 +204,63 @@ function StorefrontPage() {
     );
   }
 
+  const heroTitle = draft.hero_title || shop.name;
+  const heroSubtitle = draft.hero_subtitle || shop.description;
+
   return (
-    <div className="floral-bg min-h-screen pb-32">
+    <div className={`floral-bg min-h-screen pb-32 ${editing ? "lg:pr-[24rem]" : ""}`}>
+      {/* Owner edit bar */}
+      {isOwner && session && !editing && (
+        <button
+          onClick={() => setEditing(true)}
+          className="fixed right-4 top-4 z-40 inline-flex items-center gap-1.5 rounded-full bg-mauve px-4 py-2 text-xs font-medium text-cream shadow-lg hover:opacity-90"
+        >
+          <Pencil className="h-3.5 w-3.5" /> Editar vitrine
+        </button>
+      )}
+
       {/* Hero */}
-      <header className="relative overflow-hidden bg-gradient-to-br from-blush via-cream to-rose/40">
-        <div className="mx-auto max-w-5xl px-6 py-10 md:py-16">
-          <div className="flex flex-col items-center gap-4 text-center md:flex-row md:items-end md:gap-6 md:text-left">
-            {shop.logo_url ? (
-              <img
-                src={shop.logo_url}
-                alt={shop.name}
-                className="h-24 w-24 rounded-3xl border-4 border-cream object-cover shadow-lg md:h-28 md:w-28"
-              />
-            ) : (
-              <div className="grid h-24 w-24 place-items-center rounded-3xl border-4 border-cream bg-rose shadow-lg md:h-28 md:w-28">
-                <Cake className="h-10 w-10 text-mauve" strokeWidth={1.3} />
-              </div>
-            )}
-            <div className="flex-1">
-              <p className="text-xs uppercase tracking-widest text-mauve/70">Vitrine</p>
-              <h1 className="font-display text-4xl italic text-mauve md:text-5xl">{shop.name}</h1>
-              {shop.description && (
-                <p className="mt-2 max-w-xl text-sm text-mauve/80">{shop.description}</p>
+      <header className="relative overflow-hidden">
+        {draft.banner_url ? (
+          <div className="relative">
+            <img src={draft.banner_url} alt="" className="h-48 w-full object-cover sm:h-64 md:h-80" />
+            <div className="absolute inset-0 bg-gradient-to-t from-cream via-cream/60 to-transparent" />
+          </div>
+        ) : null}
+        <div className={`bg-gradient-to-br from-blush via-cream to-rose/40 ${draft.banner_url ? "" : ""}`}>
+          <div className="mx-auto max-w-5xl px-6 py-10 md:py-14">
+            <div className="flex flex-col items-center gap-4 text-center md:flex-row md:items-end md:gap-6 md:text-left">
+              {shop.logo_url ? (
+                <img
+                  src={shop.logo_url}
+                  alt={shop.name}
+                  className="h-24 w-24 rounded-3xl border-4 border-cream object-cover shadow-lg md:h-28 md:w-28"
+                />
+              ) : (
+                <div className="grid h-24 w-24 place-items-center rounded-3xl border-4 border-cream bg-rose shadow-lg md:h-28 md:w-28">
+                  <Cake className="h-10 w-10 text-mauve" strokeWidth={1.3} />
+                </div>
               )}
+              <div className="flex-1">
+                <p className="text-xs uppercase tracking-widest text-mauve/70">Vitrine</p>
+                <h1 className="font-display text-4xl italic text-mauve md:text-5xl">{heroTitle}</h1>
+                {heroSubtitle && (
+                  <p className="mt-2 max-w-xl text-sm text-mauve/80">{heroSubtitle}</p>
+                )}
+                {(draft.social.instagram || draft.social.address || draft.social.hours) && (
+                  <div className="mt-3 flex flex-wrap justify-center gap-3 text-[11px] text-mauve/70 md:justify-start">
+                    {draft.social.instagram && (
+                      <span className="inline-flex items-center gap-1"><Instagram className="h-3 w-3" /> {draft.social.instagram}</span>
+                    )}
+                    {draft.social.address && (
+                      <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" /> {draft.social.address}</span>
+                    )}
+                    {draft.social.hours && (
+                      <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" /> {draft.social.hours}</span>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
