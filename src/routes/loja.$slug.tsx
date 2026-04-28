@@ -512,6 +512,13 @@ function StorefrontPage() {
           >
             <Eye className="inline h-3 w-3 mr-1" /> Ver pública
           </button>
+          <button
+            onClick={() => setShareOpen(true)}
+            className="rounded-full border border-border bg-white px-3 py-1.5 text-xs text-mauve hover:border-rose/50"
+            title="Compartilhar com QR Code"
+          >
+            <QrCode className="inline h-3 w-3 mr-1" /> Compartilhar
+          </button>
           <Link
             to="/"
             className="rounded-full border border-border bg-white px-3 py-1.5 text-xs text-mauve hover:border-rose/50"
