@@ -36,6 +36,7 @@ import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
 import { formatBRL } from "@/lib/store";
 import { toast } from "sonner";
+import { nextOccurrence, WEEKDAYS } from "@/lib/recurrence";
 
 export const Route = createFileRoute("/eventos")({
   head: () => ({
@@ -66,6 +67,8 @@ type EventRow = {
   recurrence: string;
   recurrence_until: string | null;
   parent_event_id: string | null;
+  weekday: number | null;
+  day_of_month: number | null;
   closed_at: string | null;
   payment_summary: PaymentSummary | null;
 };
