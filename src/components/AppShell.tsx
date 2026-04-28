@@ -6,7 +6,7 @@ import {
   ShoppingBag,
   Package,
   Store,
-  
+  Menu,
   LogOut,
   ChevronDown,
   Sparkles,
@@ -154,21 +154,27 @@ export function AppShell() {
 
         {/* ============ Main content ============ */}
         <div className="flex min-h-screen flex-1 flex-col">
-          {/* Mobile topbar — slim, no hamburger (bottom nav handles primary nav) */}
+          {/* Mobile topbar — hamburger opens drawer with full nav */}
           <header className="sticky top-0 z-40 flex items-center justify-between gap-3 border-b border-border/60 bg-card/80 px-4 py-2.5 backdrop-blur-xl lg:hidden">
-            <div className="flex items-center gap-2 min-w-0">
+            <button
+              onClick={() => setMobileOpen(true)}
+              className="grid h-9 w-9 place-items-center rounded-xl border border-border/60 bg-background/60 text-mauve"
+              aria-label="Abrir menu"
+            >
+              <Menu className="h-5 w-5" strokeWidth={1.7} />
+            </button>
+            <div className="flex items-center gap-2 min-w-0 flex-1 justify-center">
               <div className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-blush to-rose">
                 <Sparkles className="h-4 w-4 text-mauve" strokeWidth={1.6} />
               </div>
               <p className="font-brand text-base text-mauve truncate">{currentShop?.shops.name ?? "Cakes Manager"}</p>
             </div>
-            <button
-              onClick={() => setMobileOpen(true)}
+            <div
               className="grid h-9 w-9 place-items-center rounded-full bg-rose/40 text-sm font-semibold text-mauve"
-              aria-label="Abrir mais opções"
+              aria-label="Conta"
             >
               {(user?.email ?? "?").charAt(0).toUpperCase()}
-            </button>
+            </div>
           </header>
 
           {/* Page */}
