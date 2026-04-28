@@ -348,60 +348,57 @@ function ProductCard({ r, onEdit, onToggleVisible, onToggleFeatured, onDelete, o
 }) {
   const hasPromo = r.promo_price != null && r.public_price != null && r.promo_price < r.public_price;
   return (
-    <div className={`group relative flex flex-col overflow-hidden rounded-2xl border bg-white shadow-sm transition hover:shadow-md ${r.is_featured ? "border-rose ring-1 ring-rose/30" : "border-border/60"} ${!r.show_in_catalog ? "opacity-60" : ""}`}>
+    <div className={`group relative flex flex-col overflow-hidden rounded-xl border bg-white shadow-sm transition hover:shadow-md ${r.is_featured ? "border-rose ring-1 ring-rose/30" : "border-border/60"} ${!r.show_in_catalog ? "opacity-60" : ""}`}>
       {/* Imagem */}
-      <button onClick={onEdit} className="relative aspect-[4/3] overflow-hidden bg-blush">
+      <button onClick={onEdit} className="relative aspect-square overflow-hidden bg-blush">
         {r.image_url ? (
           <img src={r.image_url} alt={r.name} loading="lazy" className="h-full w-full object-cover transition group-hover:scale-105" />
         ) : (
           <div className="grid h-full w-full place-items-center text-mauve/40">
-            <ImageIcon className="h-10 w-10" strokeWidth={1.2} />
+            <ImageIcon className="h-7 w-7" strokeWidth={1.2} />
           </div>
         )}
         {hasPromo && (
-          <span className="absolute left-2 top-2 rounded-full bg-rose px-2 py-0.5 text-[10px] font-semibold text-mauve shadow">PROMO</span>
+          <span className="absolute left-1.5 top-1.5 rounded-full bg-rose px-1.5 py-0.5 text-[9px] font-semibold text-mauve shadow">PROMO</span>
         )}
         {r.is_featured && (
-          <span className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full bg-rose text-mauve shadow">
-            <Star className="h-3.5 w-3.5 fill-current" />
+          <span className="absolute right-1.5 top-1.5 grid h-5 w-5 place-items-center rounded-full bg-rose text-mauve shadow">
+            <Star className="h-3 w-3 fill-current" />
           </span>
-        )}
-        {r.category && (
-          <span className="absolute bottom-2 left-2 rounded-full bg-white/90 px-2 py-0.5 text-[10px] text-mauve">{r.category}</span>
         )}
       </button>
 
       {/* Conteúdo */}
-      <div className="flex flex-1 flex-col gap-1 p-3">
-        <h3 className="text-sm font-medium text-mauve line-clamp-1">{r.name}</h3>
-        {r.description && <p className="text-[11px] text-mauve/60 line-clamp-2">{r.description}</p>}
-        <div className="mt-auto flex items-baseline gap-1.5 pt-2">
+      <div className="flex flex-1 flex-col gap-0.5 px-2 py-1.5">
+        <h3 className="text-xs font-medium text-mauve line-clamp-1">{r.name}</h3>
+        {r.category && <span className="text-[9px] text-mauve/50 line-clamp-1">{r.category}</span>}
+        <div className="mt-auto flex items-baseline gap-1 pt-1">
           {hasPromo ? (
             <>
-              <span className="text-xs text-mauve/50 line-through">{brl(r.public_price)}</span>
-              <span className="text-base font-semibold text-rose">{brl(r.promo_price)}</span>
+              <span className="text-[10px] text-mauve/50 line-through">{brl(r.public_price)}</span>
+              <span className="text-xs font-semibold text-rose">{brl(r.promo_price)}</span>
             </>
           ) : (
-            <span className="text-base font-semibold text-mauve">{brl(r.public_price)}</span>
+            <span className="text-xs font-semibold text-mauve">{brl(r.public_price)}</span>
           )}
         </div>
       </div>
 
       {/* Ações */}
-      <div className="flex items-center justify-between border-t border-border/50 bg-cream/30 px-2 py-1.5">
-        <div className="flex gap-0.5">
-          <IconBtn label="Subir" onClick={onMoveUp}><ChevronUp className="h-3.5 w-3.5" /></IconBtn>
-          <IconBtn label="Descer" onClick={onMoveDown}><ChevronDown className="h-3.5 w-3.5" /></IconBtn>
+      <div className="flex items-center justify-between border-t border-border/50 bg-cream/30 px-1 py-0.5">
+        <div className="flex">
+          <IconBtn label="Subir" onClick={onMoveUp}><ChevronUp className="h-3 w-3" /></IconBtn>
+          <IconBtn label="Descer" onClick={onMoveDown}><ChevronDown className="h-3 w-3" /></IconBtn>
         </div>
-        <div className="flex gap-0.5">
+        <div className="flex">
           <IconBtn label={r.is_featured ? "Remover destaque" : "Destacar"} onClick={onToggleFeatured} active={r.is_featured}>
-            <Star className={`h-3.5 w-3.5 ${r.is_featured ? "fill-current" : ""}`} />
+            <Star className={`h-3 w-3 ${r.is_featured ? "fill-current" : ""}`} />
           </IconBtn>
           <IconBtn label={r.show_in_catalog ? "Ocultar" : "Mostrar"} onClick={onToggleVisible} active={r.show_in_catalog}>
-            {r.show_in_catalog ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+            {r.show_in_catalog ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
           </IconBtn>
-          <IconBtn label="Editar" onClick={onEdit}><Pencil className="h-3.5 w-3.5" /></IconBtn>
-          <IconBtn label="Remover" onClick={onDelete} danger><Trash2 className="h-3.5 w-3.5" /></IconBtn>
+          <IconBtn label="Editar" onClick={onEdit}><Pencil className="h-3 w-3" /></IconBtn>
+          <IconBtn label="Remover" onClick={onDelete} danger><Trash2 className="h-3 w-3" /></IconBtn>
         </div>
       </div>
     </div>
@@ -413,7 +410,7 @@ function IconBtn({ children, onClick, label, active, danger }: {
 }) {
   return (
     <button title={label} onClick={onClick}
-      className={`grid h-7 w-7 place-items-center rounded-lg transition ${
+      className={`grid h-6 w-6 place-items-center rounded-md transition ${
         danger ? "text-mauve/60 hover:bg-red-100 hover:text-red-600"
         : active ? "bg-rose/30 text-mauve" : "text-mauve/70 hover:bg-rose/20"
       }`}>
