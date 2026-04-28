@@ -5,6 +5,7 @@ import { Cake, Utensils, Sparkles, Settings2, Plus, Trash2, X, Minus, ShoppingCa
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
+import { PageContainer } from "@/components/PageContainer";
 import { toast } from "sonner";
 import { getOccurrences } from "@/lib/recurrence";
 import { uploadShopImage } from "@/lib/upload";
@@ -183,43 +184,119 @@ function PDVPage() {
   const selectedEvent = events.find((e) => e.id === selectedEventId);
   const usingEvent = !!selectedEventId;
 
-  return (
-    <div className="space-y-6">
-      <PageHeader eyebrow="Modo cozinha" title="Ponto de venda" subtitle="Toque, monte o carrinho e cobre." />
-
-      {/* Seletor de contexto */}
-      <div className="card-soft p-3">
-        <p className="text-[10px] uppercase tracking-widest text-rose mb-2">Vendendo em</p>
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          <button
-            onClick={() => setSelectedEventId(null)}
-            className={`shrink-0 inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs ${
-              !usingEvent ? "border-rose bg-blush/60 text-mauve" : "border-border bg-card text-muted-foreground hover:border-rose/40"
-            }`}
-          >
-            <Store className="h-3.5 w-3.5" /> Loja (avulso)
-          </button>
-          {events.map((e) => (
-            <button
-              key={e.id}
-              onClick={() => setSelectedEventId(e.id)}
-              className={`shrink-0 inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs ${
-                selectedEventId === e.id ? "border-rose bg-blush/60 text-mauve" : "border-border bg-card text-muted-foreground hover:border-rose/40"
-              }`}
-            >
-              <CalendarHeart className="h-3.5 w-3.5" /> {e.name}
-              <span className="text-[10px] text-muted-foreground">{new Date(e.date).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}</span>
-            </button>
-          ))}
+  const cartPanel = (
+    <aside className="card-soft flex h-full flex-col overflow-hidden">
+      <div className="border-b border-border/60 bg-blush/30 px-4 py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-mauve">
+            <ShoppingCart className="h-4 w-4" />
+            <p className="text-sm font-semibold">Carrinho</p>
+          </div>
+          <span className="text-[11px] text-muted-foreground num">{cartCount} itens</span>
         </div>
       </div>
+      {cart.length === 0 ? (
+        <div className="grid flex-1 place-items-center p-6 text-center text-xs text-muted-foreground">
+          Toque em um produto para adicionar.
+        </div>
+      ) : (
+        <ul className="flex-1 divide-y divide-border/60 overflow-y-auto">
+          {cart.map((c) => (
+            <li key={c.id} className="flex items-center gap-2 px-3 py-2">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs font-medium text-mauve">{c.name}</p>
+                <p className="text-[10px] text-muted-foreground num">{fmtBRL(c.price)} · {fmtBRL(c.price * c.qty)}</p>
+              </div>
+              <div className="flex items-center gap-0.5">
+                <button onClick={() => changeQty(c.id, -1)} className="grid h-6 w-6 place-items-center rounded-md bg-blush/40 text-mauve hover:bg-blush/70"><Minus className="h-3 w-3" /></button>
+                <span className="w-5 text-center text-xs font-semibold text-mauve num">{c.qty}</span>
+                <button onClick={() => changeQty(c.id, 1)} className="grid h-6 w-6 place-items-center rounded-md bg-blush/40 text-mauve hover:bg-blush/70"><Plus className="h-3 w-3" /></button>
+              </div>
+              <button onClick={() => removeFromCart(c.id)} className="rounded p-1 text-destructive hover:bg-destructive/10"><Trash2 className="h-3 w-3" /></button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="border-t border-border/60 p-3 space-y-3">
+        <div>
+          <p className="mb-1 text-[10px] uppercase tracking-widest text-rose">Pagamento</p>
+          <div className="grid grid-cols-5 gap-1">
+            {PAY_METHODS.map((m) => (
+              <button key={m.key} onClick={() => setPayment(m.key)}
+                className={`rounded-lg border px-1 py-1.5 text-[10px] ${
+                  payment === m.key ? "border-rose bg-blush/60 text-mauve font-medium" : "border-border bg-card text-muted-foreground"
+                }`}>
+                {m.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="rounded-xl bg-blush/40 p-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-mauve">Total</span>
+            <span className="text-xl font-semibold text-mauve num">{fmtBRL(cartTotal)}</span>
+          </div>
+        </div>
+        <button onClick={checkout} disabled={cart.length === 0} className="w-full rounded-xl bg-mauve px-4 py-2.5 text-sm font-medium text-cream hover:opacity-90 disabled:opacity-40">
+          Cobrar e finalizar
+        </button>
+      </div>
+    </aside>
+  );
 
-      {/* Total + carrinho */}
-      <div className="grid grid-cols-2 gap-3">
-        <motion.div layout className="card-soft overflow-hidden bg-gradient-to-br from-blush/80 to-card p-4">
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-[11px] uppercase tracking-widest text-rose">Total</p>
-            <div className="flex gap-0.5 rounded-full border border-border bg-card/70 p-0.5">
+  return (
+    <PageContainer width="wide">
+      <PageHeader
+        eyebrow="Modo cozinha"
+        title="Ponto de venda"
+        subtitle="Toque, monte o carrinho e cobre."
+        actions={
+          <button
+            onClick={() => setShowManage(true)}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-blush/50 px-3 py-2 text-xs font-medium text-mauve hover:bg-blush/80"
+          >
+            <Settings2 className="h-3.5 w-3.5" /> Gerenciar produtos
+          </button>
+        }
+      />
+
+      <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+        <div className="min-w-0 space-y-4">
+          {/* Seletor de contexto */}
+          <div className="card-soft p-3">
+            <p className="mb-2 text-[10px] uppercase tracking-widest text-rose">Vendendo em</p>
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              <button
+                onClick={() => setSelectedEventId(null)}
+                className={`shrink-0 inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs ${
+                  !usingEvent ? "border-rose bg-blush/60 text-mauve" : "border-border bg-card text-muted-foreground hover:border-rose/40"
+                }`}
+              >
+                <Store className="h-3.5 w-3.5" /> Loja (avulso)
+              </button>
+              {events.map((e) => (
+                <button
+                  key={e.id}
+                  onClick={() => setSelectedEventId(e.id)}
+                  className={`shrink-0 inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs ${
+                    selectedEventId === e.id ? "border-rose bg-blush/60 text-mauve" : "border-border bg-card text-muted-foreground hover:border-rose/40"
+                  }`}
+                >
+                  <CalendarHeart className="h-3.5 w-3.5" /> {e.name}
+                  <span className="text-[10px] text-muted-foreground num">{new Date(e.date).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Total do período */}
+          <div className="card-soft flex items-center justify-between gap-3 bg-gradient-to-br from-blush/60 to-card p-3">
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-rose">Total {period === "today" ? "hoje" : period === "week" ? "7 dias" : period === "month" ? "30 dias" : "tudo"}</p>
+              <p className="text-2xl font-semibold text-mauve num">{fmtBRL(totalToday)}</p>
+              <p className="text-[10px] text-muted-foreground">{sales.length} vendas</p>
+            </div>
+            <div className="flex flex-col gap-0.5 rounded-xl border border-border bg-card/70 p-0.5">
               {([
                 { k: "today", l: "Hoje" },
                 { k: "week", l: "7d" },
@@ -227,36 +304,18 @@ function PDVPage() {
                 { k: "all", l: "Tudo" },
               ] as const).map((p) => (
                 <button key={p.k} onClick={() => setPeriod(p.k)}
-                  className={`rounded-full px-2 py-0.5 text-[10px] transition ${period === p.k ? "bg-mauve text-cream" : "text-mauve/70 hover:text-mauve"}`}>
+                  className={`rounded-lg px-2 py-0.5 text-[10px] transition ${period === p.k ? "bg-mauve text-cream" : "text-mauve/70 hover:text-mauve"}`}>
                   {p.l}
                 </button>
               ))}
             </div>
           </div>
-          <motion.p key={`${totalToday}-${period}`} initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="font-display text-3xl italic text-mauve mt-1">
-            {fmtBRL(totalToday)}
-          </motion.p>
-          <p className="text-[11px] text-muted-foreground">{sales.length} vendas</p>
-        </motion.div>
-        <button
-          onClick={() => setShowCart(true)}
-          disabled={cart.length === 0}
-          className="card-soft p-4 text-left bg-gradient-to-br from-rose/40 to-blush/40 disabled:opacity-50"
-        >
-          <div className="flex items-center justify-between">
-            <p className="text-[11px] uppercase tracking-widest text-rose">Carrinho</p>
-            <ShoppingCart className="h-4 w-4 text-mauve" />
-          </div>
-          <p className="font-display text-3xl italic text-mauve mt-1">{fmtBRL(cartTotal)}</p>
-          <p className="text-[11px] text-muted-foreground">{cartCount} itens</p>
-        </button>
-      </div>
 
-      {usingEvent && (
-        <div className="rounded-xl bg-blush/30 px-3 py-2 text-[11px] text-mauve">
-          Vendendo em <strong>{selectedEvent?.name}</strong> — vendas serão contabilizadas no caixa do evento.
-        </div>
-      )}
+          {usingEvent && (
+            <div className="rounded-xl bg-blush/30 px-3 py-2 text-[11px] text-mauve">
+              Vendendo em <strong>{selectedEvent?.name}</strong> — vai para o caixa do evento.
+            </div>
+          )}
 
       {/* Botões de produtos */}
       {loading ? (
