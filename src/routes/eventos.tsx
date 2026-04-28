@@ -1068,6 +1068,9 @@ function EditMeta({
   const [fee, setFee] = useState(event.fee?.toString() ?? "0");
   const [openingCash, setOpeningCash] = useState(event.opening_cash?.toString() ?? "0");
   const [recurrence, setRecurrence] = useState(event.recurrence ?? "none");
+  const [weekday, setWeekday] = useState<string>(event.weekday != null ? String(event.weekday) : "");
+  const [dayOfMonth, setDayOfMonth] = useState<string>(event.day_of_month != null ? String(event.day_of_month) : "");
+  const [recurrenceUntil, setRecurrenceUntil] = useState<string>(event.recurrence_until ?? "");
 
   return (
     <div className="space-y-3">
@@ -1084,7 +1087,7 @@ function EditMeta({
           </select>
         </div>
         <div>
-          <label className="text-[10px] uppercase tracking-widest text-rose">Data</label>
+          <label className="text-[10px] uppercase tracking-widest text-rose">Data {recurrence !== "none" ? "inicial" : ""}</label>
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="input-base mt-1" />
         </div>
         <div>
@@ -1095,13 +1098,30 @@ function EditMeta({
           <label className="text-[10px] uppercase tracking-widest text-rose">Local / endereço</label>
           <input value={location} onChange={(e) => setLocation(e.target.value)} className="input-base mt-1" />
         </div>
-        <div>
-          <label className="text-[10px] uppercase tracking-widest text-rose">Recorrência</label>
-          <select value={recurrence} onChange={(e) => setRecurrence(e.target.value)} className="input-base mt-1">
-            <option value="none">Não se repete</option>
-            <option value="weekly">Toda semana</option>
-            <option value="monthly">Todo mês</option>
-          </select>
+        <div className="md:col-span-2 rounded-xl border border-border bg-blush/20 p-3">
+          <p className="text-[10px] uppercase tracking-widest text-rose mb-2 flex items-center gap-1"><Repeat className="h-3 w-3" /> Recorrência</p>
+          <div className="grid grid-cols-2 gap-2">
+            <select value={recurrence} onChange={(e) => setRecurrence(e.target.value)} className="input-base">
+              <option value="none">Não se repete</option>
+              <option value="weekly">Toda semana</option>
+              <option value="monthly">Todo mês</option>
+            </select>
+            {recurrence === "weekly" && (
+              <select value={weekday} onChange={(e) => setWeekday(e.target.value)} className="input-base">
+                <option value="">Mesmo dia da semana da data</option>
+                {WEEKDAYS.map((w) => <option key={w.v} value={w.v}>{w.label}</option>)}
+              </select>
+            )}
+            {recurrence === "monthly" && (
+              <input type="number" min="1" max="31" value={dayOfMonth} onChange={(e) => setDayOfMonth(e.target.value)} placeholder="Dia do mês (ex: 15)" className="input-base" />
+            )}
+          </div>
+          {recurrence !== "none" && (
+            <div className="mt-2">
+              <label className="text-[10px] uppercase tracking-widest text-rose">Até quando (opcional)</label>
+              <input type="date" value={recurrenceUntil} onChange={(e) => setRecurrenceUntil(e.target.value)} className="input-base mt-1" />
+            </div>
+          )}
         </div>
         {(kind === "party" || kind === "wedding") && (
           <>
@@ -1150,6 +1170,9 @@ function EditMeta({
               fee: Number(fee) || 0,
               opening_cash: Number(openingCash) || 0,
               recurrence,
+              weekday: recurrence === "weekly" ? (weekday !== "" ? Number(weekday) : new Date(date).getDay()) : null,
+              day_of_month: recurrence === "monthly" ? (dayOfMonth ? Number(dayOfMonth) : new Date(date).getDate()) : null,
+              recurrence_until: recurrence !== "none" && recurrenceUntil ? recurrenceUntil : null,
             })
           }
           className="inline-flex items-center gap-1.5 rounded-xl bg-mauve px-4 py-2 text-sm text-cream hover:opacity-90"
