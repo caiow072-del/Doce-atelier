@@ -217,8 +217,23 @@ function PDVPage() {
       {/* Total + carrinho */}
       <div className="grid grid-cols-2 gap-3">
         <motion.div layout className="card-soft overflow-hidden bg-gradient-to-br from-blush/80 to-card p-4">
-          <p className="text-[11px] uppercase tracking-widest text-rose">Total de hoje</p>
-          <motion.p key={totalToday} initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="font-display text-3xl italic text-mauve mt-1">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[11px] uppercase tracking-widest text-rose">Total</p>
+            <div className="flex gap-0.5 rounded-full border border-border bg-card/70 p-0.5">
+              {([
+                { k: "today", l: "Hoje" },
+                { k: "week", l: "7d" },
+                { k: "month", l: "30d" },
+                { k: "all", l: "Tudo" },
+              ] as const).map((p) => (
+                <button key={p.k} onClick={() => setPeriod(p.k)}
+                  className={`rounded-full px-2 py-0.5 text-[10px] transition ${period === p.k ? "bg-mauve text-cream" : "text-mauve/70 hover:text-mauve"}`}>
+                  {p.l}
+                </button>
+              ))}
+            </div>
+          </div>
+          <motion.p key={`${totalToday}-${period}`} initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="font-display text-3xl italic text-mauve mt-1">
             {fmtBRL(totalToday)}
           </motion.p>
           <p className="text-[11px] text-muted-foreground">{sales.length} vendas</p>
