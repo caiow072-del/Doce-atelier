@@ -62,13 +62,13 @@
 - [x] Toggle lista/grade com persistência em localStorage
 - [x] Alerta visual em estoque ≤ 0 (badge destrutivo)
 
-### Onda G+ — Catálogo & vitrine (completar)
-- [ ] `/catalogo` com 2 abas: vitrine da loja | vitrines de eventos
-- [ ] Drag-and-drop de receitas (`recipes.catalog_position`)
-- [ ] Categorias/tags (`recipes.category`) com filtro na vitrine pública
-- [ ] Seções arrastáveis na vitrine (`shop_storefront.sections`): destaques, depoimentos, sobre, contato
-- [ ] Renderizar promoções na vitrine pública com badge "promo" e preço de/por
-- [ ] Botão "compartilhar vitrine" com QR Code
+### Onda G+ — Catálogo & vitrine ✅
+- [x] `/catalogo` com 2 abas: vitrine da loja | vitrines de eventos (com copiar link)
+- [x] Reordenar receitas (catalog_position com botões ↑/↓ + persistência)
+- [x] Categorias/tags em recipes (datalist + filtro pills na vitrine pública)
+- [x] Seções arrastáveis na vitrine (já existia: ↑/↓ + visibilidade)
+- [x] Promoções renderizadas com badge "PROMO" e preço de/por (match por nome)
+- [x] Botão "compartilhar vitrine" com QR Code (qrcode.react) no editor
 
 ### Onda H — Qualidade, segurança, performance
 - [ ] Rodar `supabase--linter` e zerar warnings de RLS
