@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import {
   ShoppingBag,
   Plus,
@@ -13,10 +13,16 @@ import {
   Search,
   ChevronRight,
   Cake,
+  Pencil,
+  Instagram,
+  Clock,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
+import { useAuth } from "@/lib/auth";
+import { StorefrontEditor, type StorefrontDraft } from "@/components/StorefrontEditor";
+import { applyTheme, type ShopTheme } from "@/lib/theme";
 
 const checkoutSchema = z.object({
   name: z.string().trim().min(2, "Informe seu nome").max(80),
@@ -49,6 +55,14 @@ type Shop = {
   whatsapp: string | null;
   description: string | null;
   logo_url: string | null;
+  theme: ShopTheme | null;
+};
+
+const EMPTY_DRAFT: StorefrontDraft = {
+  hero_title: null,
+  hero_subtitle: null,
+  banner_url: null,
+  social: {},
 };
 
 type PublicRecipe = {
@@ -73,13 +87,18 @@ const brl = (n: number) =>
 
 function StorefrontPage() {
   const { slug } = Route.useParams();
+  const { session, shops } = useAuth();
   const [shop, setShop] = useState<Shop | null>(null);
   const [recipes, setRecipes] = useState<PublicRecipe[]>([]);
+  const [draft, setDraft] = useState<StorefrontDraft>(EMPTY_DRAFT);
   const [loading, setLoading] = useState(true);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [search, setSearch] = useState("");
   const [cartOpen, setCartOpen] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
+
+  const isOwner = !!shop && shops.some((m) => m.shop_id === shop.id && (m.role === "owner" || m.role === "manager"));
 
   useEffect(() => {
     let cancelled = false;
@@ -87,7 +106,7 @@ function StorefrontPage() {
       setLoading(true);
       const { data: shopData, error: shopErr } = await supabase
         .from("shops")
-        .select("id, name, slug, whatsapp, description, logo_url")
+        .select("id, name, slug, whatsapp, description, logo_url, theme")
         .eq("slug", slug)
         .maybeSingle();
       if (cancelled) return;
@@ -96,21 +115,40 @@ function StorefrontPage() {
         return;
       }
       setShop(shopData as Shop);
+      // Apply theme for visitors
+      applyTheme((shopData.theme ?? null) as ShopTheme | null);
 
-      const { data: recs } = await supabase
-        .from("recipes")
-        .select("id, name, description, image_url, public_price, servings")
-        .eq("shop_id", shopData.id)
-        .eq("show_in_catalog", true)
-        .order("name");
+      const [recsRes, sfRes] = await Promise.all([
+        supabase
+          .from("recipes")
+          .select("id, name, description, image_url, public_price, servings")
+          .eq("shop_id", shopData.id)
+          .eq("show_in_catalog", true)
+          .order("name"),
+        supabase
+          .from("shop_storefront")
+          .select("hero_title, hero_subtitle, banner_url, social")
+          .eq("shop_id", shopData.id)
+          .maybeSingle(),
+      ]);
       if (cancelled) return;
-      setRecipes((recs ?? []) as PublicRecipe[]);
+      setRecipes((recsRes.data ?? []) as PublicRecipe[]);
+      const sf = sfRes.data as any;
+      setDraft({
+        hero_title: sf?.hero_title ?? null,
+        hero_subtitle: sf?.hero_subtitle ?? null,
+        banner_url: sf?.banner_url ?? null,
+        social: sf?.social ?? {},
+      });
       setLoading(false);
     })();
     return () => {
       cancelled = true;
     };
   }, [slug]);
+
+  const onDraftChange = useCallback((d: StorefrontDraft) => setDraft(d), []);
+
 
   const addToCart = (r: PublicRecipe) => {
     if (r.public_price == null) {
@@ -166,29 +204,63 @@ function StorefrontPage() {
     );
   }
 
+  const heroTitle = draft.hero_title || shop.name;
+  const heroSubtitle = draft.hero_subtitle || shop.description;
+
   return (
-    <div className="floral-bg min-h-screen pb-32">
+    <div className={`floral-bg min-h-screen pb-32 ${editing ? "lg:pr-[24rem]" : ""}`}>
+      {/* Owner edit bar */}
+      {isOwner && session && !editing && (
+        <button
+          onClick={() => setEditing(true)}
+          className="fixed right-4 top-4 z-40 inline-flex items-center gap-1.5 rounded-full bg-mauve px-4 py-2 text-xs font-medium text-cream shadow-lg hover:opacity-90"
+        >
+          <Pencil className="h-3.5 w-3.5" /> Editar vitrine
+        </button>
+      )}
+
       {/* Hero */}
-      <header className="relative overflow-hidden bg-gradient-to-br from-blush via-cream to-rose/40">
-        <div className="mx-auto max-w-5xl px-6 py-10 md:py-16">
-          <div className="flex flex-col items-center gap-4 text-center md:flex-row md:items-end md:gap-6 md:text-left">
-            {shop.logo_url ? (
-              <img
-                src={shop.logo_url}
-                alt={shop.name}
-                className="h-24 w-24 rounded-3xl border-4 border-cream object-cover shadow-lg md:h-28 md:w-28"
-              />
-            ) : (
-              <div className="grid h-24 w-24 place-items-center rounded-3xl border-4 border-cream bg-rose shadow-lg md:h-28 md:w-28">
-                <Cake className="h-10 w-10 text-mauve" strokeWidth={1.3} />
-              </div>
-            )}
-            <div className="flex-1">
-              <p className="text-xs uppercase tracking-widest text-mauve/70">Vitrine</p>
-              <h1 className="font-display text-4xl italic text-mauve md:text-5xl">{shop.name}</h1>
-              {shop.description && (
-                <p className="mt-2 max-w-xl text-sm text-mauve/80">{shop.description}</p>
+      <header className="relative overflow-hidden">
+        {draft.banner_url ? (
+          <div className="relative">
+            <img src={draft.banner_url} alt="" className="h-48 w-full object-cover sm:h-64 md:h-80" />
+            <div className="absolute inset-0 bg-gradient-to-t from-cream via-cream/60 to-transparent" />
+          </div>
+        ) : null}
+        <div className={`bg-gradient-to-br from-blush via-cream to-rose/40 ${draft.banner_url ? "" : ""}`}>
+          <div className="mx-auto max-w-5xl px-6 py-10 md:py-14">
+            <div className="flex flex-col items-center gap-4 text-center md:flex-row md:items-end md:gap-6 md:text-left">
+              {shop.logo_url ? (
+                <img
+                  src={shop.logo_url}
+                  alt={shop.name}
+                  className="h-24 w-24 rounded-3xl border-4 border-cream object-cover shadow-lg md:h-28 md:w-28"
+                />
+              ) : (
+                <div className="grid h-24 w-24 place-items-center rounded-3xl border-4 border-cream bg-rose shadow-lg md:h-28 md:w-28">
+                  <Cake className="h-10 w-10 text-mauve" strokeWidth={1.3} />
+                </div>
               )}
+              <div className="flex-1">
+                <p className="text-xs uppercase tracking-widest text-mauve/70">Vitrine</p>
+                <h1 className="font-display text-4xl italic text-mauve md:text-5xl">{heroTitle}</h1>
+                {heroSubtitle && (
+                  <p className="mt-2 max-w-xl text-sm text-mauve/80">{heroSubtitle}</p>
+                )}
+                {(draft.social.instagram || draft.social.address || draft.social.hours) && (
+                  <div className="mt-3 flex flex-wrap justify-center gap-3 text-[11px] text-mauve/70 md:justify-start">
+                    {draft.social.instagram && (
+                      <span className="inline-flex items-center gap-1"><Instagram className="h-3 w-3" /> {draft.social.instagram}</span>
+                    )}
+                    {draft.social.address && (
+                      <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" /> {draft.social.address}</span>
+                    )}
+                    {draft.social.hours && (
+                      <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" /> {draft.social.hours}</span>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -340,6 +412,16 @@ function StorefrontPage() {
       <footer className="mx-auto max-w-5xl px-6 pb-8 pt-4 text-center text-xs text-mauve/50">
         Pedidos enviados via WhatsApp — sujeitos à confirmação da loja.
       </footer>
+
+      {editing && isOwner && (
+        <StorefrontEditor
+          shopId={shop.id}
+          initialTheme={(shop.theme ?? {}) as ShopTheme}
+          initialDraft={draft}
+          onDraftChange={onDraftChange}
+          onClose={() => setEditing(false)}
+        />
+      )}
     </div>
   );
 }
