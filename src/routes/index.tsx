@@ -68,11 +68,10 @@ function Dashboard() {
       supabase.from("events").select("id, name, date").eq("shop_id", shopId).is("closed_at", null).gte("date", today).order("date").limit(1).maybeSingle(),
       supabase.from("events").select("id, name, closed_at, payment_summary").eq("shop_id", shopId).not("closed_at", "is", null).order("closed_at", { ascending: false }).limit(1).maybeSingle(),
       supabase.from("orders").select("id", { count: "exact", head: true }).eq("shop_id", shopId).eq("source", "storefront").eq("status", "orcamento"),
-      supabase.from("pdv_products").select("id, name, recipe_id, sale_mode").eq("shop_id", shopId),
-      supabase.from("recipes").select("id, servings, labor_cost, packaging_cost, waste_pct").eq("shop_id", shopId),
-      supabase.from("recipe_ingredients").select("recipe_id, ingredient_id, quantity").eq("shop_id", shopId),
+      supabase.from("recipes").select("id, name, servings, labor_cost, packaging_cost, waste_pct").eq("shop_id", shopId),
+      supabase.from("recipe_ingredients").select("recipe_id, ingredient_id, quantity"),
       supabase.from("ingredients").select("id, package_qty, price_paid").eq("shop_id", shopId),
-    ]).then(([s, r, i, o, ne, lc, sp, prods, allRecipes, recIngs, ings]) => {
+    ]).then(([s, r, i, o, ne, lc, sp, allRecipes, recIngs, ings]) => {
       const sales = (s.data ?? []) as { price: number; qty: number; item: string; product_id: string | null }[];
       const totalRev = sales.reduce((sum, x) => sum + Number(x.price), 0);
       const totalQty = sales.reduce((sum, x) => sum + Number(x.qty ?? 1), 0);
@@ -86,11 +85,12 @@ function Dashboard() {
       setStorefrontPending(sp.count ?? 0);
 
       // ====== Real cost calculation ======
-      const products = (prods.data ?? []) as { id: string; name: string; recipe_id: string | null; sale_mode: string }[];
-      const recipesFull = (allRecipes.data ?? []) as RecipeLite[];
+      // Try to match each sale to a recipe by item name (case-insensitive).
+      // When matched, use real cost; otherwise fall back to ratio.
+      const recipesFull = (allRecipes.data ?? []) as (RecipeLite & { name: string })[];
       const recipeIngs = (recIngs.data ?? []) as RecipeIngredientLite[];
       const ingredients = (ings.data ?? []) as IngredientLite[];
-      const productMap = new Map(products.map((p) => [p.id, p]));
+      const recipeByName = new Map(recipesFull.map((rr) => [rr.name.toLowerCase().trim(), rr]));
 
       const perPerf = new Map<string, ProductPerf>();
       let totalCost = 0;
@@ -99,22 +99,23 @@ function Dashboard() {
       for (const sale of sales) {
         const qty = Number(sale.qty ?? 1);
         const rev = Number(sale.price);
-        const prod = sale.product_id ? productMap.get(sale.product_id) : null;
-        const recipe = prod?.recipe_id ? recipesFull.find((x) => x.id === prod.recipe_id) : null;
+        const itemKey = (sale.item ?? "").toLowerCase().trim();
+        const recipe = recipeByName.get(itemKey)
+          ?? recipesFull.find((rr) => itemKey.includes(rr.name.toLowerCase()) || rr.name.toLowerCase().includes(itemKey));
         let cost = 0;
         let estimated = false;
         if (recipe) {
           const c = recipeCost(recipe, recipeIngs, ingredients);
-          const unit = prod?.sale_mode === "slice" ? c.perSlice : c.perWhole;
-          cost = unit * qty;
+          // sales.price is total for the line (qty already factored in PDV); cost per whole × qty.
+          cost = c.perWhole * qty;
         } else {
           cost = rev * FALLBACK_RATIO;
           estPart += cost;
           estimated = true;
         }
         totalCost += cost;
-        const key = sale.product_id || sale.item;
-        const cur = perPerf.get(key) ?? { name: prod?.name || sale.item, revenue: 0, cost: 0, profit: 0, qty: 0, estimated: false };
+        const key = sale.product_id || sale.item || "—";
+        const cur = perPerf.get(key) ?? { name: sale.item || "Item", revenue: 0, cost: 0, profit: 0, qty: 0, estimated: false };
         cur.revenue += rev;
         cur.cost += cost;
         cur.profit = cur.revenue - cur.cost;
