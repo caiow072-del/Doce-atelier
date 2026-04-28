@@ -8,8 +8,9 @@ import {
   ShoppingBag, Plus, Minus, X, MapPin, Phone, User, MessageCircle,
   Loader2, Search, ChevronRight, Cake, Pencil, Instagram, Clock,
   Save, Sparkles, LayoutTemplate, Eye, EyeOff, GripVertical, Smartphone, Monitor,
-  Quote, ImagePlus, ChevronDown, ChevronUp, Check, Palette, Type,
+  Quote, ImagePlus, ChevronDown, ChevronUp, Check, Palette, Type, QrCode, Copy,
 } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
