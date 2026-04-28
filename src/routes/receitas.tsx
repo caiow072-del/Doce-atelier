@@ -330,7 +330,7 @@ function RecipesPage() {
           }}
         />
       )}
-    </div>
+    </PageContainer>
   );
 }
 
