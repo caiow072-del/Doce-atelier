@@ -101,6 +101,7 @@ function StorefrontPage() {
   const [editing, setEditing] = useState(false);
   const [device, setDevice] = useState<"mobile" | "desktop">("mobile");
   const [editorTab, setEditorTab] = useState<"template" | "sections" | "design">("template");
+  const [panelOpen, setPanelOpen] = useState(true);
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
