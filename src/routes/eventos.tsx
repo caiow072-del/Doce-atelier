@@ -1198,7 +1198,9 @@ function NewEventSheet({
   const [customerName, setCustomerName] = useState("");
   const [guests, setGuests] = useState("");
   const [recurrence, setRecurrence] = useState<"none" | "weekly" | "monthly">("none");
-  const [recurrenceCount, setRecurrenceCount] = useState("4");
+  const [weekday, setWeekday] = useState<string>("");
+  const [dayOfMonth, setDayOfMonth] = useState<string>("");
+  const [recurrenceUntil, setRecurrenceUntil] = useState<string>("");
   const [saving, setSaving] = useState(false);
 
   const selectedType = types.find((t) => t.id === typeId);
@@ -1219,62 +1221,31 @@ function NewEventSheet({
     if (!name.trim()) return toast.error("Dê um nome");
     setSaving(true);
 
-    // Gera datas de recorrência
-    const dates: Date[] = [new Date(date)];
-    if (recurrence !== "none") {
-      const n = Math.min(52, Math.max(1, Number(recurrenceCount) || 1));
-      for (let i = 1; i < n; i++) {
-        const d = new Date(date);
-        if (recurrence === "weekly") d.setDate(d.getDate() + 7 * i);
-        else d.setMonth(d.getMonth() + i);
-        dates.push(d);
-      }
-    }
-
-    // Cria evento-pai
-    const { data: parent, error: pErr } = await supabase
+    const anchor = new Date(date);
+    const { data: row, error } = await supabase
       .from("events")
       .insert({
         shop_id: shopId,
         name: name.trim(),
-        date: dates[0].toISOString(),
+        date: anchor.toISOString(),
         start_time: startTime || null,
         location: location || null,
         event_type_id: typeId || null,
         customer_name: customerName || null,
         guests: guests ? Number(guests) : null,
         recurrence,
+        weekday: recurrence === "weekly" ? (weekday !== "" ? Number(weekday) : anchor.getDay()) : null,
+        day_of_month: recurrence === "monthly" ? (dayOfMonth ? Number(dayOfMonth) : anchor.getDate()) : null,
+        recurrence_until: recurrence !== "none" && recurrenceUntil ? recurrenceUntil : null,
       })
       .select("*")
       .single();
-    if (pErr || !parent) {
-      setSaving(false);
-      return toast.error("Erro ao criar evento");
-    }
-
-    let inserted: EventRow[] = [parent as EventRow];
-
-    // Cria filhos se recorrente
-    if (dates.length > 1) {
-      const children = dates.slice(1).map((d) => ({
-        shop_id: shopId,
-        name: name.trim(),
-        date: d.toISOString(),
-        start_time: startTime || null,
-        location: location || null,
-        event_type_id: typeId || null,
-        customer_name: customerName || null,
-        guests: guests ? Number(guests) : null,
-        recurrence,
-        parent_event_id: parent.id,
-      }));
-      const { data: kids } = await supabase.from("events").insert(children).select("*");
-      if (kids) inserted = [...inserted, ...(kids as EventRow[])];
-    }
 
     setSaving(false);
-    toast.success(dates.length > 1 ? `${dates.length} eventos criados` : "Evento criado");
-    onCreated(inserted.sort((a, b) => +new Date(b.date) - +new Date(a.date)));
+    if (error || !row) return toast.error("Erro ao criar evento");
+
+    toast.success(recurrence !== "none" ? "Evento recorrente criado" : "Evento criado");
+    onCreated([row as EventRow]);
   };
 
   return (
