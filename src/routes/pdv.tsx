@@ -382,7 +382,7 @@ function PDVPage() {
       {/* Últimas vendas */}
       <div className="card-soft overflow-hidden">
         <div className="border-b border-border/60 bg-blush/30 px-5 py-3">
-          <p className="text-sm font-medium text-mauve">Últimas vendas de hoje</p>
+          <p className="text-sm font-medium text-mauve">Últimas vendas {period === "today" ? "de hoje" : period === "week" ? "(7 dias)" : period === "month" ? "(30 dias)" : "(todas)"}</p>
         </div>
         {sales.length === 0 ? (
           <p className="px-5 py-8 text-center text-sm text-muted-foreground">Nenhuma venda ainda. 🌸</p>
