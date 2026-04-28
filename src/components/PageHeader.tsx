@@ -19,7 +19,7 @@ export function PageHeader({
       {eyebrow && (
         <p className="text-[11px] uppercase tracking-[0.22em] text-rose font-medium">{eyebrow}</p>
       )}
-      <h1 className="font-display text-4xl italic text-mauve mt-1 leading-tight">{title}</h1>
+      <h1 className="mt-1 text-3xl font-semibold tracking-tight text-mauve leading-tight md:text-[2rem]">{title}</h1>
       {subtitle && <p className="text-sm text-muted-foreground mt-2">{subtitle}</p>}
     </motion.header>
   );
