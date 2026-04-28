@@ -236,11 +236,12 @@ function StorefrontPage() {
 
   const addToCart = (r: PublicRecipe) => {
     if (editing) return;
-    if (r.public_price == null) { toast.error("Produto sem preço, fale com a loja."); return; }
+    const effective = (r.promo_price != null && r.public_price != null && r.promo_price < r.public_price) ? r.promo_price : r.public_price;
+    if (effective == null) { toast.error("Produto sem preço, fale com a loja."); return; }
     setCart((prev) => {
       const found = prev.find((i) => i.recipe_id === r.id);
       if (found) return prev.map((i) => (i.recipe_id === r.id ? { ...i, qty: i.qty + 1 } : i));
-      return [...prev, { recipe_id: r.id, name: r.name, price: r.public_price!, qty: 1, image_url: r.image_url }];
+      return [...prev, { recipe_id: r.id, name: r.name, price: effective, qty: 1, image_url: r.image_url }];
     });
     toast.success(`${r.name} adicionado`);
   };
