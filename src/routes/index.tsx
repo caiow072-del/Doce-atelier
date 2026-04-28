@@ -141,41 +141,42 @@ function Dashboard() {
   const topProfit = useMemo(() => perfList.slice(0, 3), [perfList]);
   const lossMakers = useMemo(() => perfList.filter((p) => p.profit < 0).slice(0, 3), [perfList]);
 
-  const firstName = (user?.user_metadata?.full_name as string | undefined)?.split(" ")[0]
+  const rawName = (user?.user_metadata?.full_name as string | undefined)?.split(" ")[0]
     ?? user?.email?.split("@")[0]
     ?? "confeiteira";
+  const firstName = rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase();
 
   return (
-    <div className="space-y-8">
-      {/* ============ Hero ============ */}
+    <div className="space-y-6 lg:space-y-8">
+      {/* ============ Hero (compact) ============ */}
       <motion.section
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-3xl border border-border/60 bg-gradient-to-br from-blush/70 via-card to-cream p-6 shadow-soft sm:p-10"
+        className="relative overflow-hidden rounded-3xl border border-border/60 bg-gradient-to-br from-blush/70 via-card to-cream p-4 shadow-soft sm:p-6 lg:p-7"
       >
-        <div className="pointer-events-none absolute -right-8 -top-6 h-28 w-28 opacity-30 sm:-right-12 sm:-top-10 sm:h-72 sm:w-72 sm:opacity-90">
+        <div className="pointer-events-none absolute -right-6 -top-4 h-20 w-20 opacity-25 sm:-right-8 sm:-top-6 sm:h-40 sm:w-40 sm:opacity-80 lg:h-48 lg:w-48">
           <img src={heroCake} alt="" className="h-full w-full object-contain" />
         </div>
-        <div className="relative max-w-2xl">
-          <div className="inline-flex items-center gap-2 rounded-full bg-card/70 px-3 py-1 text-[11px] uppercase tracking-widest text-rose">
+        <div className="relative max-w-2xl pr-20 sm:pr-32">
+          <div className="inline-flex items-center gap-2 rounded-full bg-card/70 px-2.5 py-0.5 text-[10px] uppercase tracking-widest text-rose">
             <Sparkles className="h-3 w-3" /> {currentShop?.shops.name ?? "Sua confeitaria"}
           </div>
-          <h1 className="mt-4 font-display text-3xl italic leading-tight text-mauve sm:text-6xl">
+          <h1 className="mt-2 text-xl font-semibold leading-tight tracking-tight text-mauve sm:text-2xl lg:text-3xl">
             Bom dia, <span className="text-rose">{firstName}</span>.
           </h1>
-          <p className="mt-3 max-w-md text-sm text-mauve/80 sm:text-base">
-            Aqui está o panorama doce do seu mês. Tudo o que importa, num só olhar.
+          <p className="mt-1 max-w-md text-xs text-mauve/80 sm:text-sm">
+            Aqui está o panorama doce do seu mês.
           </p>
-          <div className="mt-6 flex flex-wrap gap-3">
+          <div className="mt-3 flex flex-wrap gap-2 sm:mt-4">
             <Link
               to="/eventos"
-              className="inline-flex items-center gap-2 rounded-2xl bg-mauve px-5 py-3 text-sm font-medium text-cream shadow-soft transition hover:opacity-90"
+              className="inline-flex items-center gap-2 rounded-xl bg-mauve px-3.5 py-2 text-xs font-medium text-cream shadow-soft transition hover:opacity-90 sm:text-sm"
             >
               <CalendarHeart className="h-4 w-4" /> Novo evento
             </Link>
             <Link
               to="/pdv"
-              className="inline-flex items-center gap-2 rounded-2xl border border-mauve/20 bg-card/70 px-5 py-3 text-sm font-medium text-mauve backdrop-blur transition hover:bg-card"
+              className="inline-flex items-center gap-2 rounded-xl border border-mauve/20 bg-card/70 px-3.5 py-2 text-xs font-medium text-mauve backdrop-blur transition hover:bg-card sm:text-sm"
             >
               <ShoppingBag className="h-4 w-4" /> Abrir PDV
             </Link>
