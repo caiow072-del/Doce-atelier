@@ -19,7 +19,7 @@ export const Route = createFileRoute("/pdv")({
   component: PDVPage,
 });
 
-type Product = { id: string; label: string; price: number; icon: string; tone: string; position: number; active: boolean };
+type Product = { id: string; label: string; price: number; icon: string; tone: string; position: number; active: boolean; image_url: string | null };
 type EventProduct = { id: string; event_id: string; name: string; unit_price: number; planned_qty: number; sold_qty: number; image_url: string | null };
 type EventLite = { id: string; name: string; date: string; closed_at: string | null; recurrence?: string; recurrence_until?: string | null; weekday?: number | null; day_of_month?: number | null };
 type Sale = { id: string; item: string; price: number; sold_at: string; payment_method: string };
