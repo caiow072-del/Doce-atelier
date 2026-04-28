@@ -87,13 +87,18 @@ const brl = (n: number) =>
 
 function StorefrontPage() {
   const { slug } = Route.useParams();
+  const { session, shops } = useAuth();
   const [shop, setShop] = useState<Shop | null>(null);
   const [recipes, setRecipes] = useState<PublicRecipe[]>([]);
+  const [draft, setDraft] = useState<StorefrontDraft>(EMPTY_DRAFT);
   const [loading, setLoading] = useState(true);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [search, setSearch] = useState("");
   const [cartOpen, setCartOpen] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
+
+  const isOwner = !!shop && shops.some((m) => m.shop_id === shop.id && (m.role === "owner" || m.role === "manager"));
 
   useEffect(() => {
     let cancelled = false;
@@ -101,7 +106,7 @@ function StorefrontPage() {
       setLoading(true);
       const { data: shopData, error: shopErr } = await supabase
         .from("shops")
-        .select("id, name, slug, whatsapp, description, logo_url")
+        .select("id, name, slug, whatsapp, description, logo_url, theme")
         .eq("slug", slug)
         .maybeSingle();
       if (cancelled) return;
@@ -110,21 +115,40 @@ function StorefrontPage() {
         return;
       }
       setShop(shopData as Shop);
+      // Apply theme for visitors
+      applyTheme((shopData.theme ?? null) as ShopTheme | null);
 
-      const { data: recs } = await supabase
-        .from("recipes")
-        .select("id, name, description, image_url, public_price, servings")
-        .eq("shop_id", shopData.id)
-        .eq("show_in_catalog", true)
-        .order("name");
+      const [recsRes, sfRes] = await Promise.all([
+        supabase
+          .from("recipes")
+          .select("id, name, description, image_url, public_price, servings")
+          .eq("shop_id", shopData.id)
+          .eq("show_in_catalog", true)
+          .order("name"),
+        supabase
+          .from("shop_storefront")
+          .select("hero_title, hero_subtitle, banner_url, social")
+          .eq("shop_id", shopData.id)
+          .maybeSingle(),
+      ]);
       if (cancelled) return;
-      setRecipes((recs ?? []) as PublicRecipe[]);
+      setRecipes((recsRes.data ?? []) as PublicRecipe[]);
+      const sf = sfRes.data as any;
+      setDraft({
+        hero_title: sf?.hero_title ?? null,
+        hero_subtitle: sf?.hero_subtitle ?? null,
+        banner_url: sf?.banner_url ?? null,
+        social: sf?.social ?? {},
+      });
       setLoading(false);
     })();
     return () => {
       cancelled = true;
     };
   }, [slug]);
+
+  const onDraftChange = useCallback((d: StorefrontDraft) => setDraft(d), []);
+
 
   const addToCart = (r: PublicRecipe) => {
     if (r.public_price == null) {
