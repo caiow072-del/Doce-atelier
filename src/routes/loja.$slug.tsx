@@ -67,7 +67,7 @@ type Storefront = {
 type PublicRecipe = {
   id: string; name: string; description: string | null;
   image_url: string | null; public_price: number | null; servings: number | null;
-  category: string | null;
+  category: string | null; promo_price: number | null; is_featured: boolean;
 };
 
 type CartItem = {
@@ -134,8 +134,8 @@ function StorefrontPage() {
 
       const [recsRes, sfRes] = await Promise.all([
         supabase.from("recipes")
-          .select("id, name, description, image_url, public_price, servings, category")
-          .eq("shop_id", shopData.id).eq("show_in_catalog", true).order("catalog_position").order("name"),
+          .select("id, name, description, image_url, public_price, servings, category, promo_price, is_featured")
+          .eq("shop_id", shopData.id).eq("show_in_catalog", true).order("is_featured", { ascending: false }).order("catalog_position").order("name"),
         supabase.from("shop_storefront").select("*").eq("shop_id", shopData.id).maybeSingle(),
       ]);
       if (cancelled) return;
@@ -236,11 +236,12 @@ function StorefrontPage() {
 
   const addToCart = (r: PublicRecipe) => {
     if (editing) return;
-    if (r.public_price == null) { toast.error("Produto sem preço, fale com a loja."); return; }
+    const effective = (r.promo_price != null && r.public_price != null && r.promo_price < r.public_price) ? r.promo_price : r.public_price;
+    if (effective == null) { toast.error("Produto sem preço, fale com a loja."); return; }
     setCart((prev) => {
       const found = prev.find((i) => i.recipe_id === r.id);
       if (found) return prev.map((i) => (i.recipe_id === r.id ? { ...i, qty: i.qty + 1 } : i));
-      return [...prev, { recipe_id: r.id, name: r.name, price: r.public_price!, qty: 1, image_url: r.image_url }];
+      return [...prev, { recipe_id: r.id, name: r.name, price: effective, qty: 1, image_url: r.image_url }];
     });
     toast.success(`${r.name} adicionado`);
   };
@@ -363,16 +364,24 @@ function StorefrontPage() {
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {filtered.map((r) => {
                     const promo = promoMap.get(r.id);
+                    const hasPromoPrice = r.promo_price != null && r.public_price != null && r.promo_price < r.public_price;
                     const showPriceTo = promo?.price_to != null;
                     const priceFrom = promo?.price_from ?? r.public_price;
+                    const finalPrice = showPriceTo ? promo!.price_to! : (hasPromoPrice ? r.promo_price! : r.public_price);
+                    const compareAt = showPriceTo ? priceFrom : (hasPromoPrice ? r.public_price : null);
                     return (
-                      <article key={r.id} className="group flex flex-col overflow-hidden rounded-3xl border border-rose/30 bg-white shadow-sm transition hover:shadow-lg">
+                      <article key={r.id} className={`group flex flex-col overflow-hidden rounded-3xl border bg-white shadow-sm transition hover:shadow-lg ${r.is_featured ? "border-rose ring-2 ring-rose/40" : "border-rose/30"}`}>
                         <div className="relative aspect-[4/3] overflow-hidden bg-blush">
                           {r.image_url ? (
                             <img src={r.image_url} alt={r.name} loading="lazy" className="h-full w-full object-cover transition group-hover:scale-105" />
                           ) : (<div className="grid h-full w-full place-items-center"><Cake className="h-12 w-12 text-mauve/40" /></div>)}
-                          {promo && (
+                          {(promo || hasPromoPrice) && (
                             <span className="absolute left-2 top-2 rounded-full bg-rose px-2.5 py-0.5 text-[10px] font-semibold text-mauve shadow">PROMO</span>
+                          )}
+                          {r.is_featured && (
+                            <span className="absolute left-2 bottom-2 inline-flex items-center gap-1 rounded-full bg-mauve px-2 py-0.5 text-[10px] font-semibold text-cream shadow">
+                              ★ Destaque
+                            </span>
                           )}
                           {r.category && (
                             <span className="absolute right-2 top-2 rounded-full bg-white/90 px-2 py-0.5 text-[10px] text-mauve">{r.category}</span>
@@ -383,11 +392,11 @@ function StorefrontPage() {
                           {r.description && <p className="line-clamp-2 text-xs text-mauve/70">{r.description}</p>}
                           <div className="mt-auto flex items-center justify-between pt-2">
                             <div className="flex items-baseline gap-1.5">
-                              {showPriceTo && priceFrom != null && (
-                                <span className="text-xs text-mauve/50 line-through">{brl(priceFrom)}</span>
+                              {compareAt != null && (
+                                <span className="text-xs text-mauve/50 line-through">{brl(compareAt)}</span>
                               )}
                               <span className="text-base font-semibold text-mauve">
-                                {showPriceTo ? brl(promo!.price_to!) : (r.public_price != null ? brl(r.public_price) : "Sob consulta")}
+                                {finalPrice != null ? brl(finalPrice) : "Sob consulta"}
                               </span>
                             </div>
                             <button onClick={() => addToCart(r)} disabled={editing} className="inline-flex items-center gap-1 rounded-full bg-mauve px-4 py-2 text-xs font-medium text-cream hover:opacity-90 disabled:opacity-50">
