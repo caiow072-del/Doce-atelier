@@ -55,6 +55,14 @@ type Shop = {
   whatsapp: string | null;
   description: string | null;
   logo_url: string | null;
+  theme: ShopTheme | null;
+};
+
+const EMPTY_DRAFT: StorefrontDraft = {
+  hero_title: null,
+  hero_subtitle: null,
+  banner_url: null,
+  social: {},
 };
 
 type PublicRecipe = {
