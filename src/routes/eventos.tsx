@@ -352,6 +352,9 @@ function EventosPage() {
         recipe_id: data.recipe_id ?? null,
         unit_price: data.unit_price ?? 0,
         planned_qty: data.planned_qty ?? 0,
+        sale_mode: data.sale_mode ?? "unit",
+        batches: data.batches ?? 0,
+        image_url: data.image_url ?? null,
         position: eventProducts.length,
       })
       .select("*")
