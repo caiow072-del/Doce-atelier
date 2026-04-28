@@ -274,22 +274,22 @@ function RecipesPage() {
                     <p className="text-center text-[10px] uppercase tracking-widest text-rose">
                       Considerando apenas os insumos
                     </p>
-                    <div className="mt-2 grid grid-cols-3 gap-3 text-center">
-                      <div className="flex flex-col gap-1 min-w-0">
+                    <div className="mt-2 grid grid-cols-3 gap-2 text-center">
+                      <div className="flex flex-col gap-0.5 min-w-0">
                         <p className="text-[10px] leading-tight text-muted-foreground">Custo/fatia</p>
-                        <p className="font-display text-sm italic text-mauve leading-tight break-words">
+                        <p className="font-display text-xs italic text-mauve leading-tight truncate">
                           {formatBRL(ingCostSlice)}
                         </p>
                       </div>
-                      <div className="flex flex-col gap-1 min-w-0">
+                      <div className="flex flex-col gap-0.5 min-w-0">
                         <p className="text-[10px] leading-tight text-muted-foreground">Lucro/fatia</p>
-                        <p className={`font-display text-sm italic leading-tight break-words ${ingProfitSlice <= 0 ? "text-destructive" : "text-mauve"}`}>
+                        <p className={`font-display text-xs italic leading-tight truncate ${ingProfitSlice <= 0 ? "text-destructive" : "text-mauve"}`}>
                           {formatBRL(ingProfitSlice)}
                         </p>
                       </div>
-                      <div className="flex flex-col gap-1 min-w-0">
+                      <div className="flex flex-col gap-0.5 min-w-0">
                         <p className="text-[10px] leading-tight text-muted-foreground">Lucro total</p>
-                        <p className={`font-display text-sm italic leading-tight break-words ${ingProfitTotal <= 0 ? "text-destructive" : "text-mauve"}`}>
+                        <p className={`font-display text-xs italic leading-tight truncate ${ingProfitTotal <= 0 ? "text-destructive" : "text-mauve"}`}>
                           {formatBRL(ingProfitTotal)}
                         </p>
                       </div>
