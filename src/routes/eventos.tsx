@@ -37,6 +37,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { formatBRL } from "@/lib/store";
 import { toast } from "sonner";
 import { nextOccurrence, WEEKDAYS } from "@/lib/recurrence";
+import { recipeCost } from "@/lib/costs";
 
 export const Route = createFileRoute("/eventos")({
   head: () => ({
@@ -749,7 +750,11 @@ function ProductsTab({
     if (!p.recipe_id) return Number(p.unit_price) * 0.35;
     const r = recipes.find((x) => x.id === p.recipe_id);
     if (!r) return Number(p.unit_price) * 0.35;
-    const c = recipeCostFor(r, recipeIngs, ingredients);
+    const c = recipeCost(
+      { id: r.id, servings: r.servings, labor_cost: Number(r.labor_cost ?? 0), packaging_cost: Number(r.packaging_cost ?? 0), waste_pct: Number(r.waste_pct ?? 0) },
+      recipeIngs,
+      ingredients.map((i) => ({ id: i.id, package_qty: Number(i.package_qty ?? 1), price_paid: Number(i.price_paid ?? 0) })),
+    );
     return p.sale_mode === "slice" ? c.perSlice : c.perWhole;
   };
 
