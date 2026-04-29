@@ -126,11 +126,15 @@ function StorefrontPage() {
 
   const [editing, setEditing] = useState(false);
   const [device, setDevice] = useState<"mobile" | "desktop">("mobile");
-  const [editorTab, setEditorTab] = useState<"template" | "sections" | "design">("template");
+  const [editorTab, setEditorTab] = useState<"template" | "sections" | "design" | "shop">("template");
   const [panelOpen, setPanelOpen] = useState(true);
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [infoOpen, setInfoOpen] = useState(false);
+  const [bottomTab, setBottomTab] = useState<BottomNavTab>("home");
+  const catalogRef = useRef<HTMLDivElement | null>(null);
+  const promoRef = useRef<HTMLDivElement | null>(null);
 
   const isOwner = !!shop && shops.some((m) => m.shop_id === shop.id && (m.role === "owner" || m.role === "manager"));
 
