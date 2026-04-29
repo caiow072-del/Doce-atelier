@@ -740,20 +740,20 @@ function SubTab({
   return (
     <button
       onClick={onClick}
-      className={`relative -mb-px inline-flex items-center gap-2 border-b-2 px-3 py-2.5 text-sm transition-colors ${
+      className={`relative -mb-px flex flex-1 min-w-0 items-center justify-center gap-1.5 border-b-2 px-2 py-2.5 text-xs sm:text-sm transition-colors sm:flex-initial sm:px-3 ${
         active
           ? "border-rose text-mauve"
           : "border-transparent text-muted-foreground hover:text-mauve"
       }`}
     >
-      <Icon className="h-4 w-4" />
-      <span className="font-medium">{label}</span>
+      <Icon className="h-4 w-4 shrink-0" />
+      <span className="truncate font-medium">{label}</span>
       {hint && (
-        <span className={`rounded-full px-1.5 py-0.5 text-[10px] num ${active ? "bg-blush/70 text-mauve" : "bg-muted text-muted-foreground"}`}>
+        <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] num ${active ? "bg-blush/70 text-mauve" : "bg-muted text-muted-foreground"}`}>
           {hint}
         </span>
       )}
-      {closed && <Lock className="h-3 w-3 text-muted-foreground" />}
+      {closed && <Lock className="h-3 w-3 shrink-0 text-muted-foreground" />}
     </button>
   );
 }
