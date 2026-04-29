@@ -1089,11 +1089,11 @@ function CashboxTab({
 
   return (
     <div className="space-y-4">
-      <div className="card-soft p-5 bg-gradient-to-br from-blush/60 to-card">
+      <div className="card-soft p-4 bg-gradient-to-br from-blush/60 to-card sm:p-5">
         <div className="flex items-start justify-between gap-3">
-          <div>
+          <div className="min-w-0">
             <p className="text-[11px] uppercase tracking-widest text-rose">Caixa do evento {closed && "(fechado)"}</p>
-            <p className="mt-1 text-3xl font-semibold text-mauve">{formatBRL(display.total)}</p>
+            <p className="mt-1 text-2xl font-semibold text-mauve sm:text-3xl">{formatBRL(display.total)}</p>
             <p className="text-xs text-muted-foreground">{display.items_sold} itens vendidos</p>
           </div>
           {closed ? (
