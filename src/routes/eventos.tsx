@@ -947,7 +947,7 @@ function ProductsTab({
       <div className="card-soft overflow-hidden">
         <button
           onClick={() => setShowInsumos(!showInsumos)}
-          className="flex w-full items-center justify-between border-b border-border/60 bg-blush/30 px-5 py-3"
+          className="flex w-full items-center justify-between border-b border-border/60 bg-blush/30 px-5 py-3 md:px-4 md:py-2.5"
         >
           <div className="flex items-center gap-2">
             <ShoppingBasket className="h-4 w-4 text-mauve" strokeWidth={1.6} />
@@ -960,9 +960,9 @@ function ProductsTab({
           shoppingList.length === 0 ? (
             <p className="px-5 py-6 text-center text-sm text-muted-foreground">Adicione produtos com receita vinculada e quantidade planejada.</p>
           ) : (
-            <ul className="divide-y divide-border/60">
+            <ul className="divide-y divide-border/60 md:grid md:grid-cols-2 md:gap-x-6 md:divide-y-0 md:px-4 md:py-2">
               {shoppingList.map((it) => (
-                <li key={it.name} className="flex items-center justify-between px-5 py-2.5 text-sm">
+                <li key={it.name} className="flex items-center justify-between px-5 py-2.5 text-sm md:border-b md:border-border/40 md:px-0">
                   <span className="text-mauve">{it.name}</span>
                   <span className="text-muted-foreground">{it.qty.toLocaleString("pt-BR", { maximumFractionDigits: 2 })} {it.unit}</span>
                 </li>
