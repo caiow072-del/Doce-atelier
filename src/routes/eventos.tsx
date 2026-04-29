@@ -871,7 +871,7 @@ function ProductsTab({
   return (
     <div className="space-y-4">
       <div className="card-soft overflow-hidden">
-        <div className="flex items-center justify-between border-b border-border/60 bg-blush/30 px-5 py-3">
+        <div className="flex items-center justify-between border-b border-border/60 bg-blush/30 px-5 py-3 md:px-4 md:py-2.5">
           <div>
             <p className="text-sm font-medium text-mauve">Produtos do evento</p>
             <p className="text-[11px] text-muted-foreground">Cada produto vira um botão no PDV deste evento.</p>
