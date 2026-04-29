@@ -20,6 +20,7 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
+import { PageContainer } from "@/components/PageContainer";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -134,6 +135,7 @@ function ClientesPage() {
   };
 
   return (
+    <PageContainer width="default">
     <div className="space-y-6">
       <PageHeader
         eyebrow="Sua carteira"

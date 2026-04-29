@@ -22,6 +22,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
+import { PageContainer } from "@/components/PageContainer";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/encomendas")({
@@ -146,6 +147,7 @@ function EncomendasPage() {
   };
 
   return (
+    <PageContainer width="default">
     <div className="space-y-6">
       <PageHeader eyebrow="Pedidos personalizados" title="Encomendas" subtitle="Bolos sob medida, com cliente e entrega." />
 
