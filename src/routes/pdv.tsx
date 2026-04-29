@@ -324,7 +324,7 @@ function PDVPage() {
         }
       />
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+      <div className="space-y-4">
         <div className="min-w-0 space-y-4">
           {/* Seletor de contexto */}
           <div className="card-soft p-3">
