@@ -826,9 +826,21 @@ function EventHeader({ event, kind, typeName, onEdit, onDelete }: { event: Event
 
 function Badge({ icon: Icon, label }: { icon: any; label: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-blush/40 px-2.5 py-1 text-[11px] text-mauve">
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-card px-2.5 py-1 text-[11px] text-mauve">
       <Icon className="h-3 w-3" /> {label}
     </span>
+  );
+}
+
+function NotesInline({ notes }: { notes: string }) {
+  const [open, setOpen] = useState(false);
+  return open ? (
+    <p className="whitespace-pre-line text-xs text-mauve/80">
+      {notes}{" "}
+      <button onClick={() => setOpen(false)} className="text-rose hover:underline">ocultar</button>
+    </p>
+  ) : (
+    <button onClick={() => setOpen(true)} className="text-[11px] text-rose hover:underline">ver observações</button>
   );
 }
 
