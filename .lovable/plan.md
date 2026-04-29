@@ -1,101 +1,85 @@
-# Repaginação Global de UI
+# Plano: Eventos clean com lista em drawer
 
-O problema-raiz é que o app usa `max-w-7xl` único para tudo (incluindo formulários e listas), os cards não têm teto de largura, e cada página foi ajustada isoladamente — por isso "arrumar uma quebra outra". Vou centralizar as regras no `AppShell` + `PageHeader` para que toda página herde o comportamento certo.
+Foco: tela principal mostra **um evento por vez**. A lista vira um painel lateral (Sheet) acionado por botão. Tudo o que é ruído visual no mobile some ou se reagrupa.
 
-## 1. Sistema de larguras por contexto (causa-raiz do "esticado")
+## Mudanças em `src/routes/eventos.tsx`
 
-Substituir o `max-w-7xl` único por **3 containers semânticos** aplicáveis via prop no `PageHeader` e numa nova classe utilitária:
+### 1. Substituir o card "Histórico" por um seletor compacto + drawer
+
+Hoje o card de histórico ocupa toda a largura, sempre visível, com chips de filtro acima. Vai virar:
 
 ```text
-narrow  → max-w-3xl  (~768px)  formulários, perfil, login, configs
-default → max-w-5xl  (~1024px) listas, eventos, encomendas, clientes, insumos, receitas
-wide    → max-w-7xl  (~1280px) dashboard, catálogo, PDV, vitrine
+┌─────────────────────────────────────────┐
+│ [📅 Festival de Tortas — 28/04]    [▾] │   ← botão único, abre o drawer
+└─────────────────────────────────────────┘
 ```
 
-- `AppShell` deixa de impor `max-w-7xl` no `<main>` — apenas padding.
-- Cada rota envolve seu conteúdo num `<PageContainer width="narrow|default|wide">` (componente novo).
-- Resultado: receitas e insumos ficam em ~1024px com 2-3 colunas reais (não 4 esticadas); dashboard e catálogo continuam aproveitando tela.
+- Um único botão mostrando o evento atualmente selecionado (ícone do tipo + nome + data + chevron).
+- Ao clicar, abre `Sheet` (lateral à direita no desktop, lateral à esquerda no mobile via `side="left"`) contendo:
+  - Campo de busca por nome (filtro local).
+  - Os chips de tipo (Todos/Festival/Festa/Feira/...) — saem da tela principal.
+  - A lista de eventos (mesmos cards de hoje, mas em coluna única dentro do drawer).
+  - Botão "+ Novo evento" no rodapé do drawer.
+- Ao selecionar um evento: fecha o drawer automaticamente.
 
-## 2. Header sticky com título da página (mobile + PC)
+### 2. Header da página mais leve
 
-Reformular `AppShell` + `PageHeader`:
+- Remover `eyebrow="Coração do negócio"` (já depreciado no componente).
+- Remover botão `Tipos` do header — mover para dentro do drawer como link discreto no rodapé ("Gerenciar tipos").
+- O `+ Novo evento` também sai do header e vai para o drawer (rodapé). No header fica apenas o título.
+- Resultado: header com só o `h1` "Eventos" e nada mais — limpo no mobile.
 
-- `AppShell` cria um **slot sticky** (`<div className="sticky top-0 z-30 ...">`) logo no topo do `<main>`, tanto no PC quanto no mobile (no mobile fica abaixo da topbar atual).
-- `PageHeader` ganha props `actions?: ReactNode` e `sticky?: boolean` (default `true`).
-- Renderiza: eyebrow + título à esquerda, ações (`+ Novo`, busca) à direita, alinhados na mesma linha em md+.
-- Fundo `bg-card/85 backdrop-blur` com borda inferior suave; encolhe altura quando rolado (opcional, via classe).
-- Todas as páginas migram seus botões "+ Novo X" para `actions` do `PageHeader`, removendo a barra de ação separada que está duplicando espaço vertical.
+### 3. EventHeader (card do evento selecionado) mais clean
 
-## 3. Cards: teto de largura + densidade controlada
+- Reduzir o título de `text-2xl italic` para `text-lg md:text-xl` sem itálico.
+- Tirar o eyebrow "tipo do evento" (já aparece como ícone na frente do nome no seletor).
+- Compactar a linha de meta (data, hora, local) numa única linha truncada com separadores `·`.
+- Esconder `notes` por padrão; mostrar atrás de um link "ver observações" se existir.
+- Manter botões editar/excluir, mas como `ghost` icon-only à direita.
 
-Criar utilitário CSS em `styles.css`:
+### 4. Barra de progresso
 
-```css
-.grid-cards-sm  { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
-.grid-cards-md  { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
-.grid-cards-lg  { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+- Fica, mas com label menor (`text-[11px]`) e sem o "Produção" redundante — só `{done}/{total} tarefas` à direita.
+
+### 5. Tabs
+
+- Mantém os 3 botões (Produtos / Tarefas / Caixa) mas com hint **só no desktop** (`hidden md:block`) — no mobile só ícone + label, evitando texto truncado.
+
+### 6. Estado vazio
+
+Se `events.length === 0`: mostra ilustração centralizada + botão "Criar primeiro evento", sem seletor nem drawer.
+
+## Mudança em `src/components/PageHeader.tsx`
+
+- `subtitle` recebe `hidden md:block` para sumir no mobile (no desktop continua visível).
+
+## Layout final mobile
+
+```text
+┌───────────────────────────────┐
+│ Eventos                       │   ← header limpo, só título
+│ ┌───────────────────────────┐ │
+│ │ 🎪 Festival de Tortas  ▾ │ │   ← seletor único (abre drawer)
+│ │    28/04 · 14:00          │ │
+│ └───────────────────────────┘ │
+│                               │
+│ ┌───────────────────────────┐ │
+│ │ Festival de Tortas        │ │   ← card do evento selecionado
+│ │ 28/04 · Centro · semanal  │ │
+│ │ [✏] [🗑]                   │ │
+│ │ ─────────────────────     │ │
+│ │ ▓▓▓▓░░░░  3/8 tarefas     │ │
+│ └───────────────────────────┘ │
+│                               │
+│ [Produtos][Tarefas][Caixa]    │
+│                               │
+│ (conteúdo da tab ativa)       │
+└───────────────────────────────┘
 ```
 
-Vantagem do `auto-fill` + `minmax`: o card **nunca estica além de ~320px** mesmo num monitor 4K, e em mobile cai naturalmente para 1 coluna. Isso resolve "cards grandes no PC" em insumos, receitas, eventos, catálogo e PDV de uma vez sem precisar definir breakpoints manuais por página.
+## Arquivos afetados
 
-## 4. Página por página
+- `src/routes/eventos.tsx` — refator visual (sem mexer em dados, mutations, sub-tabs `ProductsTab`/`TasksTab`/`CashboxTab`, `NewEventSheet`, `TypesSheet`).
+- `src/components/PageHeader.tsx` — `subtitle` invisível no mobile.
 
-**Dashboard (`index.tsx`)**
-- Container `wide`. Hero compactado (já está).
-- Grid de métricas: muda de `lg:grid-cols-4` esticado para `grid-cards-sm` com `max-w` por card → cards param de inflar.
-- Painel lateral (Estoque/Encomendas) com largura fixa ~280px no PC.
-
-**Insumos (`insumos.tsx`)**
-- Container `default` (~1024px).
-- Trocar grid de cards por **tabela densa no PC** (≥md) com colunas: nome / unidade / estoque / preço pago / ações. Em mobile mantém cards mas com altura fixa, padding reduzido (`p-3`), texto base `text-sm`, sem truncar dados críticos (mostrar 2 linhas).
-- Botão "+ Novo insumo" sobe para `PageHeader.actions`.
-
-**Receitas (`receitas.tsx`)**
-- Container `default`.
-- Cards usam `grid-cards-md` (max ~280px), padding reduzido, valores em coluna sem `font-display italic` exagerado, fonte `tabular-nums` para alinhar.
-- **Modal "Nova/Editar receita"**:
-  - Largura `max-w-3xl` no PC (`sm:max-w-3xl`).
-  - Conteúdo em **grid 2 colunas no md+**: Nome | Servings, Peso total | Rende quantas, Mão-de-obra | Embalagem.
-  - Mobile mantém 1 coluna mas usa `grid grid-cols-2 gap-3` para os pares numéricos curtos (peso/rende, produção/embalagem) com labels acima — alinhamento consistente.
-- Repassar tipografia: títulos `text-base font-semibold`, valores `text-sm tabular-nums`.
-
-**Eventos (`eventos.tsx`)**
-- Container `default`.
-- Cards de evento e histórico com `grid-cards-md` + altura mínima fixa, removendo `lg:col-span-2` e similares que esticam.
-- **Histórico**: passa a ser tabela compacta no PC (data / nome / receita / lucro / ações) com **scroll interno máximo `max-h-[60vh]`** + paginação simples ("Ver mais"); em mobile, cards compactos colapsáveis.
-- Painel "Evento selecionado": dividido em sub-cards de largura `max-w-sm` cada (Produtos, Tarefas, Caixa) num `flex flex-wrap` em vez de full-width esticados.
-
-**PDV (`pdv.tsx`)** — refatoração maior
-- Container `wide`, **layout 2 colunas no PC**: produtos à esquerda (`flex-1`), carrinho fixo à direita (`w-80 sticky top-[header]`).
-- Produtos em `grid-cards-sm` (cards ~220px max), foto menor, nome + preço + stepper +/- compacto.
-- Carrinho lateral: lista densa, total fixo no rodapé do painel, botão "Finalizar venda".
-- Mobile: carrinho vira **drawer/sheet** acionado por botão flutuante mostrando contador (já tem padrão Sheet no projeto). Grid de produtos em 2 colunas com cards menores, sem corte horizontal.
-
-**Catálogo, Clientes, Encomendas, Calendário, Vitrine**
-- Aplicar mesma migração: `PageContainer` certo + `PageHeader` com `actions` + grid `auto-fill`.
-
-## 5. Garantias contra "arrumar um e quebrar outro"
-
-- Toda mudança de largura/grid acontece em **2 lugares só**: `AppShell` (stripped do max-w) + utilitários CSS no `styles.css`.
-- Páginas declaram apenas seu `width` e usam classes utilitárias — nada de breakpoints inline customizados.
-- Mobile e PC ficam isolados: mobile usa `grid-cols-1/2` explícito + sheets; PC usa `auto-fill`. Mexer em um não afeta o outro.
-
-## Detalhes técnicos
-
-**Arquivos a criar:**
-- `src/components/PageContainer.tsx` — wrapper com prop `width: "narrow" | "default" | "wide"`.
-
-**Arquivos a editar:**
-- `src/components/AppShell.tsx` — remover `max-w-7xl` do `<main>`, manter só padding; adicionar slot sticky.
-- `src/components/PageHeader.tsx` — adicionar `actions?`, `sticky?` (default true), layout flex com título à esquerda e ações à direita em md+.
-- `src/styles.css` — adicionar utilitários `.grid-cards-sm/md/lg`, `.page-narrow/default/wide`, regra `tabular-nums` em valores de moeda.
-- `src/routes/index.tsx` — width=wide, grid de métricas com auto-fill.
-- `src/routes/insumos.tsx` — width=default, tabela no PC + cards compactos no mobile, ação no header.
-- `src/routes/receitas.tsx` — width=default, grid auto-fill, modal em grid 2-col no PC, alinhamento mobile.
-- `src/routes/eventos.tsx` — width=default, histórico em tabela paginada, sub-cards do evento selecionado em flex-wrap.
-- `src/routes/pdv.tsx` — width=wide, split products/cart, sheet no mobile.
-- `src/routes/catalogo.tsx`, `clientes.tsx`, `encomendas.tsx`, `calendario.tsx`, `vitrine.tsx` — adotar PageContainer + PageHeader.actions + grid utilitário.
-
-**Sem mudanças em:** lógica de banco, paleta de cores, autenticação, supabase types, vitrine pública (`loja.$slug.tsx`) — só o app interno.
-
-Após implementar, rodo verificação visual nas páginas em viewports 375px (mobile), 947px (atual) e 1440px (PC) para confirmar que nenhuma quebrou.
+Sem mudanças de banco, schema, ou comportamento funcional.
