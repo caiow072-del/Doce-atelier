@@ -535,7 +535,7 @@ function EventosPage() {
           </div>
 
           {/* Sub-abas discretas */}
-          <div className="flex w-full min-w-0 items-center gap-0 border-b border-border/60 sm:gap-1">
+          <div className="flex w-full min-w-0 items-center gap-0 overflow-hidden border-b border-border/60 sm:gap-1">
             <SubTab active={activeTab === "products"} onClick={() => setActiveTab("products")} icon={Package} label="Produtos" hint={`${eventProducts.length}`} />
             <SubTab active={activeTab === "tasks"} onClick={() => setActiveTab("tasks")} icon={CheckCircle2} label="Tarefas" hint={`${doneTasks}/${totalTasks}`} />
             <SubTab active={activeTab === "cashbox"} onClick={() => setActiveTab("cashbox")} icon={Wallet} label="Caixa" closed={!!selected.closed_at} />
