@@ -481,7 +481,6 @@ function PDVPage() {
               );
             })}
           </div>
-        </>
       )}
 
       {/* Últimas vendas */}
@@ -508,10 +507,17 @@ function PDVPage() {
           </ul>
         )}
       </div>
+        </div>
 
-      {/* Carrinho lateral */}
+        {/* Coluna direita: carrinho fixo no PC */}
+        <div className="hidden lg:block">
+          <div className="sticky top-20">{cartPanel}</div>
+        </div>
+      </div>
+
+      {/* Carrinho mobile (sheet) */}
       {showCart && (
-        <div className="fixed inset-0 z-50 bg-mauve/40 backdrop-blur-sm" onClick={() => setShowCart(false)}>
+        <div className="fixed inset-0 z-50 bg-mauve/40 backdrop-blur-sm lg:hidden" onClick={() => setShowCart(false)}>
           <div onClick={(e) => e.stopPropagation()} className="absolute right-0 top-0 h-full w-full max-w-md overflow-y-auto bg-card p-5 shadow-petal">
             <div className="flex items-center justify-between">
               <h2 className="font-display text-2xl italic text-mauve">Carrinho</h2>
@@ -583,7 +589,7 @@ function PDVPage() {
             exit={{ scale: 0, opacity: 0 }}
             whileTap={{ scale: 0.92 }}
             onClick={() => setShowCart(true)}
-            className="fixed bottom-20 right-4 z-40 inline-flex items-center gap-2 rounded-full bg-mauve px-5 py-3.5 text-cream shadow-petal sm:bottom-6"
+            className="fixed bottom-20 right-4 z-40 inline-flex items-center gap-2 rounded-full bg-mauve px-5 py-3.5 text-cream shadow-petal sm:bottom-6 lg:hidden"
             aria-label={`Abrir carrinho com ${cartCount} itens`}
           >
             <div className="relative">
@@ -601,7 +607,7 @@ function PDVPage() {
           </motion.button>
         )}
       </AnimatePresence>
-    </div>
+    </PageContainer>
   );
 }
 
