@@ -12,6 +12,7 @@ export type CardapioProduct = {
   promo_price: number | null;
   is_featured: boolean;
   category: string | null;
+  servings?: number | null;
 };
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
