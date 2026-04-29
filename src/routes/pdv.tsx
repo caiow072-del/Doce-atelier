@@ -423,7 +423,7 @@ function PDVPage() {
                       product_id: null,
                       event_product_id: p.id,
                     }, maxAvail)}
-                    className="relative aspect-square w-full sm:aspect-[4/3] overflow-hidden bg-gradient-to-br from-blush/60 to-card disabled:cursor-not-allowed"
+                    className="relative aspect-square w-full overflow-hidden bg-gradient-to-br from-blush/60 to-card disabled:cursor-not-allowed"
                   >
                     {p.image_url ? (
                       <img src={p.image_url} alt={p.name} className="h-full w-full object-cover transition-transform group-hover:scale-105" loading="lazy" />
@@ -512,7 +512,7 @@ function PDVPage() {
                     <button
                       type="button"
                       onClick={addOne}
-                      className="relative aspect-square w-full sm:aspect-[4/3] overflow-hidden bg-gradient-to-br from-blush/60 to-card"
+                      className="relative aspect-square w-full overflow-hidden bg-gradient-to-br from-blush/60 to-card"
                     >
                       <img src={p.image_url} alt={p.label} className="h-full w-full object-cover transition-transform group-hover:scale-105" loading="lazy" />
                     </button>
@@ -520,7 +520,7 @@ function PDVPage() {
                     <button
                       type="button"
                       onClick={addOne}
-                      className={`flex aspect-square w-full sm:aspect-[4/3] flex-col items-center justify-center gap-1.5 bg-gradient-to-br ${bg} px-3 py-3 text-center`}
+                      className={`flex aspect-square w-full flex-col items-center justify-center gap-1.5 bg-gradient-to-br ${bg} px-3 py-3 text-center`}
                     >
                       <div className="grid h-9 w-9 place-items-center rounded-xl bg-card/70">
                         <Icon className="h-5 w-5 text-mauve" strokeWidth={1.4} />
