@@ -279,25 +279,50 @@ function Dashboard() {
         </section>
       )}
 
-      {/* ============ Vitrine: pedidos pendentes ============ */}
-      {storefrontPending > 0 && (
-        <Link
-          to="/encomendas"
-          className="flex items-center justify-between gap-3 rounded-2xl border border-rose/40 bg-gradient-to-r from-blush/60 to-rose/30 p-4 transition hover:from-blush hover:to-rose/50"
-        >
-          <div className="flex items-center gap-3">
-            <div className="grid h-10 w-10 place-items-center rounded-xl bg-cream text-mauve">
-              <ShoppingBag className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-widest text-rose">Vitrine pública</p>
-              <p className="text-sm font-medium text-mauve">
-                {storefrontPending} {storefrontPending === 1 ? "pedido novo aguardando" : "pedidos novos aguardando"} sua confirmação
-              </p>
-            </div>
-          </div>
-          <span className="text-xs font-medium text-mauve">Ver →</span>
-        </Link>
+      {/* ============ Vitrine: pedidos pendentes + visitas ============ */}
+      {(storefrontPending > 0 || (storefrontConfigured && shopVisits > 0)) && (
+        <div className="grid gap-3 md:grid-cols-2">
+          {storefrontPending > 0 && (
+            <Link
+              to="/encomendas"
+              className="flex items-center justify-between gap-3 rounded-2xl border border-rose/40 bg-gradient-to-r from-blush/60 to-rose/30 p-4 transition hover:from-blush hover:to-rose/50"
+            >
+              <div className="flex items-center gap-3">
+                <div className="grid h-10 w-10 place-items-center rounded-xl bg-cream text-mauve">
+                  <ShoppingBag className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-widest text-rose">Vitrine pública</p>
+                  <p className="text-sm font-medium text-mauve">
+                    {storefrontPending} {storefrontPending === 1 ? "pedido novo aguardando" : "pedidos novos aguardando"} sua confirmação
+                  </p>
+                </div>
+              </div>
+              <span className="shrink-0 text-xs font-medium text-mauve">Ver →</span>
+            </Link>
+          )}
+          {storefrontConfigured && shopVisits > 0 && currentShop?.shops.slug && (
+            <Link
+              to="/loja/$slug"
+              params={{ slug: currentShop.shops.slug }}
+              className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-card p-4 transition hover:border-rose/40"
+            >
+              <div className="flex items-center gap-3">
+                <div className="grid h-10 w-10 place-items-center rounded-xl bg-blush/40 text-mauve">
+                  <Sparkles className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-widest text-rose">Visitas no mês</p>
+                  <p className="text-sm font-medium text-mauve">
+                    <span className="text-lg font-semibold tabular-nums">{shopVisits}</span>{" "}
+                    {shopVisits === 1 ? "pessoa visitou sua loja" : "pessoas visitaram sua loja"}
+                  </p>
+                </div>
+              </div>
+              <span className="shrink-0 text-xs font-medium text-mauve">Abrir →</span>
+            </Link>
+          )}
+        </div>
       )}
 
       {/* ============ Eventos: próximo + último fechado ============ */}
