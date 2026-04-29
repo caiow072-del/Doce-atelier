@@ -219,7 +219,7 @@ function EventosPage() {
       const [tRes, eRes, rRes, iRes, riRes] = await Promise.all([
         supabase.from("event_types").select("*").eq("shop_id", shopId).order("name"),
         supabase.from("events").select("*").eq("shop_id", shopId).order("date", { ascending: false }),
-        supabase.from("recipes").select("id, name, servings, image_url, labor_cost, packaging_cost, waste_pct").eq("shop_id", shopId).order("name"),
+        supabase.from("recipes").select("id, name, servings, image_url, labor_cost, packaging_cost, waste_pct, slice_price, public_price").eq("shop_id", shopId).order("name"),
         supabase.from("ingredients").select("id, name, unit, package_qty, price_paid, stock_qty").eq("shop_id", shopId),
         supabase.from("recipe_ingredients").select("recipe_id, ingredient_id, quantity"),
       ]);
