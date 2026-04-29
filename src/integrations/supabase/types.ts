@@ -646,6 +646,7 @@ export type Database = {
         Row: {
           cart_id: string | null
           created_by: string | null
+          discount: number
           event_id: string | null
           id: string
           item: string
@@ -653,12 +654,15 @@ export type Database = {
           price: number
           product_id: string | null
           qty: number
+          refund_reason: string | null
+          refunded_at: string | null
           shop_id: string
           sold_at: string
         }
         Insert: {
           cart_id?: string | null
           created_by?: string | null
+          discount?: number
           event_id?: string | null
           id?: string
           item: string
@@ -666,12 +670,15 @@ export type Database = {
           price: number
           product_id?: string | null
           qty?: number
+          refund_reason?: string | null
+          refunded_at?: string | null
           shop_id: string
           sold_at?: string
         }
         Update: {
           cart_id?: string | null
           created_by?: string | null
+          discount?: number
           event_id?: string | null
           id?: string
           item?: string
@@ -679,6 +686,8 @@ export type Database = {
           price?: number
           product_id?: string | null
           qty?: number
+          refund_reason?: string | null
+          refunded_at?: string | null
           shop_id?: string
           sold_at?: string
         }
