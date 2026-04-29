@@ -759,35 +759,43 @@ function KindChip({ label, icon: Icon, active, onClick, count }: { label: string
 }
 
 function EventHeader({ event, kind, typeName, onEdit, onDelete }: { event: EventRow; kind: EventKind; typeName?: string; onEdit: () => void; onDelete: () => void }) {
+  const [showNotes, setShowNotes] = useState(false);
+  const metaParts: string[] = [fmtDate(event.date)];
+  if (event.start_time) metaParts.push(event.start_time);
+  if (event.location) metaParts.push(event.location);
+  if (event.recurrence !== "none") metaParts.push(event.recurrence === "weekly" ? "semanal" : "mensal");
+  if ((kind === "party" || kind === "wedding") && event.customer_name) metaParts.push(event.customer_name);
+  if ((kind === "party" || kind === "wedding") && event.guests != null) metaParts.push(`${event.guests} conv.`);
+
   return (
     <div className="flex items-start justify-between gap-3">
       <div className="min-w-0 flex-1">
-        {typeName && <p className="text-[11px] uppercase tracking-widest text-rose">{typeName}</p>}
-        <h2 className="font-display text-2xl italic text-mauve">{event.name}</h2>
-        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-          <span className="inline-flex items-center gap-1.5"><CalIcon className="h-3.5 w-3.5" /> {fmtDate(event.date)}</span>
-          {event.start_time && <span className="inline-flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" /> {event.start_time}</span>}
-          {event.location && <span className="inline-flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" /> {event.location}</span>}
-          {event.recurrence !== "none" && (
-            <span className="inline-flex items-center gap-1.5 text-rose"><Repeat className="h-3.5 w-3.5" /> Recorrente {event.recurrence === "weekly" ? "semanal" : "mensal"}</span>
-          )}
-          {(kind === "party" || kind === "wedding") && event.customer_name && (
-            <span className="inline-flex items-center gap-1.5"><Users className="h-3.5 w-3.5" /> {event.customer_name}</span>
-          )}
-          {(kind === "party" || kind === "wedding") && event.guests != null && (
-            <span className="inline-flex items-center gap-1.5"><Cake className="h-3.5 w-3.5" /> {event.guests} convidados</span>
-          )}
-        </div>
-        {event.notes && <p className="mt-2 text-sm text-mauve/80 whitespace-pre-line">{event.notes}</p>}
-        <div className="mt-3 flex flex-wrap gap-2">
-          {(kind === "party" || kind === "wedding") && Number(event.fee) > 0 && <Badge icon={Truck} label={`Taxa: ${formatBRL(Number(event.fee))}`} />}
-          {kind === "fair" && Number(event.opening_cash) > 0 && <Badge icon={Wallet} label={`Troco: ${formatBRL(Number(event.opening_cash))}`} />}
-          {event.closed_at && <Badge icon={Lock} label={`Caixa fechado · ${fmtDate(event.closed_at)}`} />}
-        </div>
+        <h2 className="truncate text-lg font-semibold text-mauve md:text-xl">{event.name}</h2>
+        <p className="mt-1 truncate text-xs text-muted-foreground">{metaParts.join(" · ")}</p>
+        {event.notes && (
+          <>
+            {showNotes ? (
+              <p className="mt-2 whitespace-pre-line text-sm text-mauve/80">{event.notes}</p>
+            ) : (
+              <button onClick={() => setShowNotes(true)} className="mt-1 text-[11px] text-rose hover:underline">
+                ver observações
+              </button>
+            )}
+          </>
+        )}
+        {((kind === "party" || kind === "wedding") && Number(event.fee) > 0) ||
+        (kind === "fair" && Number(event.opening_cash) > 0) ||
+        event.closed_at ? (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {(kind === "party" || kind === "wedding") && Number(event.fee) > 0 && <Badge icon={Truck} label={`Taxa: ${formatBRL(Number(event.fee))}`} />}
+            {kind === "fair" && Number(event.opening_cash) > 0 && <Badge icon={Wallet} label={`Troco: ${formatBRL(Number(event.opening_cash))}`} />}
+            {event.closed_at && <Badge icon={Lock} label={`Fechado · ${fmtDate(event.closed_at)}`} />}
+          </div>
+        ) : null}
       </div>
-      <div className="flex shrink-0 gap-2">
-        <button onClick={onEdit} className="rounded-lg bg-blush/50 p-2 text-mauve hover:bg-blush/80" aria-label="Editar"><Pencil className="h-4 w-4" /></button>
-        <button onClick={onDelete} className="rounded-lg bg-destructive/10 p-2 text-destructive hover:bg-destructive/20" aria-label="Excluir"><Trash2 className="h-4 w-4" /></button>
+      <div className="flex shrink-0 gap-1">
+        <button onClick={onEdit} className="rounded-lg p-2 text-muted-foreground hover:bg-blush/50 hover:text-mauve" aria-label="Editar"><Pencil className="h-4 w-4" /></button>
+        <button onClick={onDelete} className="rounded-lg p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" aria-label="Excluir"><Trash2 className="h-4 w-4" /></button>
       </div>
     </div>
   );
