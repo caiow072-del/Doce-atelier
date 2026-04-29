@@ -1097,25 +1097,22 @@ function CheckoutModal({
     if (isNaN(when.getTime()) || when.getTime() < Date.now() - 60_000) return toast.error("Escolha uma data futura");
     setSubmitting(true);
     try {
-      const { data: existing } = await supabase.from("customers").select("id").eq("shop_id", shop.id).eq("phone", phone.trim()).maybeSingle();
-      let customerId = existing?.id ?? null;
-      if (!customerId) {
-        const { data: newCust } = await supabase.from("customers")
-          .insert({ shop_id: shop.id, name: name.trim(), phone: phone.trim(), address: address.trim() || "—", source: "storefront" })
-          .select("id").single();
-        customerId = newCust?.id ?? null;
-      }
       const description = cart.map((i) => `${i.qty}x ${i.name}`).join(", ");
-      const { error: orderErr } = await supabase.from("orders").insert({
-        shop_id: shop.id, customer_id: customerId,
-        customer_name: name.trim(), customer_phone: phone.trim(),
-        description, delivery_at: new Date(deliveryAt).toISOString(),
-        delivery_address: method === "delivery" ? address.trim() : null,
-        delivery_method: method, total_price: total, deposit_paid: 0,
-        status: "orcamento", source: "storefront",
-        notes: notes.trim() || null, items: cart,
+      const { error: rpcErr } = await supabase.rpc("create_storefront_order" as any, {
+        p_shop_id: shop.id,
+        p_customer_name: name.trim(),
+        p_customer_phone: phone.trim(),
+        p_customer_address: address.trim() || "",
+        p_delivery_method: method,
+        p_delivery_address: method === "delivery" ? address.trim() : "",
+        p_delivery_at: new Date(deliveryAt).toISOString(),
+        p_description: description,
+        p_total_price: total,
+        p_notes: notes.trim() || "",
+        p_items: cart as any,
       });
-      if (orderErr) { toast.error("Não foi possível enviar o pedido"); setSubmitting(false); return; }
+      if (rpcErr) { toast.error("Não foi possível enviar o pedido"); setSubmitting(false); return; }
+
 
       const lines = [
         `*Novo pedido — ${shop.name}*`, ``,
