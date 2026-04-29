@@ -1,85 +1,42 @@
-# Plano: Eventos clean com lista em drawer
+## O que ainda falta (a duplicação já foi resolvida antes)
 
-Foco: tela principal mostra **um evento por vez**. A lista vira um painel lateral (Sheet) acionado por botão. Tudo o que é ruído visual no mobile some ou se reagrupa.
+Você está certo: o `EventHeader` separado já foi unificado no card seletor do topo. Os problemas reais que sobraram:
 
-## Mudanças em `src/routes/eventos.tsx`
+1. **Editar evento** ainda abre como bloco inline empurrando a página — deve ser **modal**.
+2. **Layout no PC continua "tira estreita"** — `PageContainer width="narrow"` (max-w-3xl) faz tudo virar uma coluna magra. Cards de Produtos / Tarefas / Caixa ficam esticados verticalmente, listas com 2 dados ocupam linha inteira.
+3. **Tipografia decorativa demais no desktop** — dias da aba Tarefas (`font-display italic`) e valor do caixa (`font-display text-4xl italic`) ficam fora do tom de painel profissional.
 
-### 1. Substituir o card "Histórico" por um seletor compacto + drawer
+## Plano
 
-Hoje o card de histórico ocupa toda a largura, sempre visível, com chips de filtro acima. Vai virar:
+### A. Editar evento → Modal
+- Substituir o bloco inline `EditMeta` (linhas 558–571) por um `Dialog` do shadcn (`@/components/ui/dialog`, já existe).
+- Ao clicar no lápis: abre modal centralizado, `max-w-2xl` no PC, full-width no mobile, com scroll interno e botões "Salvar / Cancelar" no rodapé.
 
-```text
-┌─────────────────────────────────────────┐
-│ [📅 Festival de Tortas — 28/04]    [▾] │   ← botão único, abre o drawer
-└─────────────────────────────────────────┘
-```
+### B. Layout PC profissional (mobile intocado)
+- Trocar `PageContainer width="narrow"` → `width="default"` para liberar largura (max-w-5xl/6xl, padrão das outras páginas).
+- Conteúdo do evento vira **grid 12 colunas no desktop** (`lg:grid-cols-12`):
+  - Esquerda (`lg:col-span-4`): card seletor do evento + tabs verticais (Produtos / Tarefas / Caixa) empilhados como menu lateral.
+  - Direita (`lg:col-span-8`): conteúdo da aba ativa.
+- Mobile (sem `lg:`): tudo continua empilhado igual hoje (seletor em cima, tabs em grid de 3, conteúdo abaixo).
 
-- Um único botão mostrando o evento atualmente selecionado (ícone do tipo + nome + data + chevron).
-- Ao clicar, abre `Sheet` (lateral à direita no desktop, lateral à esquerda no mobile via `side="left"`) contendo:
-  - Campo de busca por nome (filtro local).
-  - Os chips de tipo (Todos/Festival/Festa/Feira/...) — saem da tela principal.
-  - A lista de eventos (mesmos cards de hoje, mas em coluna única dentro do drawer).
-  - Botão "+ Novo evento" no rodapé do drawer.
-- Ao selecionar um evento: fecha o drawer automaticamente.
+### C. Refinamento dos cards internos no desktop
 
-### 2. Header da página mais leve
+**Aba Produtos**
+- Lista de produtos vira `md:grid-cols-2` no desktop (mobile permanece 1 coluna).
+- "Lista de compras" (insumos) também `md:grid-cols-2` quando expandida.
+- Padding dos cabeçalhos `px-5 py-3` → `md:px-4 md:py-2.5`.
 
-- Remover `eyebrow="Coração do negócio"` (já depreciado no componente).
-- Remover botão `Tipos` do header — mover para dentro do drawer como link discreto no rodapé ("Gerenciar tipos").
-- O `+ Novo evento` também sai do header e vai para o drawer (rodapé). No header fica apenas o título.
-- Resultado: header com só o `h1` "Eventos" e nada mais — limpo no mobile.
+**Aba Tarefas**
+- Botões de dia: trocar `font-display italic text-base` por `text-sm font-medium` no desktop (mantém limpo).
+- Lista de tarefas: `md:grid-cols-2` quando há muitas, padding `md:px-4`.
 
-### 3. EventHeader (card do evento selecionado) mais clean
+**Aba Caixa**
+- Valor total: `font-display text-4xl italic` → `text-3xl font-semibold` (sem itálico, sem font display).
+- "Previsto vs vendido" e "Vendas registradas" lado a lado em `lg:grid-cols-2`.
+- Paddings reduzidos no desktop (`md:px-4 md:py-2.5`).
 
-- Reduzir o título de `text-2xl italic` para `text-lg md:text-xl` sem itálico.
-- Tirar o eyebrow "tipo do evento" (já aparece como ícone na frente do nome no seletor).
-- Compactar a linha de meta (data, hora, local) numa única linha truncada com separadores `·`.
-- Esconder `notes` por padrão; mostrar atrás de um link "ver observações" se existir.
-- Manter botões editar/excluir, mas como `ghost` icon-only à direita.
+## Arquivo
 
-### 4. Barra de progresso
+- `src/routes/eventos.tsx` — única edição.
 
-- Fica, mas com label menor (`text-[11px]`) e sem o "Produção" redundante — só `{done}/{total} tarefas` à direita.
-
-### 5. Tabs
-
-- Mantém os 3 botões (Produtos / Tarefas / Caixa) mas com hint **só no desktop** (`hidden md:block`) — no mobile só ícone + label, evitando texto truncado.
-
-### 6. Estado vazio
-
-Se `events.length === 0`: mostra ilustração centralizada + botão "Criar primeiro evento", sem seletor nem drawer.
-
-## Mudança em `src/components/PageHeader.tsx`
-
-- `subtitle` recebe `hidden md:block` para sumir no mobile (no desktop continua visível).
-
-## Layout final mobile
-
-```text
-┌───────────────────────────────┐
-│ Eventos                       │   ← header limpo, só título
-│ ┌───────────────────────────┐ │
-│ │ 🎪 Festival de Tortas  ▾ │ │   ← seletor único (abre drawer)
-│ │    28/04 · 14:00          │ │
-│ └───────────────────────────┘ │
-│                               │
-│ ┌───────────────────────────┐ │
-│ │ Festival de Tortas        │ │   ← card do evento selecionado
-│ │ 28/04 · Centro · semanal  │ │
-│ │ [✏] [🗑]                   │ │
-│ │ ─────────────────────     │ │
-│ │ ▓▓▓▓░░░░  3/8 tarefas     │ │
-│ └───────────────────────────┘ │
-│                               │
-│ [Produtos][Tarefas][Caixa]    │
-│                               │
-│ (conteúdo da tab ativa)       │
-└───────────────────────────────┘
-```
-
-## Arquivos afetados
-
-- `src/routes/eventos.tsx` — refator visual (sem mexer em dados, mutations, sub-tabs `ProductsTab`/`TasksTab`/`CashboxTab`, `NewEventSheet`, `TypesSheet`).
-- `src/components/PageHeader.tsx` — `subtitle` invisível no mobile.
-
-Sem mudanças de banco, schema, ou comportamento funcional.
+Confirma para eu aplicar?

@@ -40,6 +40,7 @@ import { toast } from "sonner";
 import { nextOccurrence, WEEKDAYS, parseLocalDate } from "@/lib/recurrence";
 import { recipeCost } from "@/lib/costs";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/eventos")({
   head: () => ({
@@ -460,7 +461,7 @@ function EventosPage() {
   }, [filteredEvents, listSearch]);
 
   return (
-    <PageContainer width="narrow">
+    <PageContainer width="default">
       <PageHeader title="Eventos" />
 
       {events.length === 0 ? (
@@ -474,156 +475,144 @@ function EventosPage() {
             <Plus className="h-3.5 w-3.5" /> Criar primeiro evento
           </button>
         </div>
+      ) : !selected ? (
+        <div className="card-soft p-8 text-center text-sm text-muted-foreground">Selecione um evento.</div>
       ) : (
-        <>
-          {/* Card único: seletor + ações + progresso */}
-          <div className="card-soft mb-4 overflow-hidden">
-            <div className="flex items-center gap-2 px-3 py-2.5 md:px-4 md:py-3">
-              <button
-                onClick={() => setShowListDrawer(true)}
-                className="flex min-w-0 flex-1 items-center gap-3 rounded-xl px-1 py-1 text-left transition-colors hover:bg-blush/30"
-              >
-                {selected ? (
-                  <>
-                    {(() => {
-                      const k = kindOf(selected.event_type_id);
-                      const Icon = KIND_META[k].icon;
-                      return (
-                        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-blush/50">
-                          <Icon className="h-5 w-5 text-mauve" strokeWidth={1.6} />
-                        </div>
-                      );
-                    })()}
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-mauve md:text-base">{selected.name}</p>
-                      <p className="truncate text-[11px] text-muted-foreground md:text-xs">
-                        {fmtDate(selected.date)}
-                        {selected.start_time ? ` · ${selected.start_time}` : ""}
-                        {selected.location ? ` · ${selected.location}` : ""}
-                        {selected.recurrence !== "none" ? ` · ${selected.recurrence === "weekly" ? "semanal" : "mensal"}` : ""}
-                      </p>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-blush/50">
-                      <CalendarHeart className="h-5 w-5 text-mauve" strokeWidth={1.6} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-mauve">Escolher evento</p>
-                      <p className="text-[11px] text-muted-foreground">{events.length} no histórico</p>
-                    </div>
-                  </>
-                )}
-                <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
-              </button>
-              {selected && (
+        <div className="grid gap-4 lg:grid-cols-12">
+          {/* Sidebar (PC) / topo (mobile): seletor + tabs */}
+          <aside className="space-y-3 lg:col-span-4">
+            <div className="card-soft overflow-hidden">
+              <div className="flex items-center gap-2 px-3 py-2.5 md:px-4 md:py-3">
+                <button
+                  onClick={() => setShowListDrawer(true)}
+                  className="flex min-w-0 flex-1 items-center gap-3 rounded-xl px-1 py-1 text-left transition-colors hover:bg-blush/30"
+                >
+                  {(() => {
+                    const k = kindOf(selected.event_type_id);
+                    const Icon = KIND_META[k].icon;
+                    return (
+                      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-blush/50">
+                        <Icon className="h-5 w-5 text-mauve" strokeWidth={1.6} />
+                      </div>
+                    );
+                  })()}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-mauve md:text-base">{selected.name}</p>
+                    <p className="truncate text-[11px] text-muted-foreground md:text-xs">
+                      {fmtDate(selected.date)}
+                      {selected.start_time ? ` · ${selected.start_time}` : ""}
+                      {selected.location ? ` · ${selected.location}` : ""}
+                      {selected.recurrence !== "none" ? ` · ${selected.recurrence === "weekly" ? "semanal" : "mensal"}` : ""}
+                    </p>
+                  </div>
+                  <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+                </button>
                 <div className="flex shrink-0 items-center gap-0.5 border-l border-border/60 pl-2">
                   <button onClick={() => setEditingMeta(true)} className="rounded-lg p-2 text-muted-foreground hover:bg-blush/50 hover:text-mauve" aria-label="Editar"><Pencil className="h-4 w-4" /></button>
                   <button onClick={removeEvent} className="rounded-lg p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" aria-label="Excluir"><Trash2 className="h-4 w-4" /></button>
                 </div>
+              </div>
+
+              {(totalTasks > 0 || ((selectedKind === "party" || selectedKind === "wedding") && Number(selected.fee) > 0) || (selectedKind === "fair" && Number(selected.opening_cash) > 0) || selected.closed_at || selected.notes) && (
+                <div className="space-y-2 border-t border-border/60 bg-blush/20 px-4 py-2.5">
+                  {(((selectedKind === "party" || selectedKind === "wedding") && Number(selected.fee) > 0) || (selectedKind === "fair" && Number(selected.opening_cash) > 0) || selected.closed_at) && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {(selectedKind === "party" || selectedKind === "wedding") && Number(selected.fee) > 0 && <Badge icon={Truck} label={`Taxa: ${formatBRL(Number(selected.fee))}`} />}
+                      {selectedKind === "fair" && Number(selected.opening_cash) > 0 && <Badge icon={Wallet} label={`Troco: ${formatBRL(Number(selected.opening_cash))}`} />}
+                      {selected.closed_at && <Badge icon={Lock} label={`Fechado · ${fmtDate(selected.closed_at)}`} />}
+                    </div>
+                  )}
+                  {selected.notes && <NotesInline notes={selected.notes} />}
+                  {totalTasks > 0 && (
+                    <div>
+                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-card">
+                        <div className="h-full rounded-full bg-rose transition-all" style={{ width: `${progress}%` }} />
+                      </div>
+                      <p className="mt-1 text-right text-[11px] text-muted-foreground num">{doneTasks}/{totalTasks} tarefas</p>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
 
-            {selected && (totalTasks > 0 || ((selectedKind === "party" || selectedKind === "wedding") && Number(selected.fee) > 0) || (selectedKind === "fair" && Number(selected.opening_cash) > 0) || selected.closed_at || selected.notes) && (
-              <div className="space-y-2 border-t border-border/60 bg-blush/20 px-4 py-2.5">
-                {(((selectedKind === "party" || selectedKind === "wedding") && Number(selected.fee) > 0) || (selectedKind === "fair" && Number(selected.opening_cash) > 0) || selected.closed_at) && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {(selectedKind === "party" || selectedKind === "wedding") && Number(selected.fee) > 0 && <Badge icon={Truck} label={`Taxa: ${formatBRL(Number(selected.fee))}`} />}
-                    {selectedKind === "fair" && Number(selected.opening_cash) > 0 && <Badge icon={Wallet} label={`Troco: ${formatBRL(Number(selected.opening_cash))}`} />}
-                    {selected.closed_at && <Badge icon={Lock} label={`Fechado · ${fmtDate(selected.closed_at)}`} />}
-                  </div>
-                )}
-                {selected.notes && <NotesInline notes={selected.notes} />}
-                {totalTasks > 0 && (
-                  <div>
-                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-card">
-                      <div className="h-full rounded-full bg-rose transition-all" style={{ width: `${progress}%` }} />
-                    </div>
-                    <p className="mt-1 text-right text-[11px] text-muted-foreground num">{doneTasks}/{totalTasks} tarefas</p>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </>
-      )}
-
-      {!selected && events.length > 0 && (
-        <div className="card-soft p-8 text-center text-sm text-muted-foreground">Selecione um evento.</div>
-      )}
-
-      {selected && (
-        <>
-          {editingMeta && (
-            <div className="card-soft mb-4 p-4 md:p-5">
-              <EditMeta
-                event={selected}
-                kind={selectedKind}
-                types={types}
-                onSave={async (patch) => {
-                  await updateMeta(patch);
-                  setEditingMeta(false);
-                }}
-                onCancel={() => setEditingMeta(false)}
-              />
+            {/* Tabs: 3 colunas no mobile, vertical no PC */}
+            <div className="grid grid-cols-3 gap-2 lg:grid-cols-1">
+              <TabBtn active={activeTab === "products"} onClick={() => setActiveTab("products")} icon={Package} label="Produtos" hint={`${eventProducts.length}`} />
+              <TabBtn active={activeTab === "tasks"} onClick={() => setActiveTab("tasks")} icon={CheckCircle2} label="Tarefas" hint={`${doneTasks}/${totalTasks}`} />
+              <TabBtn active={activeTab === "cashbox"} onClick={() => setActiveTab("cashbox")} icon={Wallet} label="Caixa" hint={formatBRL(cashbox.total)} closed={!!selected.closed_at} />
             </div>
-          )}
+          </aside>
 
-          {/* Tabs */}
-          <div className="mb-4 grid grid-cols-3 gap-2">
-            <TabBtn active={activeTab === "products"} onClick={() => setActiveTab("products")} icon={Package} label="Produtos" hint={`${eventProducts.length}`} />
-            <TabBtn active={activeTab === "tasks"} onClick={() => setActiveTab("tasks")} icon={CheckCircle2} label="Tarefas" hint={`${doneTasks}/${totalTasks}`} />
-            <TabBtn active={activeTab === "cashbox"} onClick={() => setActiveTab("cashbox")} icon={Wallet} label="Caixa" hint={formatBRL(cashbox.total)} closed={!!selected.closed_at} />
-          </div>
+          {/* Conteúdo da aba ativa */}
+          <section className="min-w-0 lg:col-span-8">
+            {activeTab === "products" && (
+              <ProductsTab
+                event={selected}
+                products={eventProducts}
+                recipes={recipes}
+                ingredients={ingredients}
+                recipeIngs={recipeIngs}
+                shoppingList={shoppingList}
+                showInsumos={showInsumos}
+                setShowInsumos={setShowInsumos}
+                onAdd={addProduct}
+                onUpdate={updateProduct}
+                onRemove={removeProduct}
+              />
+            )}
 
+            {activeTab === "tasks" && (
+              <TasksTab
+                days={days}
+                activeDay={activeDay}
+                setActiveDay={setActiveDay}
+                eventTasks={eventTasks}
+                dayTasks={dayTasks}
+                kind={selectedKind}
+                newTask={newTask}
+                setNewTask={setNewTask}
+                onSeed={seedDefaultTasks}
+                onToggle={toggleTask}
+                onRemove={removeTask}
+                onAdd={addTask}
+              />
+            )}
 
-          {activeTab === "products" && (
-            <ProductsTab
-              event={selected}
-              products={eventProducts}
-              recipes={recipes}
-              ingredients={ingredients}
-              recipeIngs={recipeIngs}
-              shoppingList={shoppingList}
-              showInsumos={showInsumos}
-              setShowInsumos={setShowInsumos}
-              onAdd={addProduct}
-              onUpdate={updateProduct}
-              onRemove={removeProduct}
-            />
-          )}
-
-          {activeTab === "tasks" && (
-            <TasksTab
-              days={days}
-              activeDay={activeDay}
-              setActiveDay={setActiveDay}
-              eventTasks={eventTasks}
-              dayTasks={dayTasks}
-              kind={selectedKind}
-              newTask={newTask}
-              setNewTask={setNewTask}
-              onSeed={seedDefaultTasks}
-              onToggle={toggleTask}
-              onRemove={removeTask}
-              onAdd={addTask}
-            />
-          )}
-
-          {activeTab === "cashbox" && (
-            <CashboxTab
-              event={selected}
-              products={eventProducts}
-              sales={eventSales}
-              cashbox={cashbox}
-              onClose={closeEvent}
-              onReopen={reopenEvent}
-              onUpdateOpening={(v) => updateMeta({ opening_cash: v })}
-            />
-          )}
-        </>
+            {activeTab === "cashbox" && (
+              <CashboxTab
+                event={selected}
+                products={eventProducts}
+                sales={eventSales}
+                cashbox={cashbox}
+                onClose={closeEvent}
+                onReopen={reopenEvent}
+                onUpdateOpening={(v) => updateMeta({ opening_cash: v })}
+              />
+            )}
+          </section>
+        </div>
       )}
+
+      {/* Modal de edição do evento */}
+      <Dialog open={editingMeta} onOpenChange={setEditingMeta}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-mauve">Editar evento</DialogTitle>
+          </DialogHeader>
+          {selected && (
+            <EditMeta
+              event={selected}
+              kind={selectedKind}
+              types={types}
+              onSave={async (patch) => {
+                await updateMeta(patch);
+                setEditingMeta(false);
+              }}
+              onCancel={() => setEditingMeta(false)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Drawer com a lista de eventos */}
       <Sheet open={showListDrawer} onOpenChange={setShowListDrawer}>
@@ -757,12 +746,15 @@ function TabBtn({
         active ? "border-rose bg-blush/60 shadow-soft" : "border-border bg-card hover:border-rose/40"
       }`}
     >
-      <div className="flex items-center gap-2">
-        <Icon className="h-4 w-4 text-mauve" />
-        <span className="text-sm font-medium text-mauve">{label}</span>
-        {closed && <Lock className="ml-auto h-3 w-3 text-muted-foreground" />}
+      <div className="flex items-center gap-2 lg:justify-between">
+        <div className="flex items-center gap-2">
+          <Icon className="h-4 w-4 text-mauve" />
+          <span className="text-sm font-medium text-mauve">{label}</span>
+        </div>
+        {hint && <span className="hidden text-[11px] text-muted-foreground lg:inline">{hint}</span>}
+        {closed && <Lock className="ml-auto h-3 w-3 text-muted-foreground lg:ml-0" />}
       </div>
-      {hint && <p className="mt-1 hidden text-[11px] text-muted-foreground md:block">{hint}</p>}
+      {hint && <p className="mt-1 hidden text-[11px] text-muted-foreground md:block lg:hidden">{hint}</p>}
     </button>
   );
 }
@@ -879,7 +871,7 @@ function ProductsTab({
   return (
     <div className="space-y-4">
       <div className="card-soft overflow-hidden">
-        <div className="flex items-center justify-between border-b border-border/60 bg-blush/30 px-5 py-3">
+        <div className="flex items-center justify-between border-b border-border/60 bg-blush/30 px-5 py-3 md:px-4 md:py-2.5">
           <div>
             <p className="text-sm font-medium text-mauve">Produtos do evento</p>
             <p className="text-[11px] text-muted-foreground">Cada produto vira um botão no PDV deste evento.</p>
@@ -893,7 +885,7 @@ function ProductsTab({
         {products.length === 0 ? (
           <p className="px-5 py-6 text-center text-sm text-muted-foreground">Nenhum produto. Toque em <strong>Adicionar</strong> para escolher uma receita.</p>
         ) : (
-          <ul className="divide-y divide-border/60">
+          <ul className="divide-y divide-border/60 md:grid md:grid-cols-2 md:gap-2 md:divide-y-0 md:p-2">
             {products.map((p) => {
               const sold = p.sold_qty;
               const left = Math.max(0, p.planned_qty - sold);
@@ -901,7 +893,7 @@ function ProductsTab({
               const margin = p.unit_price > 0 ? ((p.unit_price - cost) / p.unit_price) * 100 : 0;
               const recipe = p.recipe_id ? recipes.find((r) => r.id === p.recipe_id) : null;
               return (
-                <li key={p.id} className="px-4 py-3 text-sm">
+                <li key={p.id} className="px-4 py-3 text-sm md:rounded-xl md:border md:border-border/60 md:bg-card md:px-3 md:py-2.5">
                   <div className="flex items-start gap-3">
                     {(p.image_url || recipe?.image_url) && (
                       <img src={p.image_url || recipe?.image_url || ""} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" loading="lazy" />
@@ -955,7 +947,7 @@ function ProductsTab({
       <div className="card-soft overflow-hidden">
         <button
           onClick={() => setShowInsumos(!showInsumos)}
-          className="flex w-full items-center justify-between border-b border-border/60 bg-blush/30 px-5 py-3"
+          className="flex w-full items-center justify-between border-b border-border/60 bg-blush/30 px-5 py-3 md:px-4 md:py-2.5"
         >
           <div className="flex items-center gap-2">
             <ShoppingBasket className="h-4 w-4 text-mauve" strokeWidth={1.6} />
@@ -968,9 +960,9 @@ function ProductsTab({
           shoppingList.length === 0 ? (
             <p className="px-5 py-6 text-center text-sm text-muted-foreground">Adicione produtos com receita vinculada e quantidade planejada.</p>
           ) : (
-            <ul className="divide-y divide-border/60">
+            <ul className="divide-y divide-border/60 md:grid md:grid-cols-2 md:gap-x-6 md:divide-y-0 md:px-4 md:py-2">
               {shoppingList.map((it) => (
-                <li key={it.name} className="flex items-center justify-between px-5 py-2.5 text-sm">
+                <li key={it.name} className="flex items-center justify-between px-5 py-2.5 text-sm md:border-b md:border-border/40 md:px-0">
                   <span className="text-mauve">{it.name}</span>
                   <span className="text-muted-foreground">{it.qty.toLocaleString("pt-BR", { maximumFractionDigits: 2 })} {it.unit}</span>
                 </li>
@@ -1014,7 +1006,7 @@ function TasksTab({
                 active ? "border-rose bg-blush/60 text-mauve shadow-soft" : "border-border bg-card text-muted-foreground hover:border-rose/40"
               }`}
             >
-              <p className="font-display italic text-base leading-none">{d.label}</p>
+              <p className="text-sm font-medium leading-none">{d.label}</p>
               <p className="mt-1 text-[10px]">{dayCount.filter((t) => t.done).length}/{dayCount.length}</p>
             </button>
           );
@@ -1074,7 +1066,7 @@ function CashboxTab({
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-[11px] uppercase tracking-widest text-rose">Caixa do evento {closed && "(fechado)"}</p>
-            <p className="font-display text-4xl italic text-mauve mt-1">{formatBRL(display.total)}</p>
+            <p className="mt-1 text-3xl font-semibold text-mauve">{formatBRL(display.total)}</p>
             <p className="text-xs text-muted-foreground">{display.items_sold} itens vendidos</p>
           </div>
           {closed ? (
@@ -1135,46 +1127,48 @@ function CashboxTab({
         </div>
       )}
 
-      <div className="card-soft overflow-hidden">
-        <p className="border-b border-border/60 bg-blush/30 px-5 py-3 text-sm font-medium text-mauve">Previsto vs vendido</p>
-        {cashbox.sobras.length === 0 ? (
-          <p className="px-5 py-6 text-center text-sm text-muted-foreground">Adicione produtos ao evento.</p>
-        ) : (
-          <ul className="divide-y divide-border/60">
-            {cashbox.sobras.map((s) => {
-              const sobra = s.planned - s.sold;
-              return (
-                <li key={s.name} className="flex items-center justify-between px-5 py-2.5 text-sm">
-                  <span className="text-mauve">{s.name}</span>
-                  <span className="text-xs">
-                    <span className="text-success font-medium">{s.sold}</span>
-                    <span className="text-muted-foreground"> / {s.planned} planejados</span>
-                    {sobra > 0 && <span className="ml-2 text-warning">{sobra} sobra</span>}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="card-soft overflow-hidden">
+          <p className="border-b border-border/60 bg-blush/30 px-5 py-3 text-sm font-medium text-mauve md:px-4 md:py-2.5">Previsto vs vendido</p>
+          {cashbox.sobras.length === 0 ? (
+            <p className="px-5 py-6 text-center text-sm text-muted-foreground">Adicione produtos ao evento.</p>
+          ) : (
+            <ul className="divide-y divide-border/60">
+              {cashbox.sobras.map((s) => {
+                const sobra = s.planned - s.sold;
+                return (
+                  <li key={s.name} className="flex items-center justify-between px-5 py-2.5 text-sm md:px-4">
+                    <span className="text-mauve">{s.name}</span>
+                    <span className="text-xs">
+                      <span className="text-success font-medium">{s.sold}</span>
+                      <span className="text-muted-foreground"> / {s.planned} planejados</span>
+                      {sobra > 0 && <span className="ml-2 text-warning">{sobra} sobra</span>}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
 
-      <div className="card-soft overflow-hidden">
-        <p className="border-b border-border/60 bg-blush/30 px-5 py-3 text-sm font-medium text-mauve">Vendas registradas ({sales.length})</p>
-        {sales.length === 0 ? (
-          <p className="px-5 py-6 text-center text-sm text-muted-foreground">Nenhuma venda. Use o PDV com este evento selecionado.</p>
-        ) : (
-          <ul className="divide-y divide-border/60 max-h-64 overflow-y-auto">
-            {sales.slice().reverse().map((s) => (
-              <li key={s.id} className="flex items-center justify-between px-5 py-2 text-sm">
-                <div>
-                  <span className="text-mauve">{s.item}</span>
-                  <span className="ml-2 text-[10px] text-muted-foreground">{methodLabel[s.payment_method] ?? s.payment_method}</span>
-                </div>
-                <span className="font-medium text-mauve">{formatBRL(Number(s.price))}</span>
-              </li>
-            ))}
-          </ul>
-        )}
+        <div className="card-soft overflow-hidden">
+          <p className="border-b border-border/60 bg-blush/30 px-5 py-3 text-sm font-medium text-mauve md:px-4 md:py-2.5">Vendas registradas ({sales.length})</p>
+          {sales.length === 0 ? (
+            <p className="px-5 py-6 text-center text-sm text-muted-foreground">Nenhuma venda. Use o PDV com este evento selecionado.</p>
+          ) : (
+            <ul className="divide-y divide-border/60 max-h-64 overflow-y-auto">
+              {sales.slice().reverse().map((s) => (
+                <li key={s.id} className="flex items-center justify-between px-5 py-2 text-sm md:px-4">
+                  <div>
+                    <span className="text-mauve">{s.item}</span>
+                    <span className="ml-2 text-[10px] text-muted-foreground">{methodLabel[s.payment_method] ?? s.payment_method}</span>
+                  </div>
+                  <span className="font-medium text-mauve">{formatBRL(Number(s.price))}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
     </div>
   );
