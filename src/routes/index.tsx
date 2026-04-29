@@ -55,6 +55,7 @@ function Dashboard() {
   const [storefrontConfigured, setStorefrontConfigured] = useState(false);
   const [pendingOrders, setPendingOrders] = useState(0);
   const [storefrontPending, setStorefrontPending] = useState(0);
+  const [shopVisits, setShopVisits] = useState(0);
   const [nextEvent, setNextEvent] = useState<{ id: string; name: string; date: string } | null>(null);
   const [lastClosed, setLastClosed] = useState<{ id: string; name: string; closed_at: string; payment_summary: any } | null>(null);
 
@@ -77,7 +78,8 @@ function Dashboard() {
       supabase.from("ingredients").select("id, package_qty, price_paid").eq("shop_id", shopId),
       supabase.from("recipes").select("id", { count: "exact", head: true }).eq("shop_id", shopId),
       supabase.from("shop_storefront").select("hero_title").eq("shop_id", shopId).maybeSingle(),
-    ]).then(([s, r, i, o, ne, lc, sp, allRecipes, recIngs, ings, rc, sf]) => {
+      supabase.from("shop_visits").select("id", { count: "exact", head: true }).eq("shop_id", shopId).gte("visited_at", startOfMonth.toISOString()),
+    ]).then(([s, r, i, o, ne, lc, sp, allRecipes, recIngs, ings, rc, sf, sv]) => {
       const sales = (s.data ?? []) as { price: number; qty: number; item: string; product_id: string | null }[];
       const totalRev = sales.reduce((sum, x) => sum + Number(x.price), 0);
       const totalQty = sales.reduce((sum, x) => sum + Number(x.qty ?? 1), 0);
@@ -91,6 +93,7 @@ function Dashboard() {
       setNextEvent(ne.data as any);
       setLastClosed(lc.data as any);
       setStorefrontPending(sp.count ?? 0);
+      setShopVisits(sv.count ?? 0);
 
       // ====== Real cost calculation ======
       // Try to match each sale to a recipe by item name (case-insensitive).
