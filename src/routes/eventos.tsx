@@ -39,6 +39,7 @@ import { formatBRL } from "@/lib/store";
 import { toast } from "sonner";
 import { nextOccurrence, WEEKDAYS, parseLocalDate } from "@/lib/recurrence";
 import { recipeCost } from "@/lib/costs";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 export const Route = createFileRoute("/eventos")({
   head: () => ({
