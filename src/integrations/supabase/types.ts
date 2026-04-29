@@ -737,18 +737,30 @@ export type Database = {
         Row: {
           about_text: string | null
           banner_url: string | null
+          bottom_nav_enabled: boolean
+          business_hours: Json
+          city: string | null
           created_at: string
           cta_label: string | null
           cta_link: string | null
+          delivery_address: string | null
+          delivery_enabled: boolean
+          delivery_fee: number
+          delivery_radius_km: number
           gallery: Json
+          hero_images: Json
           hero_subtitle: string | null
           hero_title: string | null
           mobile_overrides: Json
+          more_info: string | null
+          pickup_address: string | null
+          pickup_enabled: boolean
           promotions: Json
           sections: Json
           sections_config: Json
           shop_id: string
           social: Json
+          state: string | null
           template: string
           testimonials: Json
           theme_overrides: Json
@@ -757,18 +769,30 @@ export type Database = {
         Insert: {
           about_text?: string | null
           banner_url?: string | null
+          bottom_nav_enabled?: boolean
+          business_hours?: Json
+          city?: string | null
           created_at?: string
           cta_label?: string | null
           cta_link?: string | null
+          delivery_address?: string | null
+          delivery_enabled?: boolean
+          delivery_fee?: number
+          delivery_radius_km?: number
           gallery?: Json
+          hero_images?: Json
           hero_subtitle?: string | null
           hero_title?: string | null
           mobile_overrides?: Json
+          more_info?: string | null
+          pickup_address?: string | null
+          pickup_enabled?: boolean
           promotions?: Json
           sections?: Json
           sections_config?: Json
           shop_id: string
           social?: Json
+          state?: string | null
           template?: string
           testimonials?: Json
           theme_overrides?: Json
@@ -777,18 +801,30 @@ export type Database = {
         Update: {
           about_text?: string | null
           banner_url?: string | null
+          bottom_nav_enabled?: boolean
+          business_hours?: Json
+          city?: string | null
           created_at?: string
           cta_label?: string | null
           cta_link?: string | null
+          delivery_address?: string | null
+          delivery_enabled?: boolean
+          delivery_fee?: number
+          delivery_radius_km?: number
           gallery?: Json
+          hero_images?: Json
           hero_subtitle?: string | null
           hero_title?: string | null
           mobile_overrides?: Json
+          more_info?: string | null
+          pickup_address?: string | null
+          pickup_enabled?: boolean
           promotions?: Json
           sections?: Json
           sections_config?: Json
           shop_id?: string
           social?: Json
+          state?: string | null
           template?: string
           testimonials?: Json
           theme_overrides?: Json
