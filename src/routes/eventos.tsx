@@ -852,6 +852,8 @@ function ProductsTab({
   onRemove: (id: string) => void;
 }) {
   const [showAdd, setShowAdd] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const editingProduct = products.find((p) => p.id === editingId) ?? null;
   const closed = !!event.closed_at;
 
   // Custo unitário por produto (real se tiver receita)
