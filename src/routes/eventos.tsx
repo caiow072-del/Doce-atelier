@@ -817,8 +817,8 @@ function EventHeader({ event, kind, typeName, onEdit, onDelete }: { event: Event
 
 function Badge({ icon: Icon, label }: { icon: any; label: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-card px-2.5 py-1 text-[11px] text-mauve">
-      <Icon className="h-3 w-3" /> {label}
+    <span className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-card px-2.5 py-1 text-[11px] text-mauve">
+      <Icon className="h-3 w-3 shrink-0" /> <span className="truncate">{label}</span>
     </span>
   );
 }
