@@ -70,6 +70,19 @@ type Storefront = {
   promotions: Promotion[];
   testimonials: Testimonial[];
   gallery: GalleryItem[];
+  // Novos campos do cardápio digital
+  business_hours: BusinessHours;
+  pickup_enabled: boolean;
+  delivery_enabled: boolean;
+  pickup_address: string | null;
+  delivery_address: string | null;
+  delivery_fee: number;
+  delivery_radius_km: number;
+  hero_images: string[];
+  bottom_nav_enabled: boolean;
+  city: string | null;
+  state: string | null;
+  more_info: string | null;
 };
 
 type PublicRecipe = {
@@ -89,6 +102,11 @@ const EMPTY_FRONT: Storefront = {
   about_text: null, cta_label: null, cta_link: null,
   template: "romantic", sections_config: DEFAULT_SECTIONS,
   promotions: [], testimonials: [], gallery: [],
+  business_hours: {}, pickup_enabled: true, delivery_enabled: false,
+  pickup_address: null, delivery_address: null,
+  delivery_fee: 0, delivery_radius_km: 0,
+  hero_images: [], bottom_nav_enabled: true,
+  city: null, state: null, more_info: null,
 };
 
 function StorefrontPage() {
