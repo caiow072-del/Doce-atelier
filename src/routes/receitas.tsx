@@ -1067,22 +1067,8 @@ function RecipeForm({
               </div>
             </div>
 
-            {realPriceNum > 0 && (
-              <div className="mt-3 flex items-center justify-between gap-2 rounded-xl border border-rose/40 bg-card/70 px-3 py-2">
-                <div className="text-left">
-                  <p className="text-[10px] uppercase tracking-widest text-rose">
-                    Total para o seu bolso
-                  </p>
-                  <p className="text-[10px] text-mauve/60">Lucro real + Produção</p>
-                </div>
-                <p className={`font-display text-xl italic ${(realProfit * servingsNum) + (Number(laborCost) || 0) <= 0 ? "text-destructive" : "text-mauve"}`}>
-                  {formatBRL((realProfit * servingsNum) + (Number(laborCost) || 0))}
-                </p>
-              </div>
-            )}
-
             <p className="mt-2 text-center text-[11px] text-mauve/70">
-              (Insumos: {formatBRL(cost.ingredientsCost)} · Extras: {formatBRL(extraCosts)}
+              (Insumos + embalagem: {formatBRL(ingredientsWithPackaging)} · Extras: {formatBRL(extraCosts)}
               {realPriceNum > 0 && (
                 <>
                   {" · "}
@@ -1097,7 +1083,7 @@ function RecipeForm({
             {realPriceNum > 0 && (
               <div className="mt-3 rounded-xl bg-card/70 p-3">
                 <p className="text-center text-[10px] uppercase tracking-widest text-rose">
-                  Lucro considerando apenas os insumos
+                  Lucro considerando apenas insumos + embalagem
                 </p>
                 <div className="mt-1 grid grid-cols-3 gap-2 text-center">
                   <div>
@@ -1120,7 +1106,7 @@ function RecipeForm({
                   </div>
                 </div>
                 <p className="mt-1 text-center text-[10px] text-muted-foreground">
-                  Ignora produção, embalagem e perda
+                  Ignora produção e perda
                 </p>
               </div>
             )}
