@@ -1010,25 +1010,36 @@ function TasksTab({
 }) {
   return (
     <>
-      <div className={`grid gap-2`} style={{ gridTemplateColumns: `repeat(${days.length}, minmax(0, 1fr))` }}>
+      <div
+        className="grid gap-1.5 sm:gap-2"
+        style={{ gridTemplateColumns: `repeat(${days.length}, minmax(0, 1fr))` }}
+      >
         {days.map((d) => {
           const active = activeDay === d.key;
           const dayCount = eventTasks.filter((t) => t.day_key === d.key);
+          const total = dayCount.length;
+          const done = dayCount.filter((t) => t.done).length;
           return (
             <button
               key={d.key}
               onClick={() => setActiveDay(d.key)}
-              className={`rounded-2xl border px-2 py-3 text-center transition-colors ${
-                active ? "border-rose bg-blush/60 text-mauve shadow-soft" : "border-border bg-card text-muted-foreground hover:border-rose/40"
+              className={`flex flex-col items-center justify-center rounded-xl border px-2 py-2 text-center transition-colors ${
+                active
+                  ? "border-rose bg-blush/60 text-mauve shadow-soft"
+                  : "border-border bg-card text-muted-foreground hover:border-rose/40"
               }`}
             >
-              <p className="text-sm font-medium leading-none">{d.label}</p>
-              <p className="mt-1 text-[10px]">{dayCount.filter((t) => t.done).length}/{dayCount.length}</p>
+              <p className="text-xs font-medium leading-none sm:text-sm">{d.label}</p>
+              {total > 0 && (
+                <p className="mt-1 text-[10px] leading-none num opacity-80">
+                  {done}/{total}
+                </p>
+              )}
             </button>
           );
         })}
       </div>
-      <div className="card-soft overflow-hidden">
+      <div className="card-soft mt-3 overflow-hidden">
         {eventTasks.length === 0 && (
           <div className="border-b border-border/60 bg-blush/20 px-5 py-3">
             <button onClick={onSeed} className="inline-flex items-center gap-1.5 rounded-xl bg-mauve px-3 py-1.5 text-xs font-medium text-cream hover:opacity-90">
