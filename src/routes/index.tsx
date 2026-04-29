@@ -75,7 +75,9 @@ function Dashboard() {
       supabase.from("recipes").select("id, name, servings, labor_cost, packaging_cost, waste_pct").eq("shop_id", shopId),
       supabase.from("recipe_ingredients").select("recipe_id, ingredient_id, quantity"),
       supabase.from("ingredients").select("id, package_qty, price_paid").eq("shop_id", shopId),
-    ]).then(([s, r, i, o, ne, lc, sp, allRecipes, recIngs, ings]) => {
+      supabase.from("recipes").select("id", { count: "exact", head: true }).eq("shop_id", shopId),
+      supabase.from("shop_storefront").select("hero_title").eq("shop_id", shopId).maybeSingle(),
+    ]).then(([s, r, i, o, ne, lc, sp, allRecipes, recIngs, ings, rc, sf]) => {
       const sales = (s.data ?? []) as { price: number; qty: number; item: string; product_id: string | null }[];
       const totalRev = sales.reduce((sum, x) => sum + Number(x.price), 0);
       const totalQty = sales.reduce((sum, x) => sum + Number(x.qty ?? 1), 0);
@@ -83,6 +85,8 @@ function Dashboard() {
       setSalesCount(totalQty);
       setRecipes((r.data ?? []) as Recipe[]);
       setIngredientsCount(i.count ?? 0);
+      setRecipesCount(rc.count ?? 0);
+      setStorefrontConfigured(!!sf.data?.hero_title);
       setPendingOrders(o.count ?? 0);
       setNextEvent(ne.data as any);
       setLastClosed(lc.data as any);
