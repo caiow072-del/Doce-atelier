@@ -461,7 +461,7 @@ function EventosPage() {
   }, [filteredEvents, listSearch]);
 
   return (
-    <PageContainer width="default">
+    <PageContainer width="default" className="min-w-0 overflow-x-hidden">
       <PageHeader title="Eventos" />
 
       {events.length === 0 ? (
@@ -535,7 +535,7 @@ function EventosPage() {
           </div>
 
           {/* Sub-abas discretas */}
-          <div className="flex w-full min-w-0 items-center gap-0 border-b border-border/60 sm:gap-1">
+          <div className="flex w-full min-w-0 items-center gap-0 overflow-hidden border-b border-border/60 sm:gap-1">
             <SubTab active={activeTab === "products"} onClick={() => setActiveTab("products")} icon={Package} label="Produtos" hint={`${eventProducts.length}`} />
             <SubTab active={activeTab === "tasks"} onClick={() => setActiveTab("tasks")} icon={CheckCircle2} label="Tarefas" hint={`${doneTasks}/${totalTasks}`} />
             <SubTab active={activeTab === "cashbox"} onClick={() => setActiveTab("cashbox")} icon={Wallet} label="Caixa" closed={!!selected.closed_at} />
@@ -817,8 +817,8 @@ function EventHeader({ event, kind, typeName, onEdit, onDelete }: { event: Event
 
 function Badge({ icon: Icon, label }: { icon: any; label: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-card px-2.5 py-1 text-[11px] text-mauve">
-      <Icon className="h-3 w-3" /> {label}
+    <span className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-card px-2.5 py-1 text-[11px] text-mauve">
+      <Icon className="h-3 w-3 shrink-0" /> <span className="truncate">{label}</span>
     </span>
   );
 }

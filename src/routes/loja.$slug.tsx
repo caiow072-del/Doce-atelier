@@ -3,12 +3,13 @@
 // when in edit mode, with a side rail for template/sections/save.
 
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import {
   ShoppingBag, Plus, Minus, X, MapPin, Phone, User, MessageCircle,
   Loader2, Search, ChevronRight, Cake, Pencil, Instagram, Clock,
   Save, Sparkles, LayoutTemplate, Eye, EyeOff, GripVertical, Smartphone, Monitor,
   Quote, ImagePlus, ChevronDown, ChevronUp, Check, Palette, Type, QrCode, Copy,
+  Truck, Store,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,6 +20,13 @@ import { applyTheme, PRESETS, FONTS, type ShopTheme, type ThemePresetKey, type F
 import { TEMPLATES, SECTION_LABELS, getTemplate, type TemplateKey, type SectionConfig, type SectionKey, DEFAULT_SECTIONS } from "@/lib/templates";
 import { EditableText, EditableImage } from "@/components/InlineEdit";
 import { uploadShopImage } from "@/lib/upload";
+import { HeroCardapio, PickupDeliveryCard } from "./-loja/HeroCardapio";
+import { ProductListHorizontal } from "./-loja/ProductListHorizontal";
+import { CategoryPicker } from "./-loja/CategoryPicker";
+import { BottomNav, type BottomNavTab } from "./-loja/BottomNav";
+import { HoursEditor } from "./-loja/HoursEditor";
+import { defaultHours, DAY_KEYS, DAY_LABELS, type BusinessHours } from "@/lib/business-hours";
+
 
 const checkoutSchema = z.object({
   name: z.string().trim().min(2, "Informe seu nome").max(80),
@@ -62,6 +70,19 @@ type Storefront = {
   promotions: Promotion[];
   testimonials: Testimonial[];
   gallery: GalleryItem[];
+  // Novos campos do cardápio digital
+  business_hours: BusinessHours;
+  pickup_enabled: boolean;
+  delivery_enabled: boolean;
+  pickup_address: string | null;
+  delivery_address: string | null;
+  delivery_fee: number;
+  delivery_radius_km: number;
+  hero_images: string[];
+  bottom_nav_enabled: boolean;
+  city: string | null;
+  state: string | null;
+  more_info: string | null;
 };
 
 type PublicRecipe = {
@@ -81,6 +102,11 @@ const EMPTY_FRONT: Storefront = {
   about_text: null, cta_label: null, cta_link: null,
   template: "romantic", sections_config: DEFAULT_SECTIONS,
   promotions: [], testimonials: [], gallery: [],
+  business_hours: {}, pickup_enabled: true, delivery_enabled: false,
+  pickup_address: null, delivery_address: null,
+  delivery_fee: 0, delivery_radius_km: 0,
+  hero_images: [], bottom_nav_enabled: true,
+  city: null, state: null, more_info: null,
 };
 
 function StorefrontPage() {
@@ -100,11 +126,15 @@ function StorefrontPage() {
 
   const [editing, setEditing] = useState(false);
   const [device, setDevice] = useState<"mobile" | "desktop">("mobile");
-  const [editorTab, setEditorTab] = useState<"template" | "sections" | "design">("template");
+  const [editorTab, setEditorTab] = useState<"template" | "sections" | "design" | "shop">("template");
   const [panelOpen, setPanelOpen] = useState(true);
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [infoOpen, setInfoOpen] = useState(false);
+  const [bottomTab, setBottomTab] = useState<BottomNavTab>("home");
+  const catalogRef = useRef<HTMLDivElement | null>(null);
+  const promoRef = useRef<HTMLDivElement | null>(null);
 
   const isOwner = !!shop && shops.some((m) => m.shop_id === shop.id && (m.role === "owner" || m.role === "manager"));
 
@@ -196,6 +226,18 @@ function StorefrontPage() {
           promotions: (sf.promotions ?? []) as Promotion[],
           testimonials: (sf.testimonials ?? []) as Testimonial[],
           gallery: (sf.gallery ?? []) as GalleryItem[],
+          business_hours: (sf.business_hours ?? {}) as BusinessHours,
+          pickup_enabled: sf.pickup_enabled ?? true,
+          delivery_enabled: sf.delivery_enabled ?? false,
+          pickup_address: sf.pickup_address ?? null,
+          delivery_address: sf.delivery_address ?? null,
+          delivery_fee: Number(sf.delivery_fee ?? 0),
+          delivery_radius_km: Number(sf.delivery_radius_km ?? 0),
+          hero_images: Array.isArray(sf.hero_images) ? (sf.hero_images as string[]) : [],
+          bottom_nav_enabled: sf.bottom_nav_enabled ?? true,
+          city: sf.city ?? null,
+          state: sf.state ?? null,
+          more_info: sf.more_info ?? null,
         });
       }
       setLoading(false);
@@ -243,6 +285,18 @@ function StorefrontPage() {
           promotions: front.promotions as any,
           testimonials: front.testimonials as any,
           gallery: front.gallery as any,
+          business_hours: front.business_hours as any,
+          pickup_enabled: front.pickup_enabled,
+          delivery_enabled: front.delivery_enabled,
+          pickup_address: front.pickup_address,
+          delivery_address: front.delivery_address,
+          delivery_fee: front.delivery_fee,
+          delivery_radius_km: front.delivery_radius_km,
+          hero_images: front.hero_images as any,
+          bottom_nav_enabled: front.bottom_nav_enabled,
+          city: front.city,
+          state: front.state,
+          more_info: front.more_info,
         }, { onConflict: "shop_id" }),
       ]);
       if (t.error || s.error) throw t.error ?? s.error;
@@ -270,6 +324,26 @@ function StorefrontPage() {
       const url = await uploadShopImage("storefront-banners", shop.id, file);
       update("gallery", [...front.gallery, { id: crypto.randomUUID(), url }]);
     } catch (e: any) { toast.error(e?.message ?? "Erro upload"); }
+  };
+
+  const onUploadHero = async (slot: number, file: File) => {
+    if (!shop) return;
+    try {
+      const url = await uploadShopImage("storefront-banners", shop.id, file);
+      const next = [...front.hero_images];
+      next[slot] = url;
+      update("hero_images", next.filter(Boolean));
+      toast.success("Foto adicionada — clique em Publicar para salvar.");
+    } catch (e: any) { toast.error(e?.message ?? "Erro upload"); }
+  };
+
+  const handleBottomTab = (t: BottomNavTab) => {
+    setBottomTab(t);
+    if (t === "home") window.scrollTo({ top: 0, behavior: "smooth" });
+    else if (t === "promo" && promoRef.current) promoRef.current.scrollIntoView({ behavior: "smooth" });
+    else if (t === "orders" || t === "profile") {
+      toast.message("Em breve", { description: "Área de pedidos e perfil para clientes." });
+    }
   };
 
   const addToCart = (r: PublicRecipe) => {
@@ -336,17 +410,31 @@ function StorefrontPage() {
       {front.sections_config.filter((s) => s.visible).map((s) => {
         switch (s.key) {
           case "hero": return (
-            <Hero
-              key={s.key}
-              shop={shop}
-              front={front}
-              editing={editing}
-              heroTitle={heroTitle}
-              heroSubtitle={heroSubtitle}
-              onTitle={(v) => update("hero_title", v)}
-              onSubtitle={(v) => update("hero_subtitle", v)}
-              onBanner={onUploadBanner}
-            />
+            <div key={s.key} className="mx-auto w-full max-w-3xl px-3 pt-3 sm:px-5 sm:pt-5">
+              <HeroCardapio
+                shopName={shop.name}
+                shopLogo={shop.logo_url}
+                heroTitle={heroTitle}
+                heroSubtitle={heroSubtitle}
+                heroImages={front.hero_images}
+                bannerUrl={front.banner_url}
+                city={front.city}
+                state={front.state}
+                businessHours={front.business_hours}
+                editing={editing}
+                onTitle={(v) => update("hero_title", v)}
+                onSubtitle={(v) => update("hero_subtitle", v)}
+                onMoreInfoClick={() => setInfoOpen(true)}
+                onUploadHero={onUploadHero}
+              />
+              <PickupDeliveryCard
+                pickupEnabled={front.pickup_enabled}
+                deliveryEnabled={front.delivery_enabled}
+                pickupAddress={front.pickup_address}
+                deliveryAddress={front.delivery_address}
+                onClick={() => setInfoOpen(true)}
+              />
+            </div>
           );
           case "about": return (
             <Section key={s.key} title="Sobre">
@@ -370,86 +458,26 @@ function StorefrontPage() {
             />
           );
           case "catalog": return (
-            <section key={s.key} className="mx-auto max-w-5xl px-5 py-6">
-              <SectionHeading>Catálogo</SectionHeading>
+            <section key={s.key} ref={catalogRef} className="mx-auto max-w-3xl px-3 py-5 sm:px-5">
               {!editing && (
-                <div className="mb-4 relative">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-mauve/50" />
-                  <input
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Buscar bolo, doce..."
-                    className="w-full rounded-full border border-rose/40 bg-white py-2.5 pl-10 pr-4 text-sm text-mauve placeholder:text-mauve/40 focus:border-rose focus:outline-none"
+                <div className="mb-4">
+                  <CategoryPicker
+                    categories={categories}
+                    activeCategory={activeCategory}
+                    onChange={setActiveCategory}
+                    search={search}
+                    onSearch={setSearch}
                   />
                 </div>
               )}
-              {!editing && categories.length > 0 && (
-                <div className="mb-4 flex flex-wrap gap-1.5">
-                  {(["all", ...categories] as const).map((c) => (
-                    <button key={c} onClick={() => setActiveCategory(c)}
-                      className={`rounded-full px-3 py-1 text-[11px] transition ${activeCategory === c ? "bg-mauve text-cream" : "bg-white border border-rose/30 text-mauve hover:border-rose"}`}>
-                      {c === "all" ? "Todos" : c}
-                    </button>
-                  ))}
-                </div>
-              )}
-              {filtered.length === 0 ? (
-                <div className="card-soft p-10 text-center text-mauve/70">
-                  <Cake className="mx-auto mb-3 h-10 w-10 text-mauve/30" strokeWidth={1.2} />
-                  <p>Nenhum produto disponível.</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {filtered.map((r) => {
-                    const promo = promoMap.get(r.id);
-                    const hasPromoPrice = r.promo_price != null && r.public_price != null && r.promo_price < r.public_price;
-                    const showPriceTo = promo?.price_to != null;
-                    const priceFrom = promo?.price_from ?? r.public_price;
-                    const finalPrice = showPriceTo ? promo!.price_to! : (hasPromoPrice ? r.promo_price! : r.public_price);
-                    const compareAt = showPriceTo ? priceFrom : (hasPromoPrice ? r.public_price : null);
-                    return (
-                      <article key={r.id} className={`group flex flex-col overflow-hidden rounded-3xl border bg-white shadow-sm transition hover:shadow-lg ${r.is_featured ? "border-rose ring-2 ring-rose/40" : "border-rose/30"}`}>
-                        <div className="relative aspect-[4/3] overflow-hidden bg-blush">
-                          {r.image_url ? (
-                            <img src={r.image_url} alt={r.name} loading="lazy" className="h-full w-full object-cover transition group-hover:scale-105" />
-                          ) : (<div className="grid h-full w-full place-items-center"><Cake className="h-12 w-12 text-mauve/40" /></div>)}
-                          {(promo || hasPromoPrice) && (
-                            <span className="absolute left-2 top-2 rounded-full bg-rose px-2.5 py-0.5 text-[10px] font-semibold text-mauve shadow">PROMO</span>
-                          )}
-                          {r.is_featured && (
-                            <span className="absolute left-2 bottom-2 inline-flex items-center gap-1 rounded-full bg-mauve px-2 py-0.5 text-[10px] font-semibold text-cream shadow">
-                              ★ Destaque
-                            </span>
-                          )}
-                          {r.category && (
-                            <span className="absolute right-2 top-2 rounded-full bg-white/90 px-2 py-0.5 text-[10px] text-mauve">{r.category}</span>
-                          )}
-                        </div>
-                        <div className="flex flex-1 flex-col gap-2 p-4">
-                          <h3 className="font-display text-lg italic text-mauve">{r.name}</h3>
-                          {r.description && <p className="line-clamp-2 text-xs text-mauve/70">{r.description}</p>}
-                          <div className="mt-auto flex items-center justify-between pt-2">
-                            <div className="flex items-baseline gap-1.5">
-                              {compareAt != null && (
-                                <span className="text-xs text-mauve/50 line-through">{brl(compareAt)}</span>
-                              )}
-                              <span className="text-base font-semibold text-mauve">
-                                {finalPrice != null ? brl(finalPrice) : "Sob consulta"}
-                              </span>
-                            </div>
-                            <button onClick={() => addToCart(r)} disabled={editing} className="inline-flex items-center gap-1 rounded-full bg-mauve px-4 py-2 text-xs font-medium text-cream hover:opacity-90 disabled:opacity-50">
-                              <Plus className="h-3.5 w-3.5" /> Adicionar
-                            </button>
-                          </div>
-                        </div>
-                      </article>
-                    );
-                  })}
-                </div>
-              )}
+              <ProductListHorizontal
+                products={filtered}
+                onAdd={(p) => addToCart(p as PublicRecipe)}
+                disabled={editing}
+              />
             </section>
           );
-          case "events": return null; // shown via /loja/{slug}/e/{eventId}
+          case "events": return null;
           case "gallery": return (
             <GallerySection
               key={s.key}
@@ -492,13 +520,56 @@ function StorefrontPage() {
 
       {/* Floating cart button */}
       {cartCount > 0 && !cartOpen && !editing && (
-        <button onClick={() => setCartOpen(true)} className="fixed bottom-5 left-1/2 z-30 flex -translate-x-1/2 items-center gap-3 rounded-full bg-mauve px-6 py-3.5 text-sm font-medium text-cream shadow-2xl">
+        <button onClick={() => setCartOpen(true)} className={`fixed left-1/2 z-30 flex -translate-x-1/2 items-center gap-3 rounded-full bg-mauve px-6 py-3.5 text-sm font-medium text-cream shadow-2xl ${front.bottom_nav_enabled ? "bottom-20 md:bottom-5" : "bottom-5"}`}>
           <ShoppingBag className="h-4 w-4" />
           <span>{cartCount} {cartCount === 1 ? "item" : "itens"}</span>
           <span className="opacity-70">·</span>
           <span>{brl(total)}</span>
           <ChevronRight className="h-4 w-4" />
         </button>
+      )}
+
+      {/* Modal "Mais informações" */}
+      {infoOpen && (
+        <div className="fixed inset-0 z-40 flex items-end justify-center bg-mauve/40 backdrop-blur-sm md:items-center" onClick={() => setInfoOpen(false)}>
+          <div className="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-cream p-5 md:rounded-3xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="font-display text-xl italic text-mauve">{shop.name}</h2>
+              <button onClick={() => setInfoOpen(false)} className="rounded-full p-1.5 hover:bg-rose/30"><X className="h-4 w-4 text-mauve" /></button>
+            </div>
+            {(front.city || front.state) && (
+              <p className="mb-2 flex items-center gap-1.5 text-sm text-mauve"><MapPin className="h-3.5 w-3.5" /> {[front.city, front.state].filter(Boolean).join(" - ")}</p>
+            )}
+            {front.pickup_enabled && front.pickup_address && (
+              <p className="mb-2 flex items-start gap-1.5 text-sm text-mauve/80"><Store className="h-3.5 w-3.5 mt-0.5 shrink-0" /> Retirada: {front.pickup_address}</p>
+            )}
+            {front.delivery_enabled && (
+              <p className="mb-2 flex items-start gap-1.5 text-sm text-mauve/80"><Truck className="h-3.5 w-3.5 mt-0.5 shrink-0" /> Entrega{front.delivery_fee > 0 ? ` · ${brl(front.delivery_fee)}` : " grátis"}{front.delivery_radius_km > 0 ? ` · até ${front.delivery_radius_km} km` : ""}{front.delivery_address ? ` · ${front.delivery_address}` : ""}</p>
+            )}
+            {front.more_info && <p className="mb-3 whitespace-pre-line text-sm text-mauve/80">{front.more_info}</p>}
+            {Object.keys(front.business_hours).length > 0 && (
+              <div className="mt-3 rounded-2xl bg-white p-3">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-mauve/70"><Clock className="inline h-3 w-3 mr-1" /> Horários</p>
+                <ul className="space-y-1 text-sm text-mauve">
+                  {DAY_KEYS.map((d) => {
+                    const it = front.business_hours[d]?.[0];
+                    return (
+                      <li key={d} className="flex items-center justify-between"><span>{DAY_LABELS[d]}</span><span className="text-mauve/70">{it ? `${it[0]} – ${it[1]}` : "Fechado"}</span></li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
+            {shop.whatsapp && (
+              <a href={`https://wa.me/${shop.whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" className="mt-4 flex items-center justify-center gap-2 rounded-full bg-mauve py-3 text-sm text-cream"><MessageCircle className="h-4 w-4" /> WhatsApp</a>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Bottom-nav público (mobile) */}
+      {front.bottom_nav_enabled && !editing && (
+        <BottomNav active={bottomTab} onSelect={handleBottomTab} />
       )}
     </div>
   );
