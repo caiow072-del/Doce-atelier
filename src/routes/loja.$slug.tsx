@@ -151,10 +151,10 @@ function StorefrontPage() {
     (async () => {
       setLoading(true);
       const { data: shopData } = await supabase
-        .from("shops")
+        .from("shops_public" as any)
         .select("id, name, slug, whatsapp, description, logo_url, theme")
         .eq("slug", slug)
-        .maybeSingle();
+        .maybeSingle() as any;
       if (cancelled) return;
       if (!shopData) { setLoading(false); return; }
       setShop(shopData as Shop);
@@ -201,13 +201,13 @@ function StorefrontPage() {
       }
 
       const [recsRes, sfRes] = await Promise.all([
-        supabase.from("recipes")
+        supabase.from("recipes_public" as any)
           .select("id, name, description, image_url, public_price, servings, category, promo_price, is_featured")
-          .eq("shop_id", shopData.id).eq("show_in_catalog", true).order("is_featured", { ascending: false }).order("catalog_position").order("name"),
+          .eq("shop_id", shopData.id).order("is_featured", { ascending: false }).order("catalog_position").order("name"),
         supabase.from("shop_storefront").select("*").eq("shop_id", shopData.id).maybeSingle(),
       ]);
       if (cancelled) return;
-      setRecipes((recsRes.data ?? []) as PublicRecipe[]);
+      setRecipes(((recsRes.data ?? []) as unknown) as PublicRecipe[]);
       const sf = sfRes.data as any;
       if (sf) {
         const sections: SectionConfig[] = Array.isArray(sf.sections_config) && sf.sections_config.length > 0
@@ -1097,25 +1097,22 @@ function CheckoutModal({
     if (isNaN(when.getTime()) || when.getTime() < Date.now() - 60_000) return toast.error("Escolha uma data futura");
     setSubmitting(true);
     try {
-      const { data: existing } = await supabase.from("customers").select("id").eq("shop_id", shop.id).eq("phone", phone.trim()).maybeSingle();
-      let customerId = existing?.id ?? null;
-      if (!customerId) {
-        const { data: newCust } = await supabase.from("customers")
-          .insert({ shop_id: shop.id, name: name.trim(), phone: phone.trim(), address: address.trim() || "—", source: "storefront" })
-          .select("id").single();
-        customerId = newCust?.id ?? null;
-      }
       const description = cart.map((i) => `${i.qty}x ${i.name}`).join(", ");
-      const { error: orderErr } = await supabase.from("orders").insert({
-        shop_id: shop.id, customer_id: customerId,
-        customer_name: name.trim(), customer_phone: phone.trim(),
-        description, delivery_at: new Date(deliveryAt).toISOString(),
-        delivery_address: method === "delivery" ? address.trim() : null,
-        delivery_method: method, total_price: total, deposit_paid: 0,
-        status: "orcamento", source: "storefront",
-        notes: notes.trim() || null, items: cart,
+      const { error: rpcErr } = await supabase.rpc("create_storefront_order" as any, {
+        p_shop_id: shop.id,
+        p_customer_name: name.trim(),
+        p_customer_phone: phone.trim(),
+        p_customer_address: address.trim() || "",
+        p_delivery_method: method,
+        p_delivery_address: method === "delivery" ? address.trim() : "",
+        p_delivery_at: new Date(deliveryAt).toISOString(),
+        p_description: description,
+        p_total_price: total,
+        p_notes: notes.trim() || "",
+        p_items: cart as any,
       });
-      if (orderErr) { toast.error("Não foi possível enviar o pedido"); setSubmitting(false); return; }
+      if (rpcErr) { toast.error("Não foi possível enviar o pedido"); setSubmitting(false); return; }
+
 
       const lines = [
         `*Novo pedido — ${shop.name}*`, ``,
