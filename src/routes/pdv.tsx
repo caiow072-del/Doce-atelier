@@ -70,17 +70,7 @@ function PDVPage() {
       supabase.from("pdv_products").select("*").eq("shop_id", shopId).eq("active", true).order("position"),
       supabase.from("events").select("id, name, date, closed_at, recurrence, recurrence_until, weekday, day_of_month").eq("shop_id", shopId).is("closed_at", null),
     ]).then(async ([p, e]) => {
-      let prods = (p.data ?? []) as Product[];
-      if (prods.length === 0) {
-        const seeds = [
-          { shop_id: shopId, label: "1 Fatia Doce", price: 17, icon: "cake", tone: "rose", position: 0 },
-          { shop_id: shopId, label: "Combo 2 Fatias", price: 32, icon: "sparkles", tone: "blush", position: 1 },
-          { shop_id: shopId, label: "Fatia Menor", price: 15, icon: "cake", tone: "rose", position: 2 },
-          { shop_id: shopId, label: "Torta Salgada", price: 15, icon: "utensils", tone: "sage", position: 3 },
-        ];
-        const { data: inserted } = await supabase.from("pdv_products").insert(seeds).select("*");
-        prods = (inserted ?? []) as Product[];
-      }
+      const prods = (p.data ?? []) as Product[];
       setProducts(prods);
       const horizon = new Date(Date.now() + 7 * 86_400_000);
       const todayStart = new Date(); todayStart.setHours(0,0,0,0);
