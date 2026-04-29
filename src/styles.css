@@ -154,6 +154,24 @@
   .app-scroll {
     padding-bottom: 6rem;
   }
+
+  @media (max-width: 639px) {
+    html,
+    body,
+    body * {
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    html::-webkit-scrollbar,
+    body::-webkit-scrollbar,
+    body *::-webkit-scrollbar {
+      width: 0;
+      height: 0;
+      display: none;
+      background: transparent;
+    }
+  }
 }
 
 @layer components {
