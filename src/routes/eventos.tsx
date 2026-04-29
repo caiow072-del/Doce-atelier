@@ -40,6 +40,7 @@ import { toast } from "sonner";
 import { nextOccurrence, WEEKDAYS, parseLocalDate } from "@/lib/recurrence";
 import { recipeCost } from "@/lib/costs";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/eventos")({
   head: () => ({
