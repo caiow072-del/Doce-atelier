@@ -872,19 +872,19 @@ function ProductsTab({
   return (
     <div className="space-y-4">
       <div className="card-soft overflow-hidden">
-        <div className="flex items-center justify-between border-b border-border/60 bg-blush/30 px-5 py-3 md:px-4 md:py-2.5">
-          <div>
-            <p className="text-sm font-medium text-mauve">Produtos do evento</p>
-            <p className="text-[11px] text-muted-foreground">Cada produto vira um botão no PDV deste evento.</p>
+        <div className="flex items-center justify-between gap-2 border-b border-border/60 bg-blush/30 px-3 py-2.5 sm:px-4 sm:py-3">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium text-mauve">Produtos do evento</p>
+            <p className="hidden text-[11px] text-muted-foreground sm:block">Cada produto vira um botão no PDV deste evento.</p>
           </div>
           {!closed && (
-            <button onClick={() => setShowAdd(true)} className="inline-flex items-center gap-1 rounded-xl bg-mauve px-3 py-1.5 text-xs text-cream hover:opacity-90">
+            <button onClick={() => setShowAdd(true)} className="inline-flex shrink-0 items-center gap-1 rounded-xl bg-mauve px-3 py-1.5 text-xs text-cream hover:opacity-90">
               <Plus className="h-3.5 w-3.5" /> Adicionar
             </button>
           )}
         </div>
         {products.length === 0 ? (
-          <p className="px-5 py-6 text-center text-sm text-muted-foreground">Nenhum produto. Toque em <strong>Adicionar</strong> para escolher uma receita.</p>
+          <p className="px-4 py-6 text-center text-sm text-muted-foreground">Nenhum produto. Toque em <strong>Adicionar</strong> para escolher uma receita.</p>
         ) : (
           <ul className="divide-y divide-border/60 md:grid md:grid-cols-2 md:gap-2 md:divide-y-0 md:p-2">
             {products.map((p) => {
@@ -894,34 +894,34 @@ function ProductsTab({
               const margin = p.unit_price > 0 ? ((p.unit_price - cost) / p.unit_price) * 100 : 0;
               const recipe = p.recipe_id ? recipes.find((r) => r.id === p.recipe_id) : null;
               return (
-                <li key={p.id} className="px-4 py-3 text-sm md:rounded-xl md:border md:border-border/60 md:bg-card md:px-3 md:py-2.5">
-                  <div className="flex items-start gap-3">
+                <li key={p.id} className="px-3 py-3 text-sm sm:px-4 md:rounded-xl md:border md:border-border/60 md:bg-card md:px-3 md:py-2.5">
+                  <div className="flex items-start gap-2 sm:gap-3">
                     {(p.image_url || recipe?.image_url) && (
                       <img src={p.image_url || recipe?.image_url || ""} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" loading="lazy" />
                     )}
                     <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-baseline gap-2">
-                        <span className="font-medium text-mauve">{p.name}</span>
+                      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                        <span className="min-w-0 truncate font-medium text-mauve">{p.name}</span>
                         {recipe && (
-                          <span className="text-[10px] uppercase tracking-wider text-rose">
-                            {recipe.name} · {p.sale_mode === "slice" ? "por fatia" : "inteiro"}
+                          <span className="truncate text-[10px] uppercase tracking-wider text-rose">
+                            {recipe.name} · {p.sale_mode === "slice" ? "fatia" : "inteiro"}
                           </span>
                         )}
                       </div>
-                      <div className="mt-1 flex flex-wrap gap-3 text-[11px] text-muted-foreground">
-                        <span>Preço: <strong className="text-mauve">{formatBRL(Number(p.unit_price))}</strong></span>
-                        <span>Custo: <strong className={cost > p.unit_price ? "text-destructive" : "text-mauve"}>{formatBRL(cost)}</strong></span>
-                        <span>Margem: <strong className={margin >= 30 ? "text-success" : margin >= 15 ? "text-warning" : "text-destructive"}>{margin.toFixed(0)}%</strong></span>
-                        <span className={left === 0 && p.planned_qty > 0 ? "text-success font-medium" : ""}>Vendas: {sold}/{p.planned_qty}</span>
+                      <div className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
+                        <span>Preço <strong className="text-mauve">{formatBRL(Number(p.unit_price))}</strong></span>
+                        <span>Custo <strong className={cost > p.unit_price ? "text-destructive" : "text-mauve"}>{formatBRL(cost)}</strong></span>
+                        <span>Margem <strong className={margin >= 30 ? "text-success" : margin >= 15 ? "text-warning" : "text-destructive"}>{margin.toFixed(0)}%</strong></span>
+                        <span className={left === 0 && p.planned_qty > 0 ? "font-medium text-success" : ""}>Vendas {sold}/{p.planned_qty}</span>
                       </div>
                     </div>
-                    <div className="flex flex-col items-end gap-1">
+                    <div className="flex shrink-0 flex-col items-end gap-1">
                       <input
                         disabled={closed}
                         type="number" placeholder="qtd"
                         value={p.planned_qty || ""}
                         onChange={(e) => onUpdate(p.id, { planned_qty: Number(e.target.value) || 0 })}
-                        className="w-16 rounded-lg border border-border bg-background px-2 py-1 text-right text-xs text-mauve disabled:opacity-60"
+                        className="w-14 rounded-lg border border-border bg-background px-1.5 py-1 text-right text-xs text-mauve disabled:opacity-60 sm:w-16 sm:px-2"
                       />
                       <div className="flex gap-0.5">
                         <button disabled={closed} onClick={() => setEditingId(p.id)} className="rounded-lg p-1 text-muted-foreground hover:bg-blush/50 hover:text-mauve disabled:opacity-30" aria-label="Editar">
