@@ -734,25 +734,26 @@ function EventosPage() {
 
 // ============ Sub-components ============
 
-function TabBtn({
+function SubTab({
   active, onClick, icon: Icon, label, hint, closed,
 }: { active: boolean; onClick: () => void; icon: any; label: string; hint?: string; closed?: boolean }) {
   return (
     <button
       onClick={onClick}
-      className={`rounded-2xl border px-3 py-3 text-left transition-colors ${
-        active ? "border-rose bg-blush/60 shadow-soft" : "border-border bg-card hover:border-rose/40"
+      className={`relative -mb-px inline-flex items-center gap-2 border-b-2 px-3 py-2.5 text-sm transition-colors ${
+        active
+          ? "border-rose text-mauve"
+          : "border-transparent text-muted-foreground hover:text-mauve"
       }`}
     >
-      <div className="flex items-center gap-2 lg:justify-between">
-        <div className="flex items-center gap-2">
-          <Icon className="h-4 w-4 text-mauve" />
-          <span className="text-sm font-medium text-mauve">{label}</span>
-        </div>
-        {hint && <span className="hidden text-[11px] text-muted-foreground lg:inline">{hint}</span>}
-        {closed && <Lock className="ml-auto h-3 w-3 text-muted-foreground lg:ml-0" />}
-      </div>
-      {hint && <p className="mt-1 hidden text-[11px] text-muted-foreground md:block lg:hidden">{hint}</p>}
+      <Icon className="h-4 w-4" />
+      <span className="font-medium">{label}</span>
+      {hint && (
+        <span className={`rounded-full px-1.5 py-0.5 text-[10px] num ${active ? "bg-blush/70 text-mauve" : "bg-muted text-muted-foreground"}`}>
+          {hint}
+        </span>
+      )}
+      {closed && <Lock className="h-3 w-3 text-muted-foreground" />}
     </button>
   );
 }
