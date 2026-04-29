@@ -461,7 +461,7 @@ function EventosPage() {
   }, [filteredEvents, listSearch]);
 
   return (
-    <PageContainer width="narrow">
+    <PageContainer width="default">
       <PageHeader title="Eventos" />
 
       {events.length === 0 ? (
@@ -475,156 +475,144 @@ function EventosPage() {
             <Plus className="h-3.5 w-3.5" /> Criar primeiro evento
           </button>
         </div>
+      ) : !selected ? (
+        <div className="card-soft p-8 text-center text-sm text-muted-foreground">Selecione um evento.</div>
       ) : (
-        <>
-          {/* Card único: seletor + ações + progresso */}
-          <div className="card-soft mb-4 overflow-hidden">
-            <div className="flex items-center gap-2 px-3 py-2.5 md:px-4 md:py-3">
-              <button
-                onClick={() => setShowListDrawer(true)}
-                className="flex min-w-0 flex-1 items-center gap-3 rounded-xl px-1 py-1 text-left transition-colors hover:bg-blush/30"
-              >
-                {selected ? (
-                  <>
-                    {(() => {
-                      const k = kindOf(selected.event_type_id);
-                      const Icon = KIND_META[k].icon;
-                      return (
-                        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-blush/50">
-                          <Icon className="h-5 w-5 text-mauve" strokeWidth={1.6} />
-                        </div>
-                      );
-                    })()}
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-mauve md:text-base">{selected.name}</p>
-                      <p className="truncate text-[11px] text-muted-foreground md:text-xs">
-                        {fmtDate(selected.date)}
-                        {selected.start_time ? ` · ${selected.start_time}` : ""}
-                        {selected.location ? ` · ${selected.location}` : ""}
-                        {selected.recurrence !== "none" ? ` · ${selected.recurrence === "weekly" ? "semanal" : "mensal"}` : ""}
-                      </p>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-blush/50">
-                      <CalendarHeart className="h-5 w-5 text-mauve" strokeWidth={1.6} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-mauve">Escolher evento</p>
-                      <p className="text-[11px] text-muted-foreground">{events.length} no histórico</p>
-                    </div>
-                  </>
-                )}
-                <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
-              </button>
-              {selected && (
+        <div className="grid gap-4 lg:grid-cols-12">
+          {/* Sidebar (PC) / topo (mobile): seletor + tabs */}
+          <aside className="space-y-3 lg:col-span-4">
+            <div className="card-soft overflow-hidden">
+              <div className="flex items-center gap-2 px-3 py-2.5 md:px-4 md:py-3">
+                <button
+                  onClick={() => setShowListDrawer(true)}
+                  className="flex min-w-0 flex-1 items-center gap-3 rounded-xl px-1 py-1 text-left transition-colors hover:bg-blush/30"
+                >
+                  {(() => {
+                    const k = kindOf(selected.event_type_id);
+                    const Icon = KIND_META[k].icon;
+                    return (
+                      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-blush/50">
+                        <Icon className="h-5 w-5 text-mauve" strokeWidth={1.6} />
+                      </div>
+                    );
+                  })()}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-mauve md:text-base">{selected.name}</p>
+                    <p className="truncate text-[11px] text-muted-foreground md:text-xs">
+                      {fmtDate(selected.date)}
+                      {selected.start_time ? ` · ${selected.start_time}` : ""}
+                      {selected.location ? ` · ${selected.location}` : ""}
+                      {selected.recurrence !== "none" ? ` · ${selected.recurrence === "weekly" ? "semanal" : "mensal"}` : ""}
+                    </p>
+                  </div>
+                  <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+                </button>
                 <div className="flex shrink-0 items-center gap-0.5 border-l border-border/60 pl-2">
                   <button onClick={() => setEditingMeta(true)} className="rounded-lg p-2 text-muted-foreground hover:bg-blush/50 hover:text-mauve" aria-label="Editar"><Pencil className="h-4 w-4" /></button>
                   <button onClick={removeEvent} className="rounded-lg p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" aria-label="Excluir"><Trash2 className="h-4 w-4" /></button>
                 </div>
+              </div>
+
+              {(totalTasks > 0 || ((selectedKind === "party" || selectedKind === "wedding") && Number(selected.fee) > 0) || (selectedKind === "fair" && Number(selected.opening_cash) > 0) || selected.closed_at || selected.notes) && (
+                <div className="space-y-2 border-t border-border/60 bg-blush/20 px-4 py-2.5">
+                  {(((selectedKind === "party" || selectedKind === "wedding") && Number(selected.fee) > 0) || (selectedKind === "fair" && Number(selected.opening_cash) > 0) || selected.closed_at) && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {(selectedKind === "party" || selectedKind === "wedding") && Number(selected.fee) > 0 && <Badge icon={Truck} label={`Taxa: ${formatBRL(Number(selected.fee))}`} />}
+                      {selectedKind === "fair" && Number(selected.opening_cash) > 0 && <Badge icon={Wallet} label={`Troco: ${formatBRL(Number(selected.opening_cash))}`} />}
+                      {selected.closed_at && <Badge icon={Lock} label={`Fechado · ${fmtDate(selected.closed_at)}`} />}
+                    </div>
+                  )}
+                  {selected.notes && <NotesInline notes={selected.notes} />}
+                  {totalTasks > 0 && (
+                    <div>
+                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-card">
+                        <div className="h-full rounded-full bg-rose transition-all" style={{ width: `${progress}%` }} />
+                      </div>
+                      <p className="mt-1 text-right text-[11px] text-muted-foreground num">{doneTasks}/{totalTasks} tarefas</p>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
 
-            {selected && (totalTasks > 0 || ((selectedKind === "party" || selectedKind === "wedding") && Number(selected.fee) > 0) || (selectedKind === "fair" && Number(selected.opening_cash) > 0) || selected.closed_at || selected.notes) && (
-              <div className="space-y-2 border-t border-border/60 bg-blush/20 px-4 py-2.5">
-                {(((selectedKind === "party" || selectedKind === "wedding") && Number(selected.fee) > 0) || (selectedKind === "fair" && Number(selected.opening_cash) > 0) || selected.closed_at) && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {(selectedKind === "party" || selectedKind === "wedding") && Number(selected.fee) > 0 && <Badge icon={Truck} label={`Taxa: ${formatBRL(Number(selected.fee))}`} />}
-                    {selectedKind === "fair" && Number(selected.opening_cash) > 0 && <Badge icon={Wallet} label={`Troco: ${formatBRL(Number(selected.opening_cash))}`} />}
-                    {selected.closed_at && <Badge icon={Lock} label={`Fechado · ${fmtDate(selected.closed_at)}`} />}
-                  </div>
-                )}
-                {selected.notes && <NotesInline notes={selected.notes} />}
-                {totalTasks > 0 && (
-                  <div>
-                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-card">
-                      <div className="h-full rounded-full bg-rose transition-all" style={{ width: `${progress}%` }} />
-                    </div>
-                    <p className="mt-1 text-right text-[11px] text-muted-foreground num">{doneTasks}/{totalTasks} tarefas</p>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </>
-      )}
-
-      {!selected && events.length > 0 && (
-        <div className="card-soft p-8 text-center text-sm text-muted-foreground">Selecione um evento.</div>
-      )}
-
-      {selected && (
-        <>
-          {editingMeta && (
-            <div className="card-soft mb-4 p-4 md:p-5">
-              <EditMeta
-                event={selected}
-                kind={selectedKind}
-                types={types}
-                onSave={async (patch) => {
-                  await updateMeta(patch);
-                  setEditingMeta(false);
-                }}
-                onCancel={() => setEditingMeta(false)}
-              />
+            {/* Tabs: 3 colunas no mobile, vertical no PC */}
+            <div className="grid grid-cols-3 gap-2 lg:grid-cols-1">
+              <TabBtn active={activeTab === "products"} onClick={() => setActiveTab("products")} icon={Package} label="Produtos" hint={`${eventProducts.length}`} />
+              <TabBtn active={activeTab === "tasks"} onClick={() => setActiveTab("tasks")} icon={CheckCircle2} label="Tarefas" hint={`${doneTasks}/${totalTasks}`} />
+              <TabBtn active={activeTab === "cashbox"} onClick={() => setActiveTab("cashbox")} icon={Wallet} label="Caixa" hint={formatBRL(cashbox.total)} closed={!!selected.closed_at} />
             </div>
-          )}
+          </aside>
 
-          {/* Tabs */}
-          <div className="mb-4 grid grid-cols-3 gap-2">
-            <TabBtn active={activeTab === "products"} onClick={() => setActiveTab("products")} icon={Package} label="Produtos" hint={`${eventProducts.length}`} />
-            <TabBtn active={activeTab === "tasks"} onClick={() => setActiveTab("tasks")} icon={CheckCircle2} label="Tarefas" hint={`${doneTasks}/${totalTasks}`} />
-            <TabBtn active={activeTab === "cashbox"} onClick={() => setActiveTab("cashbox")} icon={Wallet} label="Caixa" hint={formatBRL(cashbox.total)} closed={!!selected.closed_at} />
-          </div>
+          {/* Conteúdo da aba ativa */}
+          <section className="min-w-0 lg:col-span-8">
+            {activeTab === "products" && (
+              <ProductsTab
+                event={selected}
+                products={eventProducts}
+                recipes={recipes}
+                ingredients={ingredients}
+                recipeIngs={recipeIngs}
+                shoppingList={shoppingList}
+                showInsumos={showInsumos}
+                setShowInsumos={setShowInsumos}
+                onAdd={addProduct}
+                onUpdate={updateProduct}
+                onRemove={removeProduct}
+              />
+            )}
 
+            {activeTab === "tasks" && (
+              <TasksTab
+                days={days}
+                activeDay={activeDay}
+                setActiveDay={setActiveDay}
+                eventTasks={eventTasks}
+                dayTasks={dayTasks}
+                kind={selectedKind}
+                newTask={newTask}
+                setNewTask={setNewTask}
+                onSeed={seedDefaultTasks}
+                onToggle={toggleTask}
+                onRemove={removeTask}
+                onAdd={addTask}
+              />
+            )}
 
-          {activeTab === "products" && (
-            <ProductsTab
-              event={selected}
-              products={eventProducts}
-              recipes={recipes}
-              ingredients={ingredients}
-              recipeIngs={recipeIngs}
-              shoppingList={shoppingList}
-              showInsumos={showInsumos}
-              setShowInsumos={setShowInsumos}
-              onAdd={addProduct}
-              onUpdate={updateProduct}
-              onRemove={removeProduct}
-            />
-          )}
-
-          {activeTab === "tasks" && (
-            <TasksTab
-              days={days}
-              activeDay={activeDay}
-              setActiveDay={setActiveDay}
-              eventTasks={eventTasks}
-              dayTasks={dayTasks}
-              kind={selectedKind}
-              newTask={newTask}
-              setNewTask={setNewTask}
-              onSeed={seedDefaultTasks}
-              onToggle={toggleTask}
-              onRemove={removeTask}
-              onAdd={addTask}
-            />
-          )}
-
-          {activeTab === "cashbox" && (
-            <CashboxTab
-              event={selected}
-              products={eventProducts}
-              sales={eventSales}
-              cashbox={cashbox}
-              onClose={closeEvent}
-              onReopen={reopenEvent}
-              onUpdateOpening={(v) => updateMeta({ opening_cash: v })}
-            />
-          )}
-        </>
+            {activeTab === "cashbox" && (
+              <CashboxTab
+                event={selected}
+                products={eventProducts}
+                sales={eventSales}
+                cashbox={cashbox}
+                onClose={closeEvent}
+                onReopen={reopenEvent}
+                onUpdateOpening={(v) => updateMeta({ opening_cash: v })}
+              />
+            )}
+          </section>
+        </div>
       )}
+
+      {/* Modal de edição do evento */}
+      <Dialog open={editingMeta} onOpenChange={setEditingMeta}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-mauve">Editar evento</DialogTitle>
+          </DialogHeader>
+          {selected && (
+            <EditMeta
+              event={selected}
+              kind={selectedKind}
+              types={types}
+              onSave={async (patch) => {
+                await updateMeta(patch);
+                setEditingMeta(false);
+              }}
+              onCancel={() => setEditingMeta(false)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Drawer com a lista de eventos */}
       <Sheet open={showListDrawer} onOpenChange={setShowListDrawer}>
