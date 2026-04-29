@@ -116,7 +116,7 @@ function PDVPage() {
   const totalToday = sales.reduce((s, x) => s + (x.refunded_at ? 0 : Number(x.price)), 0);
   const cartTotal = useMemo(() => cart.reduce((s, x) => s + x.price * x.qty, 0), [cart]);
   const cartCount = useMemo(() => cart.reduce((s, x) => s + x.qty, 0), [cart]);
-  const discountValue = useMemo(() => Math.round((cartTotal * discountPct) * 100) / 100 / 100 * 100, [cartTotal, discountPct]);
+  const discountValue = useMemo(() => Math.round(cartTotal * discountPct) / 100, [cartTotal, discountPct]);
   const cartFinal = Math.max(0, cartTotal - discountValue);
 
   const inCart = (eventProductId: string) =>
