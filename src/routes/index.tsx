@@ -51,6 +51,8 @@ function Dashboard() {
   const [perfList, setPerfList] = useState<ProductPerf[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [ingredientsCount, setIngredientsCount] = useState(0);
+  const [recipesCount, setRecipesCount] = useState(0);
+  const [storefrontConfigured, setStorefrontConfigured] = useState(false);
   const [pendingOrders, setPendingOrders] = useState(0);
   const [storefrontPending, setStorefrontPending] = useState(0);
   const [nextEvent, setNextEvent] = useState<{ id: string; name: string; date: string } | null>(null);
