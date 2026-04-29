@@ -48,6 +48,7 @@ function PDVPage() {
   const [sales, setSales] = useState<Sale[]>([]);
   const [period, setPeriod] = useState<Period>("today");
   const [showManage, setShowManage] = useState(false);
+  const [showAdd, setShowAdd] = useState(false);
   const [showCart, setShowCart] = useState(false);
   const [loading, setLoading] = useState(true);
   const [discountPct, setDiscountPct] = useState<number>(0); // 0..100
