@@ -153,7 +153,7 @@ export function AppShell() {
         </aside>
 
         {/* ============ Main content ============ */}
-        <div className="flex min-h-screen flex-1 flex-col">
+        <div className="flex min-h-screen min-w-0 flex-1 flex-col">
           {/* Mobile topbar — hamburger opens drawer with full nav */}
           <header className="sticky top-0 z-40 flex items-center justify-between gap-3 border-b border-border/60 bg-card/80 px-4 py-2.5 backdrop-blur-xl lg:hidden">
             <button
