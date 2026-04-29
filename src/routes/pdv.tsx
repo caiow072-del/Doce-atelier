@@ -645,10 +645,34 @@ function PDVPage() {
                   </div>
                 </div>
 
-                <div className="mt-4 rounded-xl bg-blush/30 p-4">
+                <div className="mt-4">
+                  <p className="mb-2 flex items-center gap-1 text-[10px] uppercase tracking-widest text-rose"><BadgePercent className="h-3 w-3" /> Cupom de desconto</p>
+                  <div className="flex items-center gap-1.5">
+                    {[0, 5, 10, 15, 20].map((p) => (
+                      <button key={p} onClick={() => setDiscountPct(p)}
+                        className={`flex-1 rounded-lg border px-1 py-1.5 text-[11px] ${discountPct === p ? "border-rose bg-blush/60 text-mauve font-medium" : "border-border bg-card text-muted-foreground"}`}>
+                        {p === 0 ? "—" : `${p}%`}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-4 rounded-xl bg-blush/30 p-4 space-y-1">
+                  {discountValue > 0 && (
+                    <>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>Subtotal</span>
+                        <span className="num line-through">{fmtBRL(cartTotal)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-rose">
+                        <span>Desconto {discountPct}%</span>
+                        <span className="num">- {fmtBRL(discountValue)}</span>
+                      </div>
+                    </>
+                  )}
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-mauve">Total</span>
-                    <span className="font-display text-3xl italic text-mauve">{fmtBRL(cartTotal)}</span>
+                    <span className="font-display text-3xl italic text-mauve">{fmtBRL(cartFinal)}</span>
                   </div>
                 </div>
 
