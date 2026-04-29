@@ -391,7 +391,7 @@ function PDVPage() {
             Este evento não tem produtos. Adicione na aba Produtos do evento.
           </div>
         ) : (
-          <div className="grid-cards-sm">
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
             {eventProducts.map((p) => {
               const inC = inCart(p.id);
               const left = p.planned_qty > 0 ? Math.max(0, p.planned_qty - p.sold_qty - inC) : Infinity;
