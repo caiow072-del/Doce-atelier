@@ -319,7 +319,13 @@ function PDVPage() {
               onClick={() => setShowManage(true)}
               className="inline-flex items-center gap-1.5 rounded-xl bg-blush/50 px-3 py-2 text-xs font-medium text-mauve hover:bg-blush/80"
             >
-              <Settings2 className="h-3.5 w-3.5" /> Gerenciar produtos
+              <Settings2 className="h-3.5 w-3.5" /> Gerenciar
+            </button>
+            <button
+              onClick={() => setShowAdd(true)}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-mauve px-3 py-2 text-xs font-medium text-cream hover:opacity-90"
+            >
+              <Plus className="h-3.5 w-3.5" /> Adicionar produto
             </button>
           </div>
         }
