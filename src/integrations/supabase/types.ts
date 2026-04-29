@@ -804,6 +804,41 @@ export type Database = {
           },
         ]
       }
+      shop_visits: {
+        Row: {
+          device: string | null
+          id: string
+          referer: string | null
+          session_key: string | null
+          shop_id: string
+          visited_at: string
+        }
+        Insert: {
+          device?: string | null
+          id?: string
+          referer?: string | null
+          session_key?: string | null
+          shop_id: string
+          visited_at?: string
+        }
+        Update: {
+          device?: string | null
+          id?: string
+          referer?: string | null
+          session_key?: string | null
+          shop_id?: string
+          visited_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_visits_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shops: {
         Row: {
           created_at: string
