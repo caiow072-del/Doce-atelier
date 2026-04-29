@@ -602,8 +602,8 @@ function PDVPage() {
 
       {/* Carrinho mobile (sheet) */}
       {showCart && (
-        <div className="fixed inset-0 z-50 bg-mauve/40 backdrop-blur-sm" onClick={() => setShowCart(false)}>
-          <div onClick={(e) => e.stopPropagation()} className="absolute right-0 top-0 h-full w-full max-w-md overflow-y-auto bg-card p-5 shadow-petal">
+        <div className="fixed inset-0 z-50 grid place-items-center bg-mauve/40 p-4 backdrop-blur-sm" onClick={() => setShowCart(false)}>
+          <div onClick={(e) => e.stopPropagation()} className="flex max-h-[90vh] w-full max-w-md flex-col overflow-y-auto rounded-2xl bg-card p-5 shadow-petal">
             <div className="flex items-center justify-between">
               <h2 className="font-display text-2xl italic text-mauve">Carrinho</h2>
               <button onClick={() => setShowCart(false)} className="rounded-lg p-2 text-muted-foreground"><X className="h-5 w-5" /></button>
