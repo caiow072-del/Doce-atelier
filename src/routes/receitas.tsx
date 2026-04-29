@@ -539,14 +539,14 @@ function RecipeForm({
   const realMarginPct =
     realPriceNum > 0 && cost.perSlice > 0 ? ((realPriceNum - cost.perSlice) / realPriceNum) * 100 : 0;
   const servingsNum = previewRecipe.servings || 0;
-  const ingredientCostPerSlice = servingsNum > 0 ? cost.ingredientsCost / servingsNum : 0;
-  // Lucro considerando APENAS insumos (ignora produção, embalagem, perda)
+  // Embalagem é tratada como insumo: soma ao custo dos insumos
+  const packagingTotal = (previewRecipe.packaging_cost ?? 0) * servingsNum;
+  const ingredientsWithPackaging = cost.ingredientsCost + packagingTotal;
+  const ingredientCostPerSlice = servingsNum > 0 ? ingredientsWithPackaging / servingsNum : 0;
+  // Lucro considerando insumos+embalagem (ignora produção e perda)
   const profitPerSliceIngredients = realPriceNum > 0 ? realPriceNum - ingredientCostPerSlice : 0;
   const profitTotalIngredients = profitPerSliceIngredients * servingsNum;
-  const extraCosts =
-    (previewRecipe.labor_cost ?? 0) +
-    (previewRecipe.packaging_cost ?? 0) * servingsNum +
-    cost.wasteCost;
+  const extraCosts = (previewRecipe.labor_cost ?? 0) + cost.wasteCost;
   const sliceWeight =
     Number(totalWeight) > 0 && Number(servings) > 0
       ? Math.round(Number(totalWeight) / Number(servings))
