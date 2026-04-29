@@ -472,7 +472,7 @@ function StorefrontPage() {
               )}
               <ProductListHorizontal
                 products={filtered}
-                onAdd={addToCart}
+                onAdd={(p) => addToCart(p as PublicRecipe)}
                 disabled={editing}
               />
             </section>
