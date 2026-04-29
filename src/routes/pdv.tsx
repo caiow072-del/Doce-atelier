@@ -50,6 +50,8 @@ function PDVPage() {
   const [showManage, setShowManage] = useState(false);
   const [showCart, setShowCart] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [discountPct, setDiscountPct] = useState<number>(0); // 0..100
+  const [showHotkeys, setShowHotkeys] = useState(false);
 
   const periodStart = useMemo(() => {
     const d = new Date();
@@ -96,7 +98,7 @@ function PDVPage() {
   // ============ Load sales (reage ao período) ============
   useEffect(() => {
     if (!shopId) return;
-    let q = supabase.from("sales").select("id, item, price, sold_at, payment_method").eq("shop_id", shopId);
+    let q = supabase.from("sales").select("id, item, price, sold_at, payment_method, refunded_at, discount").eq("shop_id", shopId);
     if (periodStart) q = q.gte("sold_at", periodStart.toISOString());
     q.order("sold_at", { ascending: false }).limit(500).then(({ data }) => {
       setSales((data ?? []) as Sale[]);
