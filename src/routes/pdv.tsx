@@ -473,9 +473,15 @@ function PDVPage() {
           </div>
         )
       ) : products.length === 0 ? (
-        <div className="card-soft p-8 text-center">
-          <p className="text-sm text-muted-foreground">Nenhum produto. Crie seus botões de venda.</p>
-          <button onClick={() => setShowManage(true)} className="mt-3 rounded-xl bg-mauve px-4 py-2 text-sm text-cream">Criar produtos</button>
+        <div className="card-soft p-10 text-center">
+          <div className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-blush/50">
+            <ShoppingBasket className="h-6 w-6 text-mauve" strokeWidth={1.4} />
+          </div>
+          <p className="text-base font-semibold text-mauve">Nenhum produto cadastrado ainda</p>
+          <p className="mt-1 text-sm text-muted-foreground">Crie botões de venda rápida para agilizar o caixa.</p>
+          <button onClick={() => setShowManage(true)} className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-mauve px-5 py-2.5 text-sm font-medium text-cream hover:opacity-90">
+            <Plus className="h-4 w-4" /> Adicionar primeiro produto
+          </button>
         </div>
       ) : (
         <div className="grid-cards-sm">
