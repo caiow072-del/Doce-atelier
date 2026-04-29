@@ -271,10 +271,35 @@ function PDVPage() {
             ))}
           </div>
         </div>
-        <div className="rounded-xl bg-blush/40 p-3">
+        <div>
+          <p className="mb-1 flex items-center gap-1 text-[10px] uppercase tracking-widest text-rose"><BadgePercent className="h-3 w-3" /> Cupom (% off)</p>
+          <div className="flex items-center gap-1">
+            {[0, 5, 10, 15, 20].map((p) => (
+              <button key={p} onClick={() => setDiscountPct(p)}
+                className={`flex-1 rounded-lg border px-1 py-1 text-[10px] ${discountPct === p ? "border-rose bg-blush/60 text-mauve font-medium" : "border-border bg-card text-muted-foreground"}`}>
+                {p === 0 ? "—" : `${p}%`}
+              </button>
+            ))}
+            <input type="number" min={0} max={100} value={discountPct || ""} onChange={(e) => setDiscountPct(Math.max(0, Math.min(100, Number(e.target.value) || 0)))}
+              placeholder="0" className="w-12 rounded-lg border border-border bg-card px-1 py-1 text-center text-[10px] text-mauve" />
+          </div>
+        </div>
+        <div className="rounded-xl bg-blush/40 p-3 space-y-1">
+          {discountValue > 0 && (
+            <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+              <span>Subtotal</span>
+              <span className="num line-through">{fmtBRL(cartTotal)}</span>
+            </div>
+          )}
+          {discountValue > 0 && (
+            <div className="flex items-center justify-between text-[11px] text-rose">
+              <span>Desconto {discountPct}%</span>
+              <span className="num">- {fmtBRL(discountValue)}</span>
+            </div>
+          )}
           <div className="flex items-center justify-between">
             <span className="text-xs text-mauve">Total</span>
-            <span className="text-xl font-semibold text-mauve num">{fmtBRL(cartTotal)}</span>
+            <span className="text-xl font-semibold text-mauve num">{fmtBRL(cartFinal)}</span>
           </div>
         </div>
         <button onClick={checkout} disabled={cart.length === 0} className="w-full rounded-xl bg-mauve px-4 py-2.5 text-sm font-medium text-cream hover:opacity-90 disabled:opacity-40">
