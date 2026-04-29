@@ -222,6 +222,18 @@ function StorefrontPage() {
           promotions: (sf.promotions ?? []) as Promotion[],
           testimonials: (sf.testimonials ?? []) as Testimonial[],
           gallery: (sf.gallery ?? []) as GalleryItem[],
+          business_hours: (sf.business_hours ?? {}) as BusinessHours,
+          pickup_enabled: sf.pickup_enabled ?? true,
+          delivery_enabled: sf.delivery_enabled ?? false,
+          pickup_address: sf.pickup_address ?? null,
+          delivery_address: sf.delivery_address ?? null,
+          delivery_fee: Number(sf.delivery_fee ?? 0),
+          delivery_radius_km: Number(sf.delivery_radius_km ?? 0),
+          hero_images: Array.isArray(sf.hero_images) ? (sf.hero_images as string[]) : [],
+          bottom_nav_enabled: sf.bottom_nav_enabled ?? true,
+          city: sf.city ?? null,
+          state: sf.state ?? null,
+          more_info: sf.more_info ?? null,
         });
       }
       setLoading(false);
