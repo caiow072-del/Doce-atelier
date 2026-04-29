@@ -478,73 +478,71 @@ function EventosPage() {
       ) : !selected ? (
         <div className="card-soft p-8 text-center text-sm text-muted-foreground">Selecione um evento.</div>
       ) : (
-        <div className="grid gap-4 lg:grid-cols-12">
-          {/* Sidebar (PC) / topo (mobile): seletor + tabs */}
-          <aside className="space-y-3 lg:col-span-4">
-            <div className="card-soft overflow-hidden">
-              <div className="flex items-center gap-2 px-3 py-2.5 md:px-4 md:py-3">
-                <button
-                  onClick={() => setShowListDrawer(true)}
-                  className="flex min-w-0 flex-1 items-center gap-3 rounded-xl px-1 py-1 text-left transition-colors hover:bg-blush/30"
-                >
-                  {(() => {
-                    const k = kindOf(selected.event_type_id);
-                    const Icon = KIND_META[k].icon;
-                    return (
-                      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-blush/50">
-                        <Icon className="h-5 w-5 text-mauve" strokeWidth={1.6} />
-                      </div>
-                    );
-                  })()}
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-mauve md:text-base">{selected.name}</p>
-                    <p className="truncate text-[11px] text-muted-foreground md:text-xs">
-                      {fmtDate(selected.date)}
-                      {selected.start_time ? ` · ${selected.start_time}` : ""}
-                      {selected.location ? ` · ${selected.location}` : ""}
-                      {selected.recurrence !== "none" ? ` · ${selected.recurrence === "weekly" ? "semanal" : "mensal"}` : ""}
-                    </p>
-                  </div>
-                  <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
-                </button>
-                <div className="flex shrink-0 items-center gap-0.5 border-l border-border/60 pl-2">
-                  <button onClick={() => setEditingMeta(true)} className="rounded-lg p-2 text-muted-foreground hover:bg-blush/50 hover:text-mauve" aria-label="Editar"><Pencil className="h-4 w-4" /></button>
-                  <button onClick={removeEvent} className="rounded-lg p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" aria-label="Excluir"><Trash2 className="h-4 w-4" /></button>
+        <div className="space-y-4">
+          {/* Card do evento atual (largura total) */}
+          <div className="card-soft overflow-hidden">
+            <div className="flex items-center gap-2 px-3 py-2.5 md:px-4 md:py-3">
+              <button
+                onClick={() => setShowListDrawer(true)}
+                className="flex min-w-0 flex-1 items-center gap-3 rounded-xl px-1 py-1 text-left transition-colors hover:bg-blush/30"
+              >
+                {(() => {
+                  const k = kindOf(selected.event_type_id);
+                  const Icon = KIND_META[k].icon;
+                  return (
+                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-blush/50 md:h-12 md:w-12">
+                      <Icon className="h-5 w-5 text-mauve md:h-6 md:w-6" strokeWidth={1.6} />
+                    </div>
+                  );
+                })()}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-base font-semibold text-mauve md:text-lg">{selected.name}</p>
+                  <p className="truncate text-[11px] text-muted-foreground md:text-xs">
+                    {fmtDate(selected.date)}
+                    {selected.start_time ? ` · ${selected.start_time}` : ""}
+                    {selected.location ? ` · ${selected.location}` : ""}
+                    {selected.recurrence !== "none" ? ` · ${selected.recurrence === "weekly" ? "semanal" : "mensal"}` : ""}
+                  </p>
                 </div>
+                <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+              </button>
+              <div className="flex shrink-0 items-center gap-0.5 border-l border-border/60 pl-2">
+                <button onClick={() => setEditingMeta(true)} className="rounded-lg p-2 text-muted-foreground hover:bg-blush/50 hover:text-mauve" aria-label="Editar"><Pencil className="h-4 w-4" /></button>
+                <button onClick={removeEvent} className="rounded-lg p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" aria-label="Excluir"><Trash2 className="h-4 w-4" /></button>
               </div>
-
-              {(totalTasks > 0 || ((selectedKind === "party" || selectedKind === "wedding") && Number(selected.fee) > 0) || (selectedKind === "fair" && Number(selected.opening_cash) > 0) || selected.closed_at || selected.notes) && (
-                <div className="space-y-2 border-t border-border/60 bg-blush/20 px-4 py-2.5">
-                  {(((selectedKind === "party" || selectedKind === "wedding") && Number(selected.fee) > 0) || (selectedKind === "fair" && Number(selected.opening_cash) > 0) || selected.closed_at) && (
-                    <div className="flex flex-wrap gap-1.5">
-                      {(selectedKind === "party" || selectedKind === "wedding") && Number(selected.fee) > 0 && <Badge icon={Truck} label={`Taxa: ${formatBRL(Number(selected.fee))}`} />}
-                      {selectedKind === "fair" && Number(selected.opening_cash) > 0 && <Badge icon={Wallet} label={`Troco: ${formatBRL(Number(selected.opening_cash))}`} />}
-                      {selected.closed_at && <Badge icon={Lock} label={`Fechado · ${fmtDate(selected.closed_at)}`} />}
-                    </div>
-                  )}
-                  {selected.notes && <NotesInline notes={selected.notes} />}
-                  {totalTasks > 0 && (
-                    <div>
-                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-card">
-                        <div className="h-full rounded-full bg-rose transition-all" style={{ width: `${progress}%` }} />
-                      </div>
-                      <p className="mt-1 text-right text-[11px] text-muted-foreground num">{doneTasks}/{totalTasks} tarefas</p>
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
 
-            {/* Tabs: 3 colunas no mobile, vertical no PC */}
-            <div className="grid grid-cols-3 gap-2 lg:grid-cols-1">
-              <TabBtn active={activeTab === "products"} onClick={() => setActiveTab("products")} icon={Package} label="Produtos" hint={`${eventProducts.length}`} />
-              <TabBtn active={activeTab === "tasks"} onClick={() => setActiveTab("tasks")} icon={CheckCircle2} label="Tarefas" hint={`${doneTasks}/${totalTasks}`} />
-              <TabBtn active={activeTab === "cashbox"} onClick={() => setActiveTab("cashbox")} icon={Wallet} label="Caixa" hint={formatBRL(cashbox.total)} closed={!!selected.closed_at} />
-            </div>
-          </aside>
+            {(totalTasks > 0 || ((selectedKind === "party" || selectedKind === "wedding") && Number(selected.fee) > 0) || (selectedKind === "fair" && Number(selected.opening_cash) > 0) || selected.closed_at || selected.notes) && (
+              <div className="space-y-2 border-t border-border/60 bg-blush/20 px-4 py-2.5">
+                {(((selectedKind === "party" || selectedKind === "wedding") && Number(selected.fee) > 0) || (selectedKind === "fair" && Number(selected.opening_cash) > 0) || selected.closed_at) && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {(selectedKind === "party" || selectedKind === "wedding") && Number(selected.fee) > 0 && <Badge icon={Truck} label={`Taxa: ${formatBRL(Number(selected.fee))}`} />}
+                    {selectedKind === "fair" && Number(selected.opening_cash) > 0 && <Badge icon={Wallet} label={`Troco: ${formatBRL(Number(selected.opening_cash))}`} />}
+                    {selected.closed_at && <Badge icon={Lock} label={`Fechado · ${fmtDate(selected.closed_at)}`} />}
+                  </div>
+                )}
+                {selected.notes && <NotesInline notes={selected.notes} />}
+                {totalTasks > 0 && (
+                  <div>
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-card">
+                      <div className="h-full rounded-full bg-rose transition-all" style={{ width: `${progress}%` }} />
+                    </div>
+                    <p className="mt-1 text-right text-[11px] text-muted-foreground num">{doneTasks}/{totalTasks} tarefas</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Sub-abas discretas */}
+          <div className="flex items-center gap-1 border-b border-border/60">
+            <SubTab active={activeTab === "products"} onClick={() => setActiveTab("products")} icon={Package} label="Produtos" hint={`${eventProducts.length}`} />
+            <SubTab active={activeTab === "tasks"} onClick={() => setActiveTab("tasks")} icon={CheckCircle2} label="Tarefas" hint={`${doneTasks}/${totalTasks}`} />
+            <SubTab active={activeTab === "cashbox"} onClick={() => setActiveTab("cashbox")} icon={Wallet} label="Caixa" hint={formatBRL(cashbox.total)} closed={!!selected.closed_at} />
+          </div>
 
           {/* Conteúdo da aba ativa */}
-          <section className="min-w-0 lg:col-span-8">
+          <section className="min-w-0">
             {activeTab === "products" && (
               <ProductsTab
                 event={selected}
