@@ -712,10 +712,37 @@ function PDVPage() {
                 {cartCount}
               </motion.span>
             </div>
-            <span className="text-sm font-semibold tabular-nums">{fmtBRL(cartTotal)}</span>
+            <span className="text-sm font-semibold tabular-nums">{fmtBRL(cartFinal)}</span>
           </motion.button>
         )}
       </AnimatePresence>
+
+      {showHotkeys && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-mauve/40 p-4 backdrop-blur-sm" onClick={() => setShowHotkeys(false)}>
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm rounded-2xl bg-card p-5 shadow-petal">
+            <div className="flex items-center justify-between">
+              <h3 className="font-display text-xl italic text-mauve">Atalhos do PDV</h3>
+              <button onClick={() => setShowHotkeys(false)} className="rounded-lg p-1.5 text-muted-foreground"><X className="h-4 w-4" /></button>
+            </div>
+            <ul className="mt-3 space-y-1.5 text-sm text-mauve">
+              {[
+                ["D", "Pagamento em dinheiro"],
+                ["P", "Pagamento Pix"],
+                ["C", "Cartão de crédito"],
+                ["B", "Cartão de débito"],
+                ["Enter", "Finalizar venda"],
+                ["Esc", "Fechar carrinho"],
+                ["?", "Mostrar/ocultar atalhos"],
+              ].map(([k, l]) => (
+                <li key={k} className="flex items-center justify-between rounded-lg bg-blush/30 px-3 py-1.5">
+                  <span>{l}</span>
+                  <kbd className="rounded-md border border-border bg-card px-2 py-0.5 text-xs font-mono text-mauve">{k}</kbd>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
     </PageContainer>
   );
 }
