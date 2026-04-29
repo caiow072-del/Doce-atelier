@@ -885,7 +885,7 @@ function ProductsTab({
         {products.length === 0 ? (
           <p className="px-5 py-6 text-center text-sm text-muted-foreground">Nenhum produto. Toque em <strong>Adicionar</strong> para escolher uma receita.</p>
         ) : (
-          <ul className="divide-y divide-border/60 md:grid md:grid-cols-2 md:divide-y-0 md:gap-px md:bg-border/60 md:p-0">
+          <ul className="divide-y divide-border/60 md:grid md:grid-cols-2 md:gap-2 md:divide-y-0 md:p-2">
             {products.map((p) => {
               const sold = p.sold_qty;
               const left = Math.max(0, p.planned_qty - sold);
