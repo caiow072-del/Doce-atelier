@@ -281,6 +281,18 @@ function StorefrontPage() {
           promotions: front.promotions as any,
           testimonials: front.testimonials as any,
           gallery: front.gallery as any,
+          business_hours: front.business_hours as any,
+          pickup_enabled: front.pickup_enabled,
+          delivery_enabled: front.delivery_enabled,
+          pickup_address: front.pickup_address,
+          delivery_address: front.delivery_address,
+          delivery_fee: front.delivery_fee,
+          delivery_radius_km: front.delivery_radius_km,
+          hero_images: front.hero_images as any,
+          bottom_nav_enabled: front.bottom_nav_enabled,
+          city: front.city,
+          state: front.state,
+          more_info: front.more_info,
         }, { onConflict: "shop_id" }),
       ]);
       if (t.error || s.error) throw t.error ?? s.error;
