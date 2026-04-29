@@ -1006,7 +1006,7 @@ function TasksTab({
                 active ? "border-rose bg-blush/60 text-mauve shadow-soft" : "border-border bg-card text-muted-foreground hover:border-rose/40"
               }`}
             >
-              <p className="font-display italic text-base leading-none">{d.label}</p>
+              <p className="text-sm font-medium leading-none">{d.label}</p>
               <p className="mt-1 text-[10px]">{dayCount.filter((t) => t.done).length}/{dayCount.length}</p>
             </button>
           );
