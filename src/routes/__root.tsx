@@ -55,11 +55,11 @@ function ThemeBridge() {
     }
     const slug = m[1];
     supabase
-      .from("shops")
+      .from("shops_public" as any)
       .select("theme")
       .eq("slug", slug)
       .maybeSingle()
-      .then(({ data }) => {
+      .then(({ data }: any) => {
         if (data?.theme) setStorefrontTheme(data.theme as ShopTheme);
       });
   }, [location.pathname]);

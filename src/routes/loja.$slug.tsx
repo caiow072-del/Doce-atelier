@@ -151,10 +151,10 @@ function StorefrontPage() {
     (async () => {
       setLoading(true);
       const { data: shopData } = await supabase
-        .from("shops")
+        .from("shops_public" as any)
         .select("id, name, slug, whatsapp, description, logo_url, theme")
         .eq("slug", slug)
-        .maybeSingle();
+        .maybeSingle() as any;
       if (cancelled) return;
       if (!shopData) { setLoading(false); return; }
       setShop(shopData as Shop);
@@ -201,9 +201,9 @@ function StorefrontPage() {
       }
 
       const [recsRes, sfRes] = await Promise.all([
-        supabase.from("recipes")
+        supabase.from("recipes_public" as any)
           .select("id, name, description, image_url, public_price, servings, category, promo_price, is_featured")
-          .eq("shop_id", shopData.id).eq("show_in_catalog", true).order("is_featured", { ascending: false }).order("catalog_position").order("name"),
+          .eq("shop_id", shopData.id).order("is_featured", { ascending: false }).order("catalog_position").order("name"),
         supabase.from("shop_storefront").select("*").eq("shop_id", shopData.id).maybeSingle(),
       ]);
       if (cancelled) return;
