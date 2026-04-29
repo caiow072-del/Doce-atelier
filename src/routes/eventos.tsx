@@ -1575,31 +1575,18 @@ function TypesSheet({
   );
 }
 
-// ============ Add Product Modal (recipe-driven) ============
-function AddProductModal({
-  recipes, ingredients, recipeIngs, onClose, onAdd,
-}: {
-  recipes: Recipe[];
-  ingredients: Ingredient[];
-  recipeIngs: RecipeIng[];
-  onClose: () => void;
-  onAdd: (data: Partial<EventProduct>) => void;
-}) {
-  const [recipeId, setRecipeId] = useState<string>("");
-  const [search, setSearch] = useState("");
-  const [saleMode, setSaleMode] = useState<"unit" | "slice">("unit");
-  const [name, setName] = useState("");
-  const [unitPrice, setUnitPrice] = useState("");
-  const [batches, setBatches] = useState("1");
-  const [plannedQty, setPlannedQty] = useState("");
+// ============ Product Form (shared by Add & Edit) ============
+type ProductFormValues = {
+  recipeId: string;
+  saleMode: "unit" | "slice";
+  name: string;
+  unitPrice: string;
+  batches: string;
+  plannedQty: string;
+};
 
-  const recipe = useMemo(() => recipes.find((r) => r.id === recipeId) ?? null, [recipes, recipeId]);
-  const filteredRecipes = useMemo(
-    () => (search.trim() ? recipes.filter((r) => r.name.toLowerCase().includes(search.toLowerCase())) : recipes),
-    [recipes, search],
-  );
-
-  const cost = useMemo(() => {
+function useRecipeCost(recipe: Recipe | null, recipeIngs: RecipeIng[], ingredients: Ingredient[]) {
+  return useMemo(() => {
     if (!recipe) return null;
     return recipeCost(
       { id: recipe.id, servings: recipe.servings, labor_cost: Number(recipe.labor_cost ?? 0), packaging_cost: Number(recipe.packaging_cost ?? 0), waste_pct: Number(recipe.waste_pct ?? 0) },
@@ -1607,22 +1594,70 @@ function AddProductModal({
       ingredients.map((i) => ({ id: i.id, package_qty: Number(i.package_qty ?? 1), price_paid: Number(i.price_paid ?? 0) })),
     );
   }, [recipe, recipeIngs, ingredients]);
+}
 
-  // Auto-calc planejado: batches * servings (slice) ou batches (unit)
+function suggestedPrice(recipe: Recipe | null, mode: "unit" | "slice", cost: ReturnType<typeof recipeCost> | null): number {
+  if (!recipe || !cost) return 0;
+  if (mode === "slice") {
+    if (recipe.slice_price && Number(recipe.slice_price) > 0) return Number(recipe.slice_price);
+    return cost.perSlice * 1.5;
+  }
+  if (recipe.public_price && Number(recipe.public_price) > 0) return Number(recipe.public_price);
+  return cost.perWhole * 1.5;
+}
+
+function ProductForm({
+  recipes, ingredients, recipeIngs, values, setValues, submitLabel, onSubmit, lockRecipe,
+}: {
+  recipes: Recipe[];
+  ingredients: Ingredient[];
+  recipeIngs: RecipeIng[];
+  values: ProductFormValues;
+  setValues: (v: ProductFormValues) => void;
+  submitLabel: string;
+  onSubmit: () => void;
+  lockRecipe?: boolean;
+}) {
+  const [search, setSearch] = useState("");
+  const recipe = useMemo(() => recipes.find((r) => r.id === values.recipeId) ?? null, [recipes, values.recipeId]);
+  const cost = useRecipeCost(recipe, recipeIngs, ingredients);
+
+  const filtered = useMemo(
+    () => (search.trim() ? recipes.filter((r) => r.name.toLowerCase().includes(search.toLowerCase())) : recipes),
+    [recipes, search],
+  );
+
+  // Auto-cálculo
   useEffect(() => {
     if (!recipe) return;
-    const b = Number(batches) || 0;
-    const calc = saleMode === "slice" ? b * recipe.servings : b;
-    if (!plannedQty || Number(plannedQty) === 0) setPlannedQty(String(calc));
-    if (!name) setName(recipe.name);
-    if (!unitPrice && cost) setUnitPrice((saleMode === "slice" ? cost.perSlice : cost.perWhole).toFixed(2));
+    const b = Number(values.batches) || 0;
+    const calc = values.saleMode === "slice" ? b * recipe.servings : b;
+    const patch: Partial<ProductFormValues> = {};
+    if (!values.plannedQty || Number(values.plannedQty) === 0) patch.plannedQty = String(calc);
+    if (!values.name) patch.name = recipe.name;
+    if (!values.unitPrice && cost) patch.unitPrice = suggestedPrice(recipe, values.saleMode, cost).toFixed(2);
+    if (Object.keys(patch).length) setValues({ ...values, ...patch });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [recipeId, saleMode, batches]);
+  }, [values.recipeId, values.saleMode, values.batches]);
 
-  // Insumos faltando: precisa quantity * batches mas tem stock < isso
+  const sugg = suggestedPrice(recipe, values.saleMode, cost);
+  const unitCost = cost ? (values.saleMode === "slice" ? cost.perSlice : cost.perWhole) : 0;
+  const ingOnlyCost = useMemo(() => {
+    if (!recipe || !cost) return 0;
+    // só ingredientes + embalagem (sem perda, sem labor)
+    const packPerSlice = Number(recipe.packaging_cost ?? 0);
+    const ingPerSlice = (cost.ingredients / Math.max(1, recipe.servings)) + packPerSlice;
+    return values.saleMode === "slice" ? ingPerSlice : ingPerSlice * recipe.servings;
+  }, [recipe, cost, values.saleMode]);
+
+  const price = Number(values.unitPrice) || 0;
+  const margin = cost && price > 0 ? ((price - unitCost) / price) * 100 : null;
+  const profit = price - unitCost;
+  const profitIngOnly = price - ingOnlyCost;
+
   const missing = useMemo(() => {
     if (!recipe) return [];
-    const b = Number(batches) || 0;
+    const b = Number(values.batches) || 0;
     const need: { name: string; needed: number; stock: number; unit: string }[] = [];
     recipeIngs.filter((ri) => ri.recipe_id === recipe.id).forEach((ri) => {
       const ing = ingredients.find((x) => x.id === ri.ingredient_id);
@@ -1633,153 +1668,282 @@ function AddProductModal({
       }
     });
     return need;
-  }, [recipe, batches, recipeIngs, ingredients]);
+  }, [recipe, values.batches, recipeIngs, ingredients]);
+
+  const handleSelect = (id: string) => setValues({ ...values, recipeId: id });
+
+  return (
+    <div className="space-y-4">
+      {!lockRecipe && (
+        <div>
+          <label className="text-[10px] uppercase tracking-widest text-rose">Receita base</label>
+          <input
+            value={search} onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar receita..." className="input-base mt-1"
+          />
+          <div className="mt-2 max-h-64 overflow-y-auto rounded-xl border border-border divide-y divide-border/60">
+            <button
+              type="button"
+              onClick={() => handleSelect("")}
+              className={`flex w-full items-center justify-between px-3 py-2.5 text-left text-sm transition-colors ${!values.recipeId ? "bg-blush/50 text-mauve" : "text-mauve/70 hover:bg-blush/20"}`}
+            >
+              <span className="font-medium">— Sem receita (produto avulso) —</span>
+              <span className="text-[10px] text-muted-foreground">manual</span>
+            </button>
+            {filtered.length === 0 ? (
+              <p className="px-3 py-3 text-center text-xs text-muted-foreground">Nenhuma receita encontrada.</p>
+            ) : (
+              filtered.map((r) => {
+                const c = recipeCost(
+                  { id: r.id, servings: r.servings, labor_cost: Number(r.labor_cost ?? 0), packaging_cost: Number(r.packaging_cost ?? 0), waste_pct: Number(r.waste_pct ?? 0) },
+                  recipeIngs,
+                  ingredients.map((i) => ({ id: i.id, package_qty: Number(i.package_qty ?? 1), price_paid: Number(i.price_paid ?? 0) })),
+                );
+                const sliceSugg = (r.slice_price && Number(r.slice_price) > 0) ? Number(r.slice_price) : c.perSlice * 1.5;
+                const wholeSugg = (r.public_price && Number(r.public_price) > 0) ? Number(r.public_price) : c.perWhole * 1.5;
+                const active = values.recipeId === r.id;
+                return (
+                  <button
+                    key={r.id}
+                    type="button"
+                    onClick={() => handleSelect(r.id)}
+                    className={`flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors ${active ? "bg-blush/50" : "hover:bg-blush/20"}`}
+                  >
+                    {r.image_url ? (
+                      <img src={r.image_url} alt="" className="h-10 w-10 shrink-0 rounded-lg object-cover" />
+                    ) : (
+                      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-blush/40">
+                        <Cake className="h-4 w-4 text-mauve" />
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-mauve">{r.name}</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {r.servings} fatias · custo/fatia {formatBRL(c.perSlice)}
+                      </p>
+                    </div>
+                    <div className="text-right text-[10px]">
+                      <p className="text-rose">sugerido</p>
+                      <p className="font-medium text-mauve num">{formatBRL(wholeSugg)}</p>
+                      <p className="text-muted-foreground num">{formatBRL(sliceSugg)}/fatia</p>
+                    </div>
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+
+      {recipe && (
+        <div className="rounded-xl border border-border bg-blush/20 p-3">
+          <p className="mb-2 text-[10px] uppercase tracking-widest text-rose">Modo de venda</p>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setValues({ ...values, saleMode: "unit", unitPrice: "" })}
+              className={`rounded-xl border px-3 py-2 text-xs ${values.saleMode === "unit" ? "border-rose bg-card text-mauve font-medium" : "border-border text-muted-foreground"}`}
+            >
+              Inteiro<br />
+              <span className="text-[10px]">(rende {recipe.servings} fatias)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setValues({ ...values, saleMode: "slice", unitPrice: "" })}
+              className={`rounded-xl border px-3 py-2 text-xs ${values.saleMode === "slice" ? "border-rose bg-card text-mauve font-medium" : "border-border text-muted-foreground"}`}
+            >
+              Por fatia<br />
+              <span className="text-[10px]">(ex: {recipe.servings} fatias por receita)</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-[10px] uppercase tracking-widest text-rose">Nome no PDV</label>
+          <input value={values.name} onChange={(e) => setValues({ ...values, name: e.target.value })} placeholder={recipe?.name ?? "Produto"} className="input-base mt-1" />
+        </div>
+        <div>
+          <label className="text-[10px] uppercase tracking-widest text-rose">
+            Preço unitário {sugg > 0 && <span className="ml-1 text-[10px] normal-case tracking-normal text-muted-foreground">(sug. {formatBRL(sugg)})</span>}
+          </label>
+          <input type="number" step="0.01" value={values.unitPrice} onChange={(e) => setValues({ ...values, unitPrice: e.target.value })} className="input-base mt-1" />
+        </div>
+        {recipe && (
+          <div>
+            <label className="text-[10px] uppercase tracking-widest text-rose">Lotes da receita</label>
+            <input type="number" step="0.5" min="0" value={values.batches} onChange={(e) => setValues({ ...values, batches: e.target.value })} className="input-base mt-1" />
+          </div>
+        )}
+        <div>
+          <label className="text-[10px] uppercase tracking-widest text-rose">Qtd planejada</label>
+          <input type="number" value={values.plannedQty} onChange={(e) => setValues({ ...values, plannedQty: e.target.value })} className="input-base mt-1" />
+        </div>
+      </div>
+
+      {cost && (
+        <div className="grid gap-2 sm:grid-cols-2">
+          <div className="rounded-xl border border-border bg-card p-3 text-xs space-y-1">
+            <p className="text-[10px] uppercase tracking-widest text-rose">Custo real (com perdas + produção)</p>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Custo {values.saleMode === "slice" ? "/fatia" : "/inteiro"}</span>
+              <strong className="text-mauve num">{formatBRL(unitCost)}</strong>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Lucro previsto</span>
+              <strong className={`num ${profit < 0 ? "text-destructive" : "text-success"}`}>{formatBRL(profit)}</strong>
+            </div>
+            {margin != null && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Margem</span>
+                <strong className={margin >= 30 ? "text-success" : margin >= 15 ? "text-warning" : "text-destructive"}>{margin.toFixed(0)}%</strong>
+              </div>
+            )}
+          </div>
+          <div className="rounded-xl border border-border bg-card p-3 text-xs space-y-1">
+            <p className="text-[10px] uppercase tracking-widest text-rose">Só insumos + embalagem</p>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Custo {values.saleMode === "slice" ? "/fatia" : "/inteiro"}</span>
+              <strong className="text-mauve num">{formatBRL(ingOnlyCost)}</strong>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Lucro</span>
+              <strong className={`num ${profitIngOnly < 0 ? "text-destructive" : "text-success"}`}>{formatBRL(profitIngOnly)}</strong>
+            </div>
+            <p className="text-[10px] text-muted-foreground">Ignora perdas e produção</p>
+          </div>
+          {Number(values.batches) > 0 && (
+            <div className="sm:col-span-2 flex justify-between rounded-xl bg-blush/20 px-3 py-2 text-xs">
+              <span className="text-muted-foreground">Custo total ({values.batches} lote{Number(values.batches) === 1 ? "" : "s"})</span>
+              <strong className="text-mauve num">{formatBRL(cost.totalRecipe * Number(values.batches))}</strong>
+            </div>
+          )}
+        </div>
+      )}
+
+      {missing.length > 0 && (
+        <div className="rounded-xl border border-warning/30 bg-warning/10 p-3 text-xs">
+          <p className="flex items-center gap-1 font-medium text-warning"><AlertCircle className="h-3.5 w-3.5" /> Insumos insuficientes</p>
+          <ul className="mt-1 space-y-0.5 text-mauve">
+            {missing.map((m) => (
+              <li key={m.name}>
+                <strong>{m.name}</strong>: precisa {m.needed.toLocaleString("pt-BR", { maximumFractionDigits: 2 })} {m.unit}, em estoque {m.stock} {m.unit}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <button
+        onClick={onSubmit}
+        className="w-full rounded-xl bg-mauve px-4 py-3 text-sm font-medium text-cream hover:opacity-90"
+      >
+        <Save className="mr-1 inline h-4 w-4" /> {submitLabel}
+      </button>
+    </div>
+  );
+}
+
+// ============ Add Product Modal ============
+function AddProductModal({
+  recipes, ingredients, recipeIngs, onClose, onAdd,
+}: {
+  recipes: Recipe[];
+  ingredients: Ingredient[];
+  recipeIngs: RecipeIng[];
+  onClose: () => void;
+  onAdd: (data: Partial<EventProduct>) => void;
+}) {
+  const [values, setValues] = useState<ProductFormValues>({
+    recipeId: "", saleMode: "unit", name: "", unitPrice: "", batches: "1", plannedQty: "",
+  });
 
   const handleSave = () => {
-    const finalName = name.trim() || recipe?.name || "";
+    const recipe = recipes.find((r) => r.id === values.recipeId) ?? null;
+    const finalName = values.name.trim() || recipe?.name || "";
     if (!finalName) return toast.error("Dê um nome ao produto");
     onAdd({
       name: finalName,
-      recipe_id: recipeId || null,
-      sale_mode: saleMode,
-      batches: Number(batches) || 0,
-      unit_price: Number(unitPrice) || 0,
-      planned_qty: Number(plannedQty) || 0,
+      recipe_id: values.recipeId || null,
+      sale_mode: values.saleMode,
+      batches: Number(values.batches) || 0,
+      unit_price: Number(values.unitPrice) || 0,
+      planned_qty: Number(values.plannedQty) || 0,
       image_url: recipe?.image_url ?? null,
     });
   };
 
-  const margin = cost && Number(unitPrice) > 0
-    ? ((Number(unitPrice) - (saleMode === "slice" ? cost.perSlice : cost.perWhole)) / Number(unitPrice)) * 100
-    : null;
+  return (
+    <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="text-mauve">Adicionar produto ao evento</DialogTitle>
+        </DialogHeader>
+        <ProductForm
+          recipes={recipes}
+          ingredients={ingredients}
+          recipeIngs={recipeIngs}
+          values={values}
+          setValues={setValues}
+          submitLabel="Adicionar ao evento"
+          onSubmit={handleSave}
+        />
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ============ Edit Product Modal ============
+function EditProductModal({
+  product, recipes, ingredients, recipeIngs, onClose, onSave,
+}: {
+  product: EventProduct;
+  recipes: Recipe[];
+  ingredients: Ingredient[];
+  recipeIngs: RecipeIng[];
+  onClose: () => void;
+  onSave: (patch: Partial<EventProduct>) => void;
+}) {
+  const [values, setValues] = useState<ProductFormValues>({
+    recipeId: product.recipe_id ?? "",
+    saleMode: product.sale_mode,
+    name: product.name,
+    unitPrice: String(product.unit_price ?? ""),
+    batches: String(product.batches ?? 0),
+    plannedQty: String(product.planned_qty ?? ""),
+  });
+
+  const handleSave = () => {
+    const recipe = recipes.find((r) => r.id === values.recipeId) ?? null;
+    const finalName = values.name.trim() || recipe?.name || "";
+    if (!finalName) return toast.error("Dê um nome ao produto");
+    onSave({
+      name: finalName,
+      recipe_id: values.recipeId || null,
+      sale_mode: values.saleMode,
+      batches: Number(values.batches) || 0,
+      unit_price: Number(values.unitPrice) || 0,
+      planned_qty: Number(values.plannedQty) || 0,
+    });
+  };
 
   return (
-    <div className="fixed inset-0 z-50 bg-mauve/40 backdrop-blur-sm" onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} className="absolute right-0 top-0 h-full w-full max-w-md overflow-y-auto bg-card p-6 shadow-petal">
-        <div className="flex items-center justify-between">
-          <h2 className="font-display text-2xl italic text-mauve">Adicionar produto</h2>
-          <button onClick={onClose} className="rounded-lg p-2 text-muted-foreground"><X className="h-5 w-5" /></button>
-        </div>
-
-        <div className="mt-4 space-y-4">
-          <div>
-            <label className="text-[10px] uppercase tracking-widest text-rose">Receita base</label>
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar receita..." className="input-base mt-1" />
-            <div className="mt-2 max-h-44 overflow-y-auto rounded-xl border border-border">
-              {filteredRecipes.length === 0 ? (
-                <p className="px-3 py-3 text-center text-xs text-muted-foreground">Nenhuma receita.</p>
-              ) : (
-                <ul>
-                  {filteredRecipes.map((r) => (
-                    <li key={r.id}>
-                      <button
-                        type="button"
-                        onClick={() => setRecipeId(r.id)}
-                        className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-blush/30 ${recipeId === r.id ? "bg-blush/50 text-mauve" : "text-mauve/80"}`}
-                      >
-                        {r.image_url && <img src={r.image_url} alt="" className="h-7 w-7 rounded object-cover" />}
-                        <span className="flex-1 truncate">{r.name}</span>
-                        <span className="text-[10px] text-muted-foreground">{r.servings} fatias</span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-              <button
-                type="button"
-                onClick={() => { setRecipeId(""); }}
-                className={`w-full border-t border-border px-3 py-2 text-left text-xs ${!recipeId ? "bg-blush/30 text-mauve" : "text-muted-foreground hover:bg-blush/20"}`}
-              >
-                — sem receita (produto avulso) —
-              </button>
-            </div>
-          </div>
-
-          {recipe && (
-            <div className="rounded-xl border border-border bg-blush/20 p-3">
-              <p className="text-[10px] uppercase tracking-widest text-rose mb-2">Modo de venda</p>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setSaleMode("unit")}
-                  className={`rounded-xl border px-3 py-2 text-xs ${saleMode === "unit" ? "border-rose bg-card text-mauve font-medium" : "border-border text-muted-foreground"}`}
-                >
-                  Inteiro<br /><span className="text-[10px]">({recipe.servings} fatias cada)</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSaleMode("slice")}
-                  className={`rounded-xl border px-3 py-2 text-xs ${saleMode === "slice" ? "border-rose bg-card text-mauve font-medium" : "border-border text-muted-foreground"}`}
-                >
-                  Por fatia<br /><span className="text-[10px]">(1/{recipe.servings} da receita)</span>
-                </button>
-              </div>
-            </div>
-          )}
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-[10px] uppercase tracking-widest text-rose">Nome no PDV</label>
-              <input value={name} onChange={(e) => setName(e.target.value)} placeholder={recipe?.name ?? "Produto"} className="input-base mt-1" />
-            </div>
-            <div>
-              <label className="text-[10px] uppercase tracking-widest text-rose">Preço unitário</label>
-              <input type="number" step="0.01" value={unitPrice} onChange={(e) => setUnitPrice(e.target.value)} className="input-base mt-1" />
-            </div>
-            {recipe && (
-              <div>
-                <label className="text-[10px] uppercase tracking-widest text-rose">Lotes da receita</label>
-                <input type="number" step="0.5" min="0" value={batches} onChange={(e) => setBatches(e.target.value)} className="input-base mt-1" />
-              </div>
-            )}
-            <div>
-              <label className="text-[10px] uppercase tracking-widest text-rose">Qtd planejada</label>
-              <input type="number" value={plannedQty} onChange={(e) => setPlannedQty(e.target.value)} className="input-base mt-1" />
-            </div>
-          </div>
-
-          {cost && (
-            <div className="rounded-xl border border-border bg-card p-3 space-y-1 text-xs">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Custo {saleMode === "slice" ? "por fatia" : "por unidade"}</span>
-                <strong className="text-mauve">{formatBRL(saleMode === "slice" ? cost.perSlice : cost.perWhole)}</strong>
-              </div>
-              {margin != null && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Margem prevista</span>
-                  <strong className={margin >= 30 ? "text-success" : margin >= 15 ? "text-warning" : "text-destructive"}>{margin.toFixed(0)}%</strong>
-                </div>
-              )}
-              {Number(batches) > 0 && (
-                <div className="flex justify-between border-t border-border/60 pt-1">
-                  <span className="text-muted-foreground">Custo total ({batches} lote{Number(batches) === 1 ? "" : "s"})</span>
-                  <strong className="text-mauve">{formatBRL(cost.totalRecipe * Number(batches))}</strong>
-                </div>
-              )}
-            </div>
-          )}
-
-          {missing.length > 0 && (
-            <div className="rounded-xl border border-warning/30 bg-warning/10 p-3 text-xs">
-              <p className="flex items-center gap-1 font-medium text-warning"><AlertCircle className="h-3.5 w-3.5" /> Insumos insuficientes</p>
-              <ul className="mt-1 space-y-0.5 text-mauve">
-                {missing.map((m) => (
-                  <li key={m.name}>
-                    <strong>{m.name}</strong>: precisa {m.needed.toLocaleString("pt-BR", { maximumFractionDigits: 2 })} {m.unit}, em estoque {m.stock} {m.unit}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          <button
-            onClick={handleSave}
-            className="w-full rounded-xl bg-mauve px-4 py-3 text-sm font-medium text-cream hover:opacity-90"
-          >
-            <Plus className="mr-1 inline h-4 w-4" /> Adicionar ao evento
-          </button>
-        </div>
-      </div>
-    </div>
+    <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="text-mauve">Editar produto</DialogTitle>
+        </DialogHeader>
+        <ProductForm
+          recipes={recipes}
+          ingredients={ingredients}
+          recipeIngs={recipeIngs}
+          values={values}
+          setValues={setValues}
+          submitLabel="Salvar alterações"
+          onSubmit={handleSave}
+        />
+      </DialogContent>
+    </Dialog>
   );
 }
