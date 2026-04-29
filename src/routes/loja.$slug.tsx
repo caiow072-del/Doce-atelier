@@ -458,86 +458,26 @@ function StorefrontPage() {
             />
           );
           case "catalog": return (
-            <section key={s.key} className="mx-auto max-w-5xl px-5 py-6">
-              <SectionHeading>Catálogo</SectionHeading>
+            <section key={s.key} ref={catalogRef} className="mx-auto max-w-3xl px-3 py-5 sm:px-5">
               {!editing && (
-                <div className="mb-4 relative">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-mauve/50" />
-                  <input
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Buscar bolo, doce..."
-                    className="w-full rounded-full border border-rose/40 bg-white py-2.5 pl-10 pr-4 text-sm text-mauve placeholder:text-mauve/40 focus:border-rose focus:outline-none"
+                <div className="mb-4">
+                  <CategoryPicker
+                    categories={categories}
+                    activeCategory={activeCategory}
+                    onChange={setActiveCategory}
+                    search={search}
+                    onSearch={setSearch}
                   />
                 </div>
               )}
-              {!editing && categories.length > 0 && (
-                <div className="mb-4 flex flex-wrap gap-1.5">
-                  {(["all", ...categories] as const).map((c) => (
-                    <button key={c} onClick={() => setActiveCategory(c)}
-                      className={`rounded-full px-3 py-1 text-[11px] transition ${activeCategory === c ? "bg-mauve text-cream" : "bg-white border border-rose/30 text-mauve hover:border-rose"}`}>
-                      {c === "all" ? "Todos" : c}
-                    </button>
-                  ))}
-                </div>
-              )}
-              {filtered.length === 0 ? (
-                <div className="card-soft p-10 text-center text-mauve/70">
-                  <Cake className="mx-auto mb-3 h-10 w-10 text-mauve/30" strokeWidth={1.2} />
-                  <p>Nenhum produto disponível.</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {filtered.map((r) => {
-                    const promo = promoMap.get(r.id);
-                    const hasPromoPrice = r.promo_price != null && r.public_price != null && r.promo_price < r.public_price;
-                    const showPriceTo = promo?.price_to != null;
-                    const priceFrom = promo?.price_from ?? r.public_price;
-                    const finalPrice = showPriceTo ? promo!.price_to! : (hasPromoPrice ? r.promo_price! : r.public_price);
-                    const compareAt = showPriceTo ? priceFrom : (hasPromoPrice ? r.public_price : null);
-                    return (
-                      <article key={r.id} className={`group flex flex-col overflow-hidden rounded-3xl border bg-white shadow-sm transition hover:shadow-lg ${r.is_featured ? "border-rose ring-2 ring-rose/40" : "border-rose/30"}`}>
-                        <div className="relative aspect-[4/3] overflow-hidden bg-blush">
-                          {r.image_url ? (
-                            <img src={r.image_url} alt={r.name} loading="lazy" className="h-full w-full object-cover transition group-hover:scale-105" />
-                          ) : (<div className="grid h-full w-full place-items-center"><Cake className="h-12 w-12 text-mauve/40" /></div>)}
-                          {(promo || hasPromoPrice) && (
-                            <span className="absolute left-2 top-2 rounded-full bg-rose px-2.5 py-0.5 text-[10px] font-semibold text-mauve shadow">PROMO</span>
-                          )}
-                          {r.is_featured && (
-                            <span className="absolute left-2 bottom-2 inline-flex items-center gap-1 rounded-full bg-mauve px-2 py-0.5 text-[10px] font-semibold text-cream shadow">
-                              ★ Destaque
-                            </span>
-                          )}
-                          {r.category && (
-                            <span className="absolute right-2 top-2 rounded-full bg-white/90 px-2 py-0.5 text-[10px] text-mauve">{r.category}</span>
-                          )}
-                        </div>
-                        <div className="flex flex-1 flex-col gap-2 p-4">
-                          <h3 className="font-display text-lg italic text-mauve">{r.name}</h3>
-                          {r.description && <p className="line-clamp-2 text-xs text-mauve/70">{r.description}</p>}
-                          <div className="mt-auto flex items-center justify-between pt-2">
-                            <div className="flex items-baseline gap-1.5">
-                              {compareAt != null && (
-                                <span className="text-xs text-mauve/50 line-through">{brl(compareAt)}</span>
-                              )}
-                              <span className="text-base font-semibold text-mauve">
-                                {finalPrice != null ? brl(finalPrice) : "Sob consulta"}
-                              </span>
-                            </div>
-                            <button onClick={() => addToCart(r)} disabled={editing} className="inline-flex items-center gap-1 rounded-full bg-mauve px-4 py-2 text-xs font-medium text-cream hover:opacity-90 disabled:opacity-50">
-                              <Plus className="h-3.5 w-3.5" /> Adicionar
-                            </button>
-                          </div>
-                        </div>
-                      </article>
-                    );
-                  })}
-                </div>
-              )}
+              <ProductListHorizontal
+                products={filtered}
+                onAdd={addToCart}
+                disabled={editing}
+              />
             </section>
           );
-          case "events": return null; // shown via /loja/{slug}/e/{eventId}
+          case "events": return null;
           case "gallery": return (
             <GallerySection
               key={s.key}
