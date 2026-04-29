@@ -21,6 +21,7 @@ import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { recipeCost, type IngredientLite, type RecipeIngredientLite, type RecipeLite } from "@/lib/costs";
 import { PageContainer } from "@/components/PageContainer";
+import { OnboardingChecklist } from "@/components/OnboardingChecklist";
 import heroCake from "@/assets/hero-cake.jpg";
 
 const formatBRL = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
