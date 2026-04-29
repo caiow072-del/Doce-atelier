@@ -226,6 +226,7 @@ function ClientesPage() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+    </PageContainer>
   );
 }
 

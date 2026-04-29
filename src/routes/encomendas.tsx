@@ -316,6 +316,7 @@ function EncomendasPage() {
         />
       )}
     </div>
+    </PageContainer>
   );
 }
 

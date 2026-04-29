@@ -340,6 +340,7 @@ function CatalogoPage() {
       {/* Modal QR */}
       {qrTarget && <QrModal target={qrTarget} onClose={() => setQrTarget(null)} />}
     </div>
+    </PageContainer>
   );
 }
 
