@@ -587,6 +587,7 @@ function PDVPage() {
             </AnimatePresence>
           </ul>
         )}
+      </div>
         </div>
       </div>
 
