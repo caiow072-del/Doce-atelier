@@ -170,5 +170,6 @@ function CalendarioPage() {
         </div>
       )}
     </div>
+    </PageContainer>
   );
 }
