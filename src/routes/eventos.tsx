@@ -460,7 +460,7 @@ function EventosPage() {
   }, [filteredEvents, listSearch]);
 
   return (
-    <PageContainer width="default">
+    <PageContainer width="narrow">
       <PageHeader title="Eventos" />
 
       {events.length === 0 ? (
