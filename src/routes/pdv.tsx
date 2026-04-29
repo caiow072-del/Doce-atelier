@@ -333,53 +333,55 @@ function PDVPage() {
 
       <div className="space-y-4">
         <div className="min-w-0 space-y-4">
-          {/* Seletor de contexto */}
-          <div className="card-soft p-3">
-            <p className="mb-2 text-[10px] uppercase tracking-widest text-rose">Vendendo em</p>
-            <div className="flex flex-wrap gap-1.5">
-              <button
-                onClick={() => setSelectedEventId(null)}
-                className={`inline-flex max-w-full items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs ${
-                  !usingEvent ? "border-rose bg-blush/60 text-mauve" : "border-border bg-card text-muted-foreground hover:border-rose/40"
-                }`}
-              >
-                <Store className="h-3.5 w-3.5 shrink-0" /> Loja (avulso)
-              </button>
-              {events.map((e) => (
+          {/* Seletor de contexto + Total (2 colunas no desktop) */}
+          <div className="grid gap-3 lg:grid-cols-[1fr_auto]">
+            <div className="card-soft p-3 min-w-0">
+              <p className="mb-2 text-[10px] uppercase tracking-widest text-rose">Vendendo em</p>
+              <div className="flex flex-wrap gap-1.5">
                 <button
-                  key={e.id}
-                  onClick={() => setSelectedEventId(e.id)}
-                  className={`inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs ${
-                    selectedEventId === e.id ? "border-rose bg-blush/60 text-mauve" : "border-border bg-card text-muted-foreground hover:border-rose/40"
+                  onClick={() => setSelectedEventId(null)}
+                  className={`inline-flex max-w-full items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs ${
+                    !usingEvent ? "border-rose bg-blush/60 text-mauve" : "border-border bg-card text-muted-foreground hover:border-rose/40"
                   }`}
                 >
-                  <CalendarHeart className="h-3.5 w-3.5 shrink-0" />
-                  <span className="truncate">{e.name}</span>
-                  <span className="shrink-0 text-[10px] text-muted-foreground num">{new Date(e.date).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}</span>
+                  <Store className="h-3.5 w-3.5 shrink-0" /> Loja (avulso)
                 </button>
-              ))}
+                {events.map((e) => (
+                  <button
+                    key={e.id}
+                    onClick={() => setSelectedEventId(e.id)}
+                    className={`inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs ${
+                      selectedEventId === e.id ? "border-rose bg-blush/60 text-mauve" : "border-border bg-card text-muted-foreground hover:border-rose/40"
+                    }`}
+                  >
+                    <CalendarHeart className="h-3.5 w-3.5 shrink-0" />
+                    <span className="truncate">{e.name}</span>
+                    <span className="shrink-0 text-[10px] text-muted-foreground num">{new Date(e.date).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}</span>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
 
-          {/* Total do período */}
-          <div className="card-soft flex items-center justify-between gap-3 bg-gradient-to-br from-blush/60 to-card p-3">
-            <div>
-              <p className="text-[10px] uppercase tracking-widest text-rose">Total {period === "today" ? "hoje" : period === "week" ? "7 dias" : period === "month" ? "30 dias" : "tudo"}</p>
-              <p className="text-2xl font-semibold text-mauve num">{fmtBRL(totalToday)}</p>
-              <p className="text-[10px] text-muted-foreground">{sales.length} vendas</p>
-            </div>
-            <div className="flex flex-col gap-0.5 rounded-xl border border-border bg-card/70 p-0.5">
-              {([
-                { k: "today", l: "Hoje" },
-                { k: "week", l: "7d" },
-                { k: "month", l: "30d" },
-                { k: "all", l: "Tudo" },
-              ] as const).map((p) => (
-                <button key={p.k} onClick={() => setPeriod(p.k)}
-                  className={`rounded-lg px-2 py-0.5 text-[10px] transition ${period === p.k ? "bg-mauve text-cream" : "text-mauve/70 hover:text-mauve"}`}>
-                  {p.l}
-                </button>
-              ))}
+            {/* Total do período - compacto à direita no desktop */}
+            <div className="card-soft flex items-center justify-between gap-3 bg-gradient-to-br from-blush/60 to-card p-3 lg:min-w-[260px]">
+              <div>
+                <p className="text-[10px] uppercase tracking-widest text-rose">Total {period === "today" ? "hoje" : period === "week" ? "7 dias" : period === "month" ? "30 dias" : "tudo"}</p>
+                <p className="text-2xl font-semibold text-mauve num">{fmtBRL(totalToday)}</p>
+                <p className="text-[10px] text-muted-foreground">{sales.length} vendas</p>
+              </div>
+              <div className="flex flex-col gap-0.5 rounded-xl border border-border bg-card/70 p-0.5">
+                {([
+                  { k: "today", l: "Hoje" },
+                  { k: "week", l: "7d" },
+                  { k: "month", l: "30d" },
+                  { k: "all", l: "Tudo" },
+                ] as const).map((p) => (
+                  <button key={p.k} onClick={() => setPeriod(p.k)}
+                    className={`rounded-lg px-2 py-0.5 text-[10px] transition ${period === p.k ? "bg-mauve text-cream" : "text-mauve/70 hover:text-mauve"}`}>
+                    {p.l}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
