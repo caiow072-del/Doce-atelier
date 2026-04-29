@@ -739,7 +739,7 @@ function TabBtn({
         <span className="text-sm font-medium text-mauve">{label}</span>
         {closed && <Lock className="ml-auto h-3 w-3 text-muted-foreground" />}
       </div>
-      {hint && <p className="mt-1 text-[11px] text-muted-foreground">{hint}</p>}
+      {hint && <p className="mt-1 hidden text-[11px] text-muted-foreground md:block">{hint}</p>}
     </button>
   );
 }
