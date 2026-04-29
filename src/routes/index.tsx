@@ -193,6 +193,12 @@ function Dashboard() {
         </div>
       </motion.section>
 
+      <OnboardingChecklist
+        ingredientsCount={ingredientsCount}
+        recipesCount={recipesCount}
+        hasStorefront={storefrontConfigured}
+      />
+
       {/* ============ Metric grid ============ */}
       <section className="grid-cards-sm">
         <Metric
