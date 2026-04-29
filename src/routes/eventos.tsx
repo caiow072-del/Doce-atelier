@@ -923,9 +923,14 @@ function ProductsTab({
                         onChange={(e) => onUpdate(p.id, { planned_qty: Number(e.target.value) || 0 })}
                         className="w-16 rounded-lg border border-border bg-background px-2 py-1 text-right text-xs text-mauve disabled:opacity-60"
                       />
-                      <button disabled={closed} onClick={() => onRemove(p.id)} className="rounded-lg p-1 text-destructive hover:bg-destructive/10 disabled:opacity-30">
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                      <div className="flex gap-0.5">
+                        <button disabled={closed} onClick={() => setEditingId(p.id)} className="rounded-lg p-1 text-muted-foreground hover:bg-blush/50 hover:text-mauve disabled:opacity-30" aria-label="Editar">
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button disabled={closed} onClick={() => onRemove(p.id)} className="rounded-lg p-1 text-destructive hover:bg-destructive/10 disabled:opacity-30" aria-label="Excluir">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </li>
