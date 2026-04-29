@@ -316,12 +316,21 @@ function PDVPage() {
         title="Ponto de venda"
         subtitle="Toque, monte o carrinho e cobre."
         actions={
-          <button
-            onClick={() => setShowManage(true)}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-blush/50 px-3 py-2 text-xs font-medium text-mauve hover:bg-blush/80"
-          >
-            <Settings2 className="h-3.5 w-3.5" /> Gerenciar produtos
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowHotkeys(true)}
+              className="hidden lg:inline-flex items-center gap-1.5 rounded-xl bg-blush/40 px-3 py-2 text-xs font-medium text-mauve hover:bg-blush/70"
+              title="Atalhos de teclado (?)"
+            >
+              <Keyboard className="h-3.5 w-3.5" /> Atalhos
+            </button>
+            <button
+              onClick={() => setShowManage(true)}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-blush/50 px-3 py-2 text-xs font-medium text-mauve hover:bg-blush/80"
+            >
+              <Settings2 className="h-3.5 w-3.5" /> Gerenciar produtos
+            </button>
+          </div>
         }
       />
 
