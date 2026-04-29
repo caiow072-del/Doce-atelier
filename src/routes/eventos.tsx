@@ -449,100 +449,72 @@ function EventosPage() {
     return Array.from(set);
   }, [events, types]);
 
+  const [showListDrawer, setShowListDrawer] = useState(false);
+  const [listSearch, setListSearch] = useState("");
+
+  const searchedEvents = useMemo(() => {
+    const q = listSearch.trim().toLowerCase();
+    if (!q) return filteredEvents;
+    return filteredEvents.filter((e) => e.name.toLowerCase().includes(q));
+  }, [filteredEvents, listSearch]);
+
   return (
     <PageContainer width="default">
-      <PageHeader
-        eyebrow="Coração do negócio"
-        title="Eventos"
-        subtitle="Festivais, feiras e festas — produtos, produção e caixa em um só lugar."
-        actions={
-          <>
-            <button onClick={() => setShowTypes(true)} className="inline-flex items-center gap-1.5 rounded-xl bg-blush/50 px-3 py-2 text-xs font-medium text-mauve hover:bg-blush/80">
-              <Settings2 className="h-3.5 w-3.5" /> Tipos
-            </button>
-            <button onClick={() => setShowNew(true)} className="inline-flex items-center gap-1.5 rounded-xl bg-mauve px-3 py-2 text-xs font-medium text-cream hover:opacity-90">
-              <Plus className="h-3.5 w-3.5" /> Novo evento
-            </button>
-          </>
-        }
-      />
+      <PageHeader title="Eventos" />
 
-      {events.length > 0 && (
-        <div className="mb-4 flex flex-wrap gap-2">
-          <KindChip label="Todos" icon={Tag} active={filterKind === "all"} onClick={() => setFilterKind("all")} count={events.length} />
-          {(["festival", "party", "fair", "wedding", "generic"] as EventKind[])
-            .filter((k) => kindsPresent.includes(k))
-            .map((k) => {
-              const meta = KIND_META[k];
-              const count = events.filter((e) => kindOf(e.event_type_id) === k).length;
-              return (
-                <KindChip key={k} label={meta.label} icon={meta.icon} active={filterKind === k} onClick={() => setFilterKind(k)} count={count} />
-              );
-            })}
+      {events.length === 0 ? (
+        <div className="card-soft px-6 py-12 text-center">
+          <CalendarHeart className="mx-auto h-12 w-12 text-rose" strokeWidth={1.4} />
+          <p className="mt-3 text-sm text-muted-foreground">Nenhum evento ainda.</p>
+          <button
+            onClick={() => setShowNew(true)}
+            className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-mauve px-4 py-2 text-xs font-medium text-cream hover:opacity-90"
+          >
+            <Plus className="h-3.5 w-3.5" /> Criar primeiro evento
+          </button>
         </div>
+      ) : (
+        <>
+          {/* Seletor compacto de evento */}
+          <button
+            onClick={() => setShowListDrawer(true)}
+            className="card-soft mb-4 flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:border-rose/40"
+          >
+            {selected ? (
+              <>
+                {(() => {
+                  const k = kindOf(selected.event_type_id);
+                  const Icon = KIND_META[k].icon;
+                  return (
+                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-blush/50">
+                      <Icon className="h-5 w-5 text-mauve" strokeWidth={1.6} />
+                    </div>
+                  );
+                })()}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-mauve">{selected.name}</p>
+                  <p className="truncate text-[11px] text-muted-foreground">
+                    {fmtDate(selected.date)}
+                    {selected.start_time ? ` · ${selected.start_time}` : ""}
+                    {selected.location ? ` · ${selected.location}` : ""}
+                  </p>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-blush/50">
+                  <CalendarHeart className="h-5 w-5 text-mauve" strokeWidth={1.6} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-mauve">Escolher evento</p>
+                  <p className="text-[11px] text-muted-foreground">{events.length} no histórico</p>
+                </div>
+              </>
+            )}
+            <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+          </button>
+        </>
       )}
-
-      <div className="card-soft mb-5 p-4">
-        <div className="mb-3 flex items-center justify-between gap-2">
-          <p className="text-[11px] uppercase tracking-widest text-rose">Histórico</p>
-          <span className="text-[11px] text-muted-foreground num">{filteredEvents.length} eventos</span>
-        </div>
-        {filteredEvents.length === 0 ? (
-          <div className="py-8 text-center">
-            <CalendarHeart className="mx-auto h-10 w-10 text-rose" strokeWidth={1.4} />
-            <p className="mt-2 text-sm text-muted-foreground">
-              {events.length === 0 ? "Nenhum evento ainda — crie o primeiro." : "Nenhum evento neste filtro."}
-            </p>
-          </div>
-        ) : (
-          <div className={`grid-cards-md ${filteredEvents.length > 9 ? "max-h-[460px] overflow-y-auto pr-1" : ""}`}>
-            {filteredEvents.map((e) => {
-              const t = typeOf(e.event_type_id);
-              const k = t?.kind ?? "generic";
-              const Icon = KIND_META[k].icon;
-              const active = e.id === selectedId;
-              const closed = !!e.closed_at;
-              return (
-                <button
-                  key={e.id}
-                  onClick={() => setSelectedId(e.id)}
-                  className={`flex items-start gap-3 rounded-2xl border p-3 text-left transition-colors ${
-                    active ? "border-rose bg-blush/60 text-mauve shadow-soft" : "border-border bg-card text-mauve hover:border-rose/40"
-                  }`}
-                >
-                  <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${active ? "bg-rose/30" : "bg-blush/40"}`}>
-                    <Icon className="h-5 w-5 text-mauve" strokeWidth={1.6} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[10px] uppercase tracking-wider text-rose">{t?.name ?? "Sem tipo"}</p>
-                    <p className="truncate text-sm font-medium">{e.name}</p>
-                    <p className="text-[11px] text-muted-foreground">
-                      {fmtDate(e.date)}
-                      {e.start_time ? ` · ${e.start_time}` : ""}
-                      {e.recurrence !== "none" && (() => {
-                        const next = nextOccurrence({
-                          date: e.date,
-                          recurrence: e.recurrence,
-                          recurrence_until: e.recurrence_until,
-                          weekday: e.weekday,
-                          day_of_month: e.day_of_month,
-                        });
-                        return (
-                          <span className="ml-1 inline-flex items-center gap-0.5 text-rose">
-                            <Repeat className="h-3 w-3" /> {e.recurrence === "weekly" ? "semanal" : "mensal"}
-                            {next && <span className="ml-1 text-muted-foreground">· próx: {fmtDate(next.toISOString())}</span>}
-                          </span>
-                        );
-                      })()}
-                    </p>
-                  </div>
-                  {closed && <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </div>
 
       {!selected && events.length > 0 && (
         <div className="card-soft p-8 text-center text-sm text-muted-foreground">Selecione um evento.</div>
@@ -550,7 +522,7 @@ function EventosPage() {
 
       {selected && (
         <>
-          <div className="card-soft p-5">
+          <div className="card-soft mb-4 p-4 md:p-5">
             {editingMeta ? (
               <EditMeta
                 event={selected}
@@ -567,22 +539,20 @@ function EventosPage() {
             )}
 
             <div className="mt-4">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-mauve">Produção</span>
-                <span className="text-muted-foreground">{doneTasks}/{totalTasks} tarefas</span>
-              </div>
-              <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-secondary">
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
                 <div className="h-full rounded-full bg-rose transition-all" style={{ width: `${progress}%` }} />
               </div>
+              <p className="mt-1.5 text-right text-[11px] text-muted-foreground num">{doneTasks}/{totalTasks} tarefas</p>
             </div>
           </div>
 
           {/* Tabs */}
-          <div className="grid grid-cols-3 gap-2">
+          <div className="mb-4 grid grid-cols-3 gap-2">
             <TabBtn active={activeTab === "products"} onClick={() => setActiveTab("products")} icon={Package} label="Produtos" hint={`${eventProducts.length}`} />
             <TabBtn active={activeTab === "tasks"} onClick={() => setActiveTab("tasks")} icon={CheckCircle2} label="Tarefas" hint={`${doneTasks}/${totalTasks}`} />
             <TabBtn active={activeTab === "cashbox"} onClick={() => setActiveTab("cashbox")} icon={Wallet} label="Caixa" hint={formatBRL(cashbox.total)} closed={!!selected.closed_at} />
           </div>
+
 
           {activeTab === "products" && (
             <ProductsTab
