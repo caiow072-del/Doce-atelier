@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
+import { PageContainer } from "@/components/PageContainer";
 import { formatBRL } from "@/lib/store";
 import { SUGGESTED_INGREDIENTS, type SuggestedIngredient } from "@/lib/suggestions";
 import {
@@ -98,52 +99,54 @@ function InsumosPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <PageContainer width="default">
       <PageHeader
         eyebrow="Estoque"
         title="Insumos"
-        subtitle="Cadastre seus ingredientes para que o sistema calcule o custo de cada receita."
+        subtitle="Cadastre seus ingredientes para o sistema calcular o custo das receitas."
+        actions={
+          <>
+            <div className="inline-flex items-center rounded-xl border border-border bg-card p-0.5">
+              <button
+                onClick={() => setView("grid")}
+                aria-label="Grade"
+                className={`grid h-8 w-8 place-items-center rounded-lg ${view === "grid" ? "bg-blush/60 text-mauve" : "text-muted-foreground hover:text-mauve"}`}
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => setView("list")}
+                aria-label="Lista"
+                className={`grid h-8 w-8 place-items-center rounded-lg ${view === "list" ? "bg-blush/60 text-mauve" : "text-muted-foreground hover:text-mauve"}`}
+              >
+                <List className="h-4 w-4" />
+              </button>
+            </div>
+            <button
+              onClick={() => setShowSuggestions(true)}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-rose/40 bg-blush/30 px-3 py-2 text-xs font-medium text-mauve hover:bg-blush/50 sm:text-sm"
+            >
+              <Sparkles className="h-4 w-4" /> Sugestões
+            </button>
+            <button
+              onClick={() => setCreating(true)}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-mauve px-3 py-2 text-xs font-medium text-cream hover:opacity-90 sm:text-sm"
+            >
+              <Plus className="h-4 w-4" /> Novo insumo
+            </button>
+          </>
+        }
       />
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative max-w-md flex-1">
+      <div className="mb-4">
+        <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar insumo..."
-            className="w-full rounded-2xl border border-border bg-card py-2.5 pl-9 pr-3 text-sm text-mauve outline-none focus:border-rose"
+            className="w-full rounded-xl border border-border bg-card py-2 pl-9 pr-3 text-sm text-mauve outline-none focus:border-rose"
           />
-        </div>
-        <div className="flex gap-2">
-          <div className="inline-flex items-center rounded-2xl border border-border bg-card p-0.5">
-            <button
-              onClick={() => setView("grid")}
-              aria-label="Visualizar em grade"
-              className={`grid h-9 w-9 place-items-center rounded-xl ${view === "grid" ? "bg-blush/60 text-mauve" : "text-muted-foreground hover:text-mauve"}`}
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => setView("list")}
-              aria-label="Visualizar em lista"
-              className={`grid h-9 w-9 place-items-center rounded-xl ${view === "list" ? "bg-blush/60 text-mauve" : "text-muted-foreground hover:text-mauve"}`}
-            >
-              <List className="h-4 w-4" />
-            </button>
-          </div>
-          <button
-            onClick={() => setShowSuggestions(true)}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-rose/40 bg-blush/30 px-3 py-2.5 text-sm font-medium text-mauve hover:bg-blush/50"
-          >
-            <Sparkles className="h-4 w-4" /> Sugestões
-          </button>
-          <button
-            onClick={() => setCreating(true)}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-mauve px-4 py-2.5 text-sm font-medium text-cream hover:opacity-90"
-          >
-            <Plus className="h-4 w-4" /> Novo insumo
-          </button>
         </div>
       </div>
 
@@ -157,7 +160,7 @@ function InsumosPage() {
           onShowSuggestions={() => setShowSuggestions(true)}
         />
       ) : view === "grid" ? (
-        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        <div className="grid-cards-sm">
           {filtered.map((i) => {
             const unitCost = i.package_qty > 0 ? i.price_paid / i.package_qty : 0;
             const low = i.stock_qty <= 0;
@@ -342,7 +345,7 @@ function InsumosPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </PageContainer>
   );
 }
 

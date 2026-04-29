@@ -14,6 +14,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
+import { PageContainer } from "@/components/PageContainer";
 import { uploadShopImage } from "@/lib/upload";
 import { toast } from "sonner";
 
@@ -183,6 +184,7 @@ function CatalogoPage() {
   };
 
   return (
+    <PageContainer width="wide">
     <div className="space-y-6">
       <PageHeader
         eyebrow="Vitrine pública"

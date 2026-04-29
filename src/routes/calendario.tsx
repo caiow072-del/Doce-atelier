@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, CalendarDays, Repeat } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
+import { PageContainer } from "@/components/PageContainer";
 import { getOccurrences } from "@/lib/recurrence";
 
 export const Route = createFileRoute("/calendario")({
@@ -88,6 +89,7 @@ function CalendarioPage() {
   const isToday = (d: Date) => d.toDateString() === today.toDateString();
 
   return (
+    <PageContainer width="default">
     <div className="space-y-6">
       <PageHeader eyebrow="Agenda" title="Calendário" subtitle="Eventos e entregas em um só lugar." />
 
@@ -168,5 +170,6 @@ function CalendarioPage() {
         </div>
       )}
     </div>
+    </PageContainer>
   );
 }

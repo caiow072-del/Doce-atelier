@@ -177,8 +177,8 @@ export function AppShell() {
             </div>
           </header>
 
-          {/* Page */}
-          <main className="mx-auto w-full max-w-7xl flex-1 overflow-x-hidden px-4 pb-28 pt-6 sm:px-6 lg:px-10 lg:pb-10 lg:pt-10">
+          {/* Page — no max-w here; each page picks its own via <PageContainer/> */}
+          <main className="w-full flex-1 overflow-x-hidden px-4 pb-28 pt-4 sm:px-6 lg:px-8 lg:pb-10 lg:pt-6">
             <Outlet />
           </main>
         </div>

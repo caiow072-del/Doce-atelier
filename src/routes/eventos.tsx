@@ -34,6 +34,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
+import { PageContainer } from "@/components/PageContainer";
 import { formatBRL } from "@/lib/store";
 import { toast } from "sonner";
 import { nextOccurrence, WEEKDAYS, parseLocalDate } from "@/lib/recurrence";
@@ -449,15 +450,25 @@ function EventosPage() {
   }, [events, types]);
 
   return (
-    <div className="space-y-6">
+    <PageContainer width="default">
       <PageHeader
         eyebrow="Coração do negócio"
         title="Eventos"
         subtitle="Festivais, feiras e festas — produtos, produção e caixa em um só lugar."
+        actions={
+          <>
+            <button onClick={() => setShowTypes(true)} className="inline-flex items-center gap-1.5 rounded-xl bg-blush/50 px-3 py-2 text-xs font-medium text-mauve hover:bg-blush/80">
+              <Settings2 className="h-3.5 w-3.5" /> Tipos
+            </button>
+            <button onClick={() => setShowNew(true)} className="inline-flex items-center gap-1.5 rounded-xl bg-mauve px-3 py-2 text-xs font-medium text-cream hover:opacity-90">
+              <Plus className="h-3.5 w-3.5" /> Novo evento
+            </button>
+          </>
+        }
       />
 
       {events.length > 0 && (
-        <div className="flex flex-wrap gap-2">
+        <div className="mb-4 flex flex-wrap gap-2">
           <KindChip label="Todos" icon={Tag} active={filterKind === "all"} onClick={() => setFilterKind("all")} count={events.length} />
           {(["festival", "party", "fair", "wedding", "generic"] as EventKind[])
             .filter((k) => kindsPresent.includes(k))
@@ -471,17 +482,10 @@ function EventosPage() {
         </div>
       )}
 
-      <div className="card-soft p-4">
-        <div className="flex items-center justify-between gap-2 mb-3">
+      <div className="card-soft mb-5 p-4">
+        <div className="mb-3 flex items-center justify-between gap-2">
           <p className="text-[11px] uppercase tracking-widest text-rose">Histórico</p>
-          <div className="flex gap-2">
-            <button onClick={() => setShowTypes(true)} className="inline-flex items-center gap-1 rounded-xl bg-blush/50 px-3 py-1.5 text-xs font-medium text-mauve hover:bg-blush/80">
-              <Settings2 className="h-3.5 w-3.5" /> Tipos
-            </button>
-            <button onClick={() => setShowNew(true)} className="inline-flex items-center gap-1 rounded-xl bg-mauve px-3 py-1.5 text-xs font-medium text-cream hover:opacity-90">
-              <Plus className="h-3.5 w-3.5" /> Novo evento
-            </button>
-          </div>
+          <span className="text-[11px] text-muted-foreground num">{filteredEvents.length} eventos</span>
         </div>
         {filteredEvents.length === 0 ? (
           <div className="py-8 text-center">
@@ -491,7 +495,7 @@ function EventosPage() {
             </p>
           </div>
         ) : (
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          <div className={`grid-cards-md ${filteredEvents.length > 9 ? "max-h-[460px] overflow-y-auto pr-1" : ""}`}>
             {filteredEvents.map((e) => {
               const t = typeOf(e.event_type_id);
               const k = t?.kind ?? "generic";
@@ -643,7 +647,7 @@ function EventosPage() {
       {showTypes && shopId && (
         <TypesSheet shopId={shopId} types={types} onClose={() => setShowTypes(false)} onChange={setTypes} />
       )}
-    </div>
+    </PageContainer>
   );
 }
 
