@@ -963,7 +963,7 @@ function ProductsTab({
       <div className="card-soft overflow-hidden">
         <button
           onClick={() => setShowInsumos(!showInsumos)}
-          className="flex w-full items-center justify-between border-b border-border/60 bg-blush/30 px-5 py-3 md:px-4 md:py-2.5"
+          className="flex w-full items-center justify-between border-b border-border/60 bg-blush/30 px-3 py-2.5 sm:px-4 sm:py-3"
         >
           <div className="flex items-center gap-2">
             <ShoppingBasket className="h-4 w-4 text-mauve" strokeWidth={1.6} />
@@ -974,11 +974,11 @@ function ProductsTab({
         </button>
         {showInsumos && (
           shoppingList.length === 0 ? (
-            <p className="px-5 py-6 text-center text-sm text-muted-foreground">Adicione produtos com receita vinculada e quantidade planejada.</p>
+            <p className="px-4 py-6 text-center text-sm text-muted-foreground">Adicione produtos com receita vinculada e quantidade planejada.</p>
           ) : (
             <ul className="divide-y divide-border/60 md:grid md:grid-cols-2 md:gap-x-6 md:divide-y-0 md:px-4 md:py-2">
               {shoppingList.map((it) => (
-                <li key={it.name} className="flex items-center justify-between px-5 py-2.5 text-sm md:border-b md:border-border/40 md:px-0">
+                <li key={it.name} className="flex items-center justify-between px-3 py-2.5 sm:px-4 text-sm md:border-b md:border-border/40 md:px-0">
                   <span className="text-mauve">{it.name}</span>
                   <span className="text-muted-foreground">{it.qty.toLocaleString("pt-BR", { maximumFractionDigits: 2 })} {it.unit}</span>
                 </li>
@@ -1041,7 +1041,7 @@ function TasksTab({
       </div>
       <div className="card-soft mt-3 overflow-hidden">
         {eventTasks.length === 0 && (
-          <div className="border-b border-border/60 bg-blush/20 px-5 py-3">
+          <div className="border-b border-border/60 bg-blush/20 px-3 py-3 sm:px-4">
             <button onClick={onSeed} className="inline-flex items-center gap-1.5 rounded-xl bg-mauve px-3 py-1.5 text-xs font-medium text-cream hover:opacity-90">
               <Sparkles className="h-3.5 w-3.5" /> Gerar checklist sugerido para {KIND_META[kind].label}
             </button>
@@ -1049,9 +1049,9 @@ function TasksTab({
         )}
         <ul className="divide-y divide-border/60">
           {dayTasks.length === 0 ? (
-            <li className="px-5 py-6 text-center text-sm text-muted-foreground">Sem tarefas neste dia.</li>
+            <li className="px-4 py-6 text-center text-sm text-muted-foreground">Sem tarefas neste dia.</li>
           ) : dayTasks.map((t) => (
-            <li key={t.id} className="flex items-center gap-3 px-5 py-3">
+            <li key={t.id} className="flex items-center gap-3 px-3 py-3 sm:px-4">
               <button onClick={() => onToggle(t)} className="flex flex-1 items-center gap-3 text-left">
                 {t.done ? <CheckCircle2 className="h-6 w-6 text-success shrink-0" strokeWidth={1.6} /> : <Circle className="h-6 w-6 text-rose shrink-0" strokeWidth={1.6} />}
                 <span className={`text-sm ${t.done ? "text-muted-foreground line-through" : "text-mauve"}`}>{t.task}</span>
@@ -1156,15 +1156,15 @@ function CashboxTab({
 
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="card-soft overflow-hidden">
-          <p className="border-b border-border/60 bg-blush/30 px-5 py-3 text-sm font-medium text-mauve md:px-4 md:py-2.5">Previsto vs vendido</p>
+          <p className="border-b border-border/60 bg-blush/30 px-3 py-3 sm:px-4 text-sm font-medium text-mauve md:px-4 md:py-2.5">Previsto vs vendido</p>
           {cashbox.sobras.length === 0 ? (
-            <p className="px-5 py-6 text-center text-sm text-muted-foreground">Adicione produtos ao evento.</p>
+            <p className="px-4 py-6 text-center text-sm text-muted-foreground">Adicione produtos ao evento.</p>
           ) : (
             <ul className="divide-y divide-border/60">
               {cashbox.sobras.map((s) => {
                 const sobra = s.planned - s.sold;
                 return (
-                  <li key={s.name} className="flex items-center justify-between px-5 py-2.5 text-sm md:px-4">
+                  <li key={s.name} className="flex items-center justify-between px-3 py-2.5 sm:px-4 text-sm md:px-4">
                     <span className="text-mauve">{s.name}</span>
                     <span className="text-xs">
                       <span className="text-success font-medium">{s.sold}</span>
@@ -1179,13 +1179,13 @@ function CashboxTab({
         </div>
 
         <div className="card-soft overflow-hidden">
-          <p className="border-b border-border/60 bg-blush/30 px-5 py-3 text-sm font-medium text-mauve md:px-4 md:py-2.5">Vendas registradas ({sales.length})</p>
+          <p className="border-b border-border/60 bg-blush/30 px-3 py-3 sm:px-4 text-sm font-medium text-mauve md:px-4 md:py-2.5">Vendas registradas ({sales.length})</p>
           {sales.length === 0 ? (
-            <p className="px-5 py-6 text-center text-sm text-muted-foreground">Nenhuma venda. Use o PDV com este evento selecionado.</p>
+            <p className="px-4 py-6 text-center text-sm text-muted-foreground">Nenhuma venda. Use o PDV com este evento selecionado.</p>
           ) : (
             <ul className="divide-y divide-border/60 max-h-64 overflow-y-auto">
               {sales.slice().reverse().map((s) => (
-                <li key={s.id} className="flex items-center justify-between px-5 py-2 text-sm md:px-4">
+                <li key={s.id} className="flex items-center justify-between px-3 py-2 text-sm sm:px-4">
                   <div>
                     <span className="text-mauve">{s.item}</span>
                     <span className="ml-2 text-[10px] text-muted-foreground">{methodLabel[s.payment_method] ?? s.payment_method}</span>
