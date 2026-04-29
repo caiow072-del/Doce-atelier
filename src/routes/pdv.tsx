@@ -1032,7 +1032,7 @@ function AddProductModal({
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-mauve/40 p-4 backdrop-blur-sm" onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-card shadow-petal">
+      <div onClick={(e) => e.stopPropagation()} className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-card shadow-petal">
         <div className="flex items-center justify-between border-b border-border/60 bg-blush/20 px-5 py-4">
           <div>
             <p className="text-[10px] uppercase tracking-widest text-rose">
