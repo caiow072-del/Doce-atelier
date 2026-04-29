@@ -1,0 +1,1 @@
+DELETE FROM public.pdv_products WHERE label IN ('1 Fatia Doce','Combo 2 Fatias','Fatia Menor','Torta Salgada');

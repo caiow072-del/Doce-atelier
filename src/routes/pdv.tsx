@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Cake, Utensils, Sparkles, Settings2, Plus, Trash2, X, Minus, ShoppingCart, CalendarHeart, Store, Image as ImageIcon, Loader2, Check, Undo2, BadgePercent, Keyboard } from "lucide-react";
+import { Cake, Utensils, Sparkles, Settings2, Plus, Trash2, X, Minus, ShoppingCart, ShoppingBasket, CalendarHeart, Store, Image as ImageIcon, Loader2, Check, Undo2, BadgePercent, Keyboard } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
@@ -70,17 +70,7 @@ function PDVPage() {
       supabase.from("pdv_products").select("*").eq("shop_id", shopId).eq("active", true).order("position"),
       supabase.from("events").select("id, name, date, closed_at, recurrence, recurrence_until, weekday, day_of_month").eq("shop_id", shopId).is("closed_at", null),
     ]).then(async ([p, e]) => {
-      let prods = (p.data ?? []) as Product[];
-      if (prods.length === 0) {
-        const seeds = [
-          { shop_id: shopId, label: "1 Fatia Doce", price: 17, icon: "cake", tone: "rose", position: 0 },
-          { shop_id: shopId, label: "Combo 2 Fatias", price: 32, icon: "sparkles", tone: "blush", position: 1 },
-          { shop_id: shopId, label: "Fatia Menor", price: 15, icon: "cake", tone: "rose", position: 2 },
-          { shop_id: shopId, label: "Torta Salgada", price: 15, icon: "utensils", tone: "sage", position: 3 },
-        ];
-        const { data: inserted } = await supabase.from("pdv_products").insert(seeds).select("*");
-        prods = (inserted ?? []) as Product[];
-      }
+      const prods = (p.data ?? []) as Product[];
       setProducts(prods);
       const horizon = new Date(Date.now() + 7 * 86_400_000);
       const todayStart = new Date(); todayStart.setHours(0,0,0,0);
@@ -483,9 +473,15 @@ function PDVPage() {
           </div>
         )
       ) : products.length === 0 ? (
-        <div className="card-soft p-8 text-center">
-          <p className="text-sm text-muted-foreground">Nenhum produto. Crie seus botões de venda.</p>
-          <button onClick={() => setShowManage(true)} className="mt-3 rounded-xl bg-mauve px-4 py-2 text-sm text-cream">Criar produtos</button>
+        <div className="card-soft p-10 text-center">
+          <div className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-blush/50">
+            <ShoppingBasket className="h-6 w-6 text-mauve" strokeWidth={1.4} />
+          </div>
+          <p className="text-base font-semibold text-mauve">Nenhum produto cadastrado ainda</p>
+          <p className="mt-1 text-sm text-muted-foreground">Crie botões de venda rápida para agilizar o caixa.</p>
+          <button onClick={() => setShowManage(true)} className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-mauve px-5 py-2.5 text-sm font-medium text-cream hover:opacity-90">
+            <Plus className="h-4 w-4" /> Adicionar primeiro produto
+          </button>
         </div>
       ) : (
         <div className="grid-cards-sm">

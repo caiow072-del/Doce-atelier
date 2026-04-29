@@ -58,8 +58,8 @@ export function AppShell() {
     end ? location.pathname === to : location.pathname === to || location.pathname.startsWith(to + "/");
 
   return (
-    <div className="min-h-screen floral-bg">
-      <div className="flex">
+    <div className="min-h-screen floral-bg overflow-x-hidden">
+      <div className="flex w-full max-w-full">
         {/* ============ Desktop Sidebar ============ */}
         <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-border/60 bg-card/60 backdrop-blur-xl lg:flex">
           {/* Brand */}
@@ -153,7 +153,7 @@ export function AppShell() {
         </aside>
 
         {/* ============ Main content ============ */}
-        <div className="flex min-h-screen flex-1 flex-col">
+        <div className="flex min-h-screen min-w-0 flex-1 flex-col">
           {/* Mobile topbar — hamburger opens drawer with full nav */}
           <header className="sticky top-0 z-40 flex items-center justify-between gap-3 border-b border-border/60 bg-card/80 px-4 py-2.5 backdrop-blur-xl lg:hidden">
             <button
@@ -178,7 +178,7 @@ export function AppShell() {
           </header>
 
           {/* Page — no max-w here; each page picks its own via <PageContainer/> */}
-          <main className="w-full flex-1 overflow-x-hidden px-4 pb-28 pt-4 sm:px-6 lg:px-8 lg:pb-10 lg:pt-6">
+          <main className="w-full min-w-0 max-w-full flex-1 overflow-x-hidden px-3 pb-28 pt-4 sm:px-6 lg:px-8 lg:pb-10 lg:pt-6">
             <Outlet />
           </main>
         </div>
