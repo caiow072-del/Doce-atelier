@@ -601,6 +601,106 @@ function EventosPage() {
         </>
       )}
 
+      {/* Drawer com a lista de eventos */}
+      <Sheet open={showListDrawer} onOpenChange={setShowListDrawer}>
+        <SheetContent side="left" className="flex w-full flex-col gap-0 p-0 sm:max-w-md">
+          <SheetHeader className="border-b border-border/60 p-4">
+            <SheetTitle className="text-mauve">Eventos</SheetTitle>
+          </SheetHeader>
+
+          <div className="space-y-3 border-b border-border/60 p-4">
+            <input
+              type="search"
+              value={listSearch}
+              onChange={(e) => setListSearch(e.target.value)}
+              placeholder="Buscar evento..."
+              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-mauve placeholder:text-muted-foreground focus:border-rose focus:outline-none"
+            />
+            {kindsPresent.length > 1 && (
+              <div className="flex flex-wrap gap-1.5">
+                <KindChip label="Todos" icon={Tag} active={filterKind === "all"} onClick={() => setFilterKind("all")} count={events.length} />
+                {(["festival", "party", "fair", "wedding", "generic"] as EventKind[])
+                  .filter((k) => kindsPresent.includes(k))
+                  .map((k) => {
+                    const meta = KIND_META[k];
+                    const count = events.filter((e) => kindOf(e.event_type_id) === k).length;
+                    return (
+                      <KindChip key={k} label={meta.label} icon={meta.icon} active={filterKind === k} onClick={() => setFilterKind(k)} count={count} />
+                    );
+                  })}
+              </div>
+            )}
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-3">
+            {searchedEvents.length === 0 ? (
+              <p className="px-2 py-8 text-center text-sm text-muted-foreground">Nenhum evento encontrado.</p>
+            ) : (
+              <ul className="space-y-2">
+                {searchedEvents.map((e) => {
+                  const t = typeOf(e.event_type_id);
+                  const k = t?.kind ?? "generic";
+                  const Icon = KIND_META[k].icon;
+                  const active = e.id === selectedId;
+                  const closed = !!e.closed_at;
+                  return (
+                    <li key={e.id}>
+                      <button
+                        onClick={() => {
+                          setSelectedId(e.id);
+                          setShowListDrawer(false);
+                        }}
+                        className={`flex w-full items-start gap-3 rounded-2xl border p-3 text-left transition-colors ${
+                          active ? "border-rose bg-blush/60 text-mauve shadow-soft" : "border-border bg-card text-mauve hover:border-rose/40"
+                        }`}
+                      >
+                        <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${active ? "bg-rose/30" : "bg-blush/40"}`}>
+                          <Icon className="h-5 w-5 text-mauve" strokeWidth={1.6} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium">{e.name}</p>
+                          <p className="text-[11px] text-muted-foreground">
+                            {fmtDate(e.date)}
+                            {e.start_time ? ` · ${e.start_time}` : ""}
+                            {e.recurrence !== "none" && (
+                              <span className="ml-1 inline-flex items-center gap-0.5 text-rose">
+                                <Repeat className="h-3 w-3" /> {e.recurrence === "weekly" ? "sem" : "men"}
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                        {closed && <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between gap-2 border-t border-border/60 p-3">
+            <button
+              onClick={() => {
+                setShowListDrawer(false);
+                setShowTypes(true);
+              }}
+              className="rounded-xl px-3 py-2 text-xs text-muted-foreground hover:text-mauve"
+            >
+              <Settings2 className="mr-1 inline h-3.5 w-3.5" /> Tipos
+            </button>
+            <button
+              onClick={() => {
+                setShowListDrawer(false);
+                setShowNew(true);
+              }}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-mauve px-3 py-2 text-xs font-medium text-cream hover:opacity-90"
+            >
+              <Plus className="h-3.5 w-3.5" /> Novo evento
+            </button>
+          </div>
+        </SheetContent>
+      </Sheet>
+
       {showNew && shopId && (
         <NewEventSheet
           shopId={shopId}
