@@ -1051,12 +1051,12 @@ function TasksTab({
           {dayTasks.length === 0 ? (
             <li className="px-4 py-6 text-center text-sm text-muted-foreground">Sem tarefas neste dia.</li>
           ) : dayTasks.map((t) => (
-            <li key={t.id} className="flex items-center gap-3 px-3 py-3 sm:px-4">
-              <button onClick={() => onToggle(t)} className="flex flex-1 items-center gap-3 text-left">
-                {t.done ? <CheckCircle2 className="h-6 w-6 text-success shrink-0" strokeWidth={1.6} /> : <Circle className="h-6 w-6 text-rose shrink-0" strokeWidth={1.6} />}
-                <span className={`text-sm ${t.done ? "text-muted-foreground line-through" : "text-mauve"}`}>{t.task}</span>
+            <li key={t.id} className="flex items-center gap-2 px-3 py-3 sm:gap-3 sm:px-4">
+              <button onClick={() => onToggle(t)} className="flex min-w-0 flex-1 items-center gap-2 text-left sm:gap-3">
+                {t.done ? <CheckCircle2 className="h-5 w-5 shrink-0 text-success sm:h-6 sm:w-6" strokeWidth={1.6} /> : <Circle className="h-5 w-5 shrink-0 text-rose sm:h-6 sm:w-6" strokeWidth={1.6} />}
+                <span className={`min-w-0 break-words text-sm ${t.done ? "text-muted-foreground line-through" : "text-mauve"}`}>{t.task}</span>
               </button>
-              <button onClick={() => onRemove(t.id)} className="rounded-lg p-1.5 text-destructive hover:bg-destructive/10" aria-label="Excluir"><Trash2 className="h-4 w-4" /></button>
+              <button onClick={() => onRemove(t.id)} className="shrink-0 rounded-lg p-1.5 text-destructive hover:bg-destructive/10" aria-label="Excluir"><Trash2 className="h-4 w-4" /></button>
             </li>
           ))}
         </ul>
