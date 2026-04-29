@@ -6,7 +6,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import {
   ShoppingBag, Plus, Minus, X, MapPin, Phone, User, MessageCircle,
-  Loader2, Cake, Pencil, Instagram, Clock,
+  Loader2, Search, ChevronRight, Cake, Pencil, Instagram, Clock,
   Save, Sparkles, LayoutTemplate, Eye, EyeOff, GripVertical, Smartphone, Monitor,
   Quote, ImagePlus, ChevronDown, ChevronUp, Check, Palette, Type, QrCode, Copy,
   Truck, Store,
