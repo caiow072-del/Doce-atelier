@@ -191,6 +191,13 @@ export type Database = {
             referencedRelation: "recipes"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "event_recipes_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       event_tasks: {
@@ -386,6 +393,13 @@ export type Database = {
             referencedRelation: "shops"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "ingredients_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       orders: {
@@ -465,6 +479,13 @@ export type Database = {
             columns: ["recipe_id"]
             isOneToOne: false
             referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes_public"
             referencedColumns: ["id"]
           },
         ]
@@ -566,6 +587,13 @@ export type Database = {
             referencedRelation: "recipes"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "recipe_ingredients_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       recipes: {
@@ -638,6 +666,13 @@ export type Database = {
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipes_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops_public"
             referencedColumns: ["id"]
           },
         ]
@@ -729,6 +764,13 @@ export type Database = {
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shop_members_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops_public"
             referencedColumns: ["id"]
           },
         ]
@@ -838,6 +880,13 @@ export type Database = {
             referencedRelation: "shops"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "shop_storefront_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: true
+            referencedRelation: "shops_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       shop_visits: {
@@ -871,6 +920,13 @@ export type Database = {
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shop_visits_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops_public"
             referencedColumns: ["id"]
           },
         ]
@@ -919,9 +975,114 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      recipes_public: {
+        Row: {
+          catalog_position: number | null
+          category: string | null
+          description: string | null
+          id: string | null
+          image_url: string | null
+          is_featured: boolean | null
+          name: string | null
+          promo_price: number | null
+          public_price: number | null
+          servings: number | null
+          shop_id: string | null
+          show_in_catalog: boolean | null
+        }
+        Insert: {
+          catalog_position?: number | null
+          category?: string | null
+          description?: string | null
+          id?: string | null
+          image_url?: string | null
+          is_featured?: boolean | null
+          name?: string | null
+          promo_price?: number | null
+          public_price?: number | null
+          servings?: number | null
+          shop_id?: string | null
+          show_in_catalog?: boolean | null
+        }
+        Update: {
+          catalog_position?: number | null
+          category?: string | null
+          description?: string | null
+          id?: string | null
+          image_url?: string | null
+          is_featured?: boolean | null
+          name?: string | null
+          promo_price?: number | null
+          public_price?: number | null
+          servings?: number | null
+          shop_id?: string | null
+          show_in_catalog?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipes_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipes_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shops_public: {
+        Row: {
+          description: string | null
+          id: string | null
+          logo_url: string | null
+          name: string | null
+          slug: string | null
+          theme: Json | null
+          whatsapp: string | null
+        }
+        Insert: {
+          description?: string | null
+          id?: string | null
+          logo_url?: string | null
+          name?: string | null
+          slug?: string | null
+          theme?: Json | null
+          whatsapp?: string | null
+        }
+        Update: {
+          description?: string | null
+          id?: string | null
+          logo_url?: string | null
+          name?: string | null
+          slug?: string | null
+          theme?: Json | null
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      create_storefront_order: {
+        Args: {
+          p_customer_address: string
+          p_customer_name: string
+          p_customer_phone: string
+          p_delivery_address: string
+          p_delivery_at: string
+          p_delivery_method: string
+          p_description: string
+          p_items: Json
+          p_notes: string
+          p_shop_id: string
+          p_total_price: number
+        }
+        Returns: string
+      }
       has_shop_role: {
         Args: {
           _roles: Database["public"]["Enums"]["shop_role"][]
