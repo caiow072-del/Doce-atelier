@@ -461,7 +461,7 @@ function EventosPage() {
   }, [filteredEvents, listSearch]);
 
   return (
-    <PageContainer width="default">
+    <PageContainer width="default" className="min-w-0 overflow-x-hidden">
       <PageHeader title="Eventos" />
 
       {events.length === 0 ? (
