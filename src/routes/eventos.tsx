@@ -39,6 +39,7 @@ import { formatBRL } from "@/lib/store";
 import { toast } from "sonner";
 import { nextOccurrence, WEEKDAYS, parseLocalDate } from "@/lib/recurrence";
 import { recipeCost } from "@/lib/costs";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 export const Route = createFileRoute("/eventos")({
   head: () => ({
@@ -449,100 +450,72 @@ function EventosPage() {
     return Array.from(set);
   }, [events, types]);
 
+  const [showListDrawer, setShowListDrawer] = useState(false);
+  const [listSearch, setListSearch] = useState("");
+
+  const searchedEvents = useMemo(() => {
+    const q = listSearch.trim().toLowerCase();
+    if (!q) return filteredEvents;
+    return filteredEvents.filter((e) => e.name.toLowerCase().includes(q));
+  }, [filteredEvents, listSearch]);
+
   return (
     <PageContainer width="default">
-      <PageHeader
-        eyebrow="Coração do negócio"
-        title="Eventos"
-        subtitle="Festivais, feiras e festas — produtos, produção e caixa em um só lugar."
-        actions={
-          <>
-            <button onClick={() => setShowTypes(true)} className="inline-flex items-center gap-1.5 rounded-xl bg-blush/50 px-3 py-2 text-xs font-medium text-mauve hover:bg-blush/80">
-              <Settings2 className="h-3.5 w-3.5" /> Tipos
-            </button>
-            <button onClick={() => setShowNew(true)} className="inline-flex items-center gap-1.5 rounded-xl bg-mauve px-3 py-2 text-xs font-medium text-cream hover:opacity-90">
-              <Plus className="h-3.5 w-3.5" /> Novo evento
-            </button>
-          </>
-        }
-      />
+      <PageHeader title="Eventos" />
 
-      {events.length > 0 && (
-        <div className="mb-4 flex flex-wrap gap-2">
-          <KindChip label="Todos" icon={Tag} active={filterKind === "all"} onClick={() => setFilterKind("all")} count={events.length} />
-          {(["festival", "party", "fair", "wedding", "generic"] as EventKind[])
-            .filter((k) => kindsPresent.includes(k))
-            .map((k) => {
-              const meta = KIND_META[k];
-              const count = events.filter((e) => kindOf(e.event_type_id) === k).length;
-              return (
-                <KindChip key={k} label={meta.label} icon={meta.icon} active={filterKind === k} onClick={() => setFilterKind(k)} count={count} />
-              );
-            })}
+      {events.length === 0 ? (
+        <div className="card-soft px-6 py-12 text-center">
+          <CalendarHeart className="mx-auto h-12 w-12 text-rose" strokeWidth={1.4} />
+          <p className="mt-3 text-sm text-muted-foreground">Nenhum evento ainda.</p>
+          <button
+            onClick={() => setShowNew(true)}
+            className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-mauve px-4 py-2 text-xs font-medium text-cream hover:opacity-90"
+          >
+            <Plus className="h-3.5 w-3.5" /> Criar primeiro evento
+          </button>
         </div>
+      ) : (
+        <>
+          {/* Seletor compacto de evento */}
+          <button
+            onClick={() => setShowListDrawer(true)}
+            className="card-soft mb-4 flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:border-rose/40"
+          >
+            {selected ? (
+              <>
+                {(() => {
+                  const k = kindOf(selected.event_type_id);
+                  const Icon = KIND_META[k].icon;
+                  return (
+                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-blush/50">
+                      <Icon className="h-5 w-5 text-mauve" strokeWidth={1.6} />
+                    </div>
+                  );
+                })()}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-mauve">{selected.name}</p>
+                  <p className="truncate text-[11px] text-muted-foreground">
+                    {fmtDate(selected.date)}
+                    {selected.start_time ? ` · ${selected.start_time}` : ""}
+                    {selected.location ? ` · ${selected.location}` : ""}
+                  </p>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-blush/50">
+                  <CalendarHeart className="h-5 w-5 text-mauve" strokeWidth={1.6} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-mauve">Escolher evento</p>
+                  <p className="text-[11px] text-muted-foreground">{events.length} no histórico</p>
+                </div>
+              </>
+            )}
+            <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+          </button>
+        </>
       )}
-
-      <div className="card-soft mb-5 p-4">
-        <div className="mb-3 flex items-center justify-between gap-2">
-          <p className="text-[11px] uppercase tracking-widest text-rose">Histórico</p>
-          <span className="text-[11px] text-muted-foreground num">{filteredEvents.length} eventos</span>
-        </div>
-        {filteredEvents.length === 0 ? (
-          <div className="py-8 text-center">
-            <CalendarHeart className="mx-auto h-10 w-10 text-rose" strokeWidth={1.4} />
-            <p className="mt-2 text-sm text-muted-foreground">
-              {events.length === 0 ? "Nenhum evento ainda — crie o primeiro." : "Nenhum evento neste filtro."}
-            </p>
-          </div>
-        ) : (
-          <div className={`grid-cards-md ${filteredEvents.length > 9 ? "max-h-[460px] overflow-y-auto pr-1" : ""}`}>
-            {filteredEvents.map((e) => {
-              const t = typeOf(e.event_type_id);
-              const k = t?.kind ?? "generic";
-              const Icon = KIND_META[k].icon;
-              const active = e.id === selectedId;
-              const closed = !!e.closed_at;
-              return (
-                <button
-                  key={e.id}
-                  onClick={() => setSelectedId(e.id)}
-                  className={`flex items-start gap-3 rounded-2xl border p-3 text-left transition-colors ${
-                    active ? "border-rose bg-blush/60 text-mauve shadow-soft" : "border-border bg-card text-mauve hover:border-rose/40"
-                  }`}
-                >
-                  <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${active ? "bg-rose/30" : "bg-blush/40"}`}>
-                    <Icon className="h-5 w-5 text-mauve" strokeWidth={1.6} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[10px] uppercase tracking-wider text-rose">{t?.name ?? "Sem tipo"}</p>
-                    <p className="truncate text-sm font-medium">{e.name}</p>
-                    <p className="text-[11px] text-muted-foreground">
-                      {fmtDate(e.date)}
-                      {e.start_time ? ` · ${e.start_time}` : ""}
-                      {e.recurrence !== "none" && (() => {
-                        const next = nextOccurrence({
-                          date: e.date,
-                          recurrence: e.recurrence,
-                          recurrence_until: e.recurrence_until,
-                          weekday: e.weekday,
-                          day_of_month: e.day_of_month,
-                        });
-                        return (
-                          <span className="ml-1 inline-flex items-center gap-0.5 text-rose">
-                            <Repeat className="h-3 w-3" /> {e.recurrence === "weekly" ? "semanal" : "mensal"}
-                            {next && <span className="ml-1 text-muted-foreground">· próx: {fmtDate(next.toISOString())}</span>}
-                          </span>
-                        );
-                      })()}
-                    </p>
-                  </div>
-                  {closed && <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </div>
 
       {!selected && events.length > 0 && (
         <div className="card-soft p-8 text-center text-sm text-muted-foreground">Selecione um evento.</div>
@@ -550,7 +523,7 @@ function EventosPage() {
 
       {selected && (
         <>
-          <div className="card-soft p-5">
+          <div className="card-soft mb-4 p-4 md:p-5">
             {editingMeta ? (
               <EditMeta
                 event={selected}
@@ -567,22 +540,20 @@ function EventosPage() {
             )}
 
             <div className="mt-4">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-mauve">Produção</span>
-                <span className="text-muted-foreground">{doneTasks}/{totalTasks} tarefas</span>
-              </div>
-              <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-secondary">
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
                 <div className="h-full rounded-full bg-rose transition-all" style={{ width: `${progress}%` }} />
               </div>
+              <p className="mt-1.5 text-right text-[11px] text-muted-foreground num">{doneTasks}/{totalTasks} tarefas</p>
             </div>
           </div>
 
           {/* Tabs */}
-          <div className="grid grid-cols-3 gap-2">
+          <div className="mb-4 grid grid-cols-3 gap-2">
             <TabBtn active={activeTab === "products"} onClick={() => setActiveTab("products")} icon={Package} label="Produtos" hint={`${eventProducts.length}`} />
             <TabBtn active={activeTab === "tasks"} onClick={() => setActiveTab("tasks")} icon={CheckCircle2} label="Tarefas" hint={`${doneTasks}/${totalTasks}`} />
             <TabBtn active={activeTab === "cashbox"} onClick={() => setActiveTab("cashbox")} icon={Wallet} label="Caixa" hint={formatBRL(cashbox.total)} closed={!!selected.closed_at} />
           </div>
+
 
           {activeTab === "products" && (
             <ProductsTab
@@ -631,6 +602,106 @@ function EventosPage() {
         </>
       )}
 
+      {/* Drawer com a lista de eventos */}
+      <Sheet open={showListDrawer} onOpenChange={setShowListDrawer}>
+        <SheetContent side="left" className="flex w-full flex-col gap-0 p-0 sm:max-w-md">
+          <SheetHeader className="border-b border-border/60 p-4">
+            <SheetTitle className="text-mauve">Eventos</SheetTitle>
+          </SheetHeader>
+
+          <div className="space-y-3 border-b border-border/60 p-4">
+            <input
+              type="search"
+              value={listSearch}
+              onChange={(e) => setListSearch(e.target.value)}
+              placeholder="Buscar evento..."
+              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-mauve placeholder:text-muted-foreground focus:border-rose focus:outline-none"
+            />
+            {kindsPresent.length > 1 && (
+              <div className="flex flex-wrap gap-1.5">
+                <KindChip label="Todos" icon={Tag} active={filterKind === "all"} onClick={() => setFilterKind("all")} count={events.length} />
+                {(["festival", "party", "fair", "wedding", "generic"] as EventKind[])
+                  .filter((k) => kindsPresent.includes(k))
+                  .map((k) => {
+                    const meta = KIND_META[k];
+                    const count = events.filter((e) => kindOf(e.event_type_id) === k).length;
+                    return (
+                      <KindChip key={k} label={meta.label} icon={meta.icon} active={filterKind === k} onClick={() => setFilterKind(k)} count={count} />
+                    );
+                  })}
+              </div>
+            )}
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-3">
+            {searchedEvents.length === 0 ? (
+              <p className="px-2 py-8 text-center text-sm text-muted-foreground">Nenhum evento encontrado.</p>
+            ) : (
+              <ul className="space-y-2">
+                {searchedEvents.map((e) => {
+                  const t = typeOf(e.event_type_id);
+                  const k = t?.kind ?? "generic";
+                  const Icon = KIND_META[k].icon;
+                  const active = e.id === selectedId;
+                  const closed = !!e.closed_at;
+                  return (
+                    <li key={e.id}>
+                      <button
+                        onClick={() => {
+                          setSelectedId(e.id);
+                          setShowListDrawer(false);
+                        }}
+                        className={`flex w-full items-start gap-3 rounded-2xl border p-3 text-left transition-colors ${
+                          active ? "border-rose bg-blush/60 text-mauve shadow-soft" : "border-border bg-card text-mauve hover:border-rose/40"
+                        }`}
+                      >
+                        <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${active ? "bg-rose/30" : "bg-blush/40"}`}>
+                          <Icon className="h-5 w-5 text-mauve" strokeWidth={1.6} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium">{e.name}</p>
+                          <p className="text-[11px] text-muted-foreground">
+                            {fmtDate(e.date)}
+                            {e.start_time ? ` · ${e.start_time}` : ""}
+                            {e.recurrence !== "none" && (
+                              <span className="ml-1 inline-flex items-center gap-0.5 text-rose">
+                                <Repeat className="h-3 w-3" /> {e.recurrence === "weekly" ? "sem" : "men"}
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                        {closed && <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between gap-2 border-t border-border/60 p-3">
+            <button
+              onClick={() => {
+                setShowListDrawer(false);
+                setShowTypes(true);
+              }}
+              className="rounded-xl px-3 py-2 text-xs text-muted-foreground hover:text-mauve"
+            >
+              <Settings2 className="mr-1 inline h-3.5 w-3.5" /> Tipos
+            </button>
+            <button
+              onClick={() => {
+                setShowListDrawer(false);
+                setShowNew(true);
+              }}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-mauve px-3 py-2 text-xs font-medium text-cream hover:opacity-90"
+            >
+              <Plus className="h-3.5 w-3.5" /> Novo evento
+            </button>
+          </div>
+        </SheetContent>
+      </Sheet>
+
       {showNew && shopId && (
         <NewEventSheet
           shopId={shopId}
@@ -668,7 +739,7 @@ function TabBtn({
         <span className="text-sm font-medium text-mauve">{label}</span>
         {closed && <Lock className="ml-auto h-3 w-3 text-muted-foreground" />}
       </div>
-      {hint && <p className="mt-1 text-[11px] text-muted-foreground">{hint}</p>}
+      {hint && <p className="mt-1 hidden text-[11px] text-muted-foreground md:block">{hint}</p>}
     </button>
   );
 }
@@ -688,35 +759,43 @@ function KindChip({ label, icon: Icon, active, onClick, count }: { label: string
 }
 
 function EventHeader({ event, kind, typeName, onEdit, onDelete }: { event: EventRow; kind: EventKind; typeName?: string; onEdit: () => void; onDelete: () => void }) {
+  const [showNotes, setShowNotes] = useState(false);
+  const metaParts: string[] = [fmtDate(event.date)];
+  if (event.start_time) metaParts.push(event.start_time);
+  if (event.location) metaParts.push(event.location);
+  if (event.recurrence !== "none") metaParts.push(event.recurrence === "weekly" ? "semanal" : "mensal");
+  if ((kind === "party" || kind === "wedding") && event.customer_name) metaParts.push(event.customer_name);
+  if ((kind === "party" || kind === "wedding") && event.guests != null) metaParts.push(`${event.guests} conv.`);
+
   return (
     <div className="flex items-start justify-between gap-3">
       <div className="min-w-0 flex-1">
-        {typeName && <p className="text-[11px] uppercase tracking-widest text-rose">{typeName}</p>}
-        <h2 className="font-display text-2xl italic text-mauve">{event.name}</h2>
-        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-          <span className="inline-flex items-center gap-1.5"><CalIcon className="h-3.5 w-3.5" /> {fmtDate(event.date)}</span>
-          {event.start_time && <span className="inline-flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" /> {event.start_time}</span>}
-          {event.location && <span className="inline-flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" /> {event.location}</span>}
-          {event.recurrence !== "none" && (
-            <span className="inline-flex items-center gap-1.5 text-rose"><Repeat className="h-3.5 w-3.5" /> Recorrente {event.recurrence === "weekly" ? "semanal" : "mensal"}</span>
-          )}
-          {(kind === "party" || kind === "wedding") && event.customer_name && (
-            <span className="inline-flex items-center gap-1.5"><Users className="h-3.5 w-3.5" /> {event.customer_name}</span>
-          )}
-          {(kind === "party" || kind === "wedding") && event.guests != null && (
-            <span className="inline-flex items-center gap-1.5"><Cake className="h-3.5 w-3.5" /> {event.guests} convidados</span>
-          )}
-        </div>
-        {event.notes && <p className="mt-2 text-sm text-mauve/80 whitespace-pre-line">{event.notes}</p>}
-        <div className="mt-3 flex flex-wrap gap-2">
-          {(kind === "party" || kind === "wedding") && Number(event.fee) > 0 && <Badge icon={Truck} label={`Taxa: ${formatBRL(Number(event.fee))}`} />}
-          {kind === "fair" && Number(event.opening_cash) > 0 && <Badge icon={Wallet} label={`Troco: ${formatBRL(Number(event.opening_cash))}`} />}
-          {event.closed_at && <Badge icon={Lock} label={`Caixa fechado · ${fmtDate(event.closed_at)}`} />}
-        </div>
+        <h2 className="truncate text-lg font-semibold text-mauve md:text-xl">{event.name}</h2>
+        <p className="mt-1 truncate text-xs text-muted-foreground">{metaParts.join(" · ")}</p>
+        {event.notes && (
+          <>
+            {showNotes ? (
+              <p className="mt-2 whitespace-pre-line text-sm text-mauve/80">{event.notes}</p>
+            ) : (
+              <button onClick={() => setShowNotes(true)} className="mt-1 text-[11px] text-rose hover:underline">
+                ver observações
+              </button>
+            )}
+          </>
+        )}
+        {((kind === "party" || kind === "wedding") && Number(event.fee) > 0) ||
+        (kind === "fair" && Number(event.opening_cash) > 0) ||
+        event.closed_at ? (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {(kind === "party" || kind === "wedding") && Number(event.fee) > 0 && <Badge icon={Truck} label={`Taxa: ${formatBRL(Number(event.fee))}`} />}
+            {kind === "fair" && Number(event.opening_cash) > 0 && <Badge icon={Wallet} label={`Troco: ${formatBRL(Number(event.opening_cash))}`} />}
+            {event.closed_at && <Badge icon={Lock} label={`Fechado · ${fmtDate(event.closed_at)}`} />}
+          </div>
+        ) : null}
       </div>
-      <div className="flex shrink-0 gap-2">
-        <button onClick={onEdit} className="rounded-lg bg-blush/50 p-2 text-mauve hover:bg-blush/80" aria-label="Editar"><Pencil className="h-4 w-4" /></button>
-        <button onClick={onDelete} className="rounded-lg bg-destructive/10 p-2 text-destructive hover:bg-destructive/20" aria-label="Excluir"><Trash2 className="h-4 w-4" /></button>
+      <div className="flex shrink-0 gap-1">
+        <button onClick={onEdit} className="rounded-lg p-2 text-muted-foreground hover:bg-blush/50 hover:text-mauve" aria-label="Editar"><Pencil className="h-4 w-4" /></button>
+        <button onClick={onDelete} className="rounded-lg p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" aria-label="Excluir"><Trash2 className="h-4 w-4" /></button>
       </div>
     </div>
   );
