@@ -1066,7 +1066,7 @@ function CashboxTab({
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-[11px] uppercase tracking-widest text-rose">Caixa do evento {closed && "(fechado)"}</p>
-            <p className="font-display text-4xl italic text-mauve mt-1">{formatBRL(display.total)}</p>
+            <p className="mt-1 text-3xl font-semibold text-mauve">{formatBRL(display.total)}</p>
             <p className="text-xs text-muted-foreground">{display.items_sold} itens vendidos</p>
           </div>
           {closed ? (
