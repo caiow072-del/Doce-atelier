@@ -3,12 +3,13 @@
 // when in edit mode, with a side rail for template/sections/save.
 
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import {
   ShoppingBag, Plus, Minus, X, MapPin, Phone, User, MessageCircle,
-  Loader2, Search, ChevronRight, Cake, Pencil, Instagram, Clock,
+  Loader2, Cake, Pencil, Instagram, Clock,
   Save, Sparkles, LayoutTemplate, Eye, EyeOff, GripVertical, Smartphone, Monitor,
   Quote, ImagePlus, ChevronDown, ChevronUp, Check, Palette, Type, QrCode, Copy,
+  Truck, Store,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,6 +20,13 @@ import { applyTheme, PRESETS, FONTS, type ShopTheme, type ThemePresetKey, type F
 import { TEMPLATES, SECTION_LABELS, getTemplate, type TemplateKey, type SectionConfig, type SectionKey, DEFAULT_SECTIONS } from "@/lib/templates";
 import { EditableText, EditableImage } from "@/components/InlineEdit";
 import { uploadShopImage } from "@/lib/upload";
+import { HeroCardapio, PickupDeliveryCard } from "./-loja/HeroCardapio";
+import { ProductListHorizontal } from "./-loja/ProductListHorizontal";
+import { CategoryPicker } from "./-loja/CategoryPicker";
+import { BottomNav, type BottomNavTab } from "./-loja/BottomNav";
+import { HoursEditor } from "./-loja/HoursEditor";
+import { defaultHours, DAY_KEYS, DAY_LABELS, type BusinessHours } from "@/lib/business-hours";
+
 
 const checkoutSchema = z.object({
   name: z.string().trim().min(2, "Informe seu nome").max(80),
