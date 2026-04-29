@@ -326,6 +326,26 @@ function StorefrontPage() {
     } catch (e: any) { toast.error(e?.message ?? "Erro upload"); }
   };
 
+  const onUploadHero = async (slot: number, file: File) => {
+    if (!shop) return;
+    try {
+      const url = await uploadShopImage("storefront-banners", shop.id, file);
+      const next = [...front.hero_images];
+      next[slot] = url;
+      update("hero_images", next.filter(Boolean));
+      toast.success("Foto adicionada — clique em Publicar para salvar.");
+    } catch (e: any) { toast.error(e?.message ?? "Erro upload"); }
+  };
+
+  const handleBottomTab = (t: BottomNavTab) => {
+    setBottomTab(t);
+    if (t === "home") window.scrollTo({ top: 0, behavior: "smooth" });
+    else if (t === "promo" && promoRef.current) promoRef.current.scrollIntoView({ behavior: "smooth" });
+    else if (t === "orders" || t === "profile") {
+      toast.message("Em breve", { description: "Área de pedidos e perfil para clientes." });
+    }
+  };
+
   const addToCart = (r: PublicRecipe) => {
     if (editing) return;
     const effective = (r.promo_price != null && r.public_price != null && r.promo_price < r.public_price) ? r.promo_price : r.public_price;
