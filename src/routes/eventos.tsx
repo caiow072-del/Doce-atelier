@@ -872,19 +872,19 @@ function ProductsTab({
   return (
     <div className="space-y-4">
       <div className="card-soft overflow-hidden">
-        <div className="flex items-center justify-between border-b border-border/60 bg-blush/30 px-5 py-3 md:px-4 md:py-2.5">
-          <div>
-            <p className="text-sm font-medium text-mauve">Produtos do evento</p>
-            <p className="text-[11px] text-muted-foreground">Cada produto vira um botão no PDV deste evento.</p>
+        <div className="flex items-center justify-between gap-2 border-b border-border/60 bg-blush/30 px-3 py-2.5 sm:px-4 sm:py-3">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium text-mauve">Produtos do evento</p>
+            <p className="hidden text-[11px] text-muted-foreground sm:block">Cada produto vira um botão no PDV deste evento.</p>
           </div>
           {!closed && (
-            <button onClick={() => setShowAdd(true)} className="inline-flex items-center gap-1 rounded-xl bg-mauve px-3 py-1.5 text-xs text-cream hover:opacity-90">
+            <button onClick={() => setShowAdd(true)} className="inline-flex shrink-0 items-center gap-1 rounded-xl bg-mauve px-3 py-1.5 text-xs text-cream hover:opacity-90">
               <Plus className="h-3.5 w-3.5" /> Adicionar
             </button>
           )}
         </div>
         {products.length === 0 ? (
-          <p className="px-5 py-6 text-center text-sm text-muted-foreground">Nenhum produto. Toque em <strong>Adicionar</strong> para escolher uma receita.</p>
+          <p className="px-4 py-6 text-center text-sm text-muted-foreground">Nenhum produto. Toque em <strong>Adicionar</strong> para escolher uma receita.</p>
         ) : (
           <ul className="divide-y divide-border/60 md:grid md:grid-cols-2 md:gap-2 md:divide-y-0 md:p-2">
             {products.map((p) => {
@@ -894,34 +894,34 @@ function ProductsTab({
               const margin = p.unit_price > 0 ? ((p.unit_price - cost) / p.unit_price) * 100 : 0;
               const recipe = p.recipe_id ? recipes.find((r) => r.id === p.recipe_id) : null;
               return (
-                <li key={p.id} className="px-4 py-3 text-sm md:rounded-xl md:border md:border-border/60 md:bg-card md:px-3 md:py-2.5">
-                  <div className="flex items-start gap-3">
+                <li key={p.id} className="px-3 py-3 text-sm sm:px-4 md:rounded-xl md:border md:border-border/60 md:bg-card md:px-3 md:py-2.5">
+                  <div className="flex items-start gap-2 sm:gap-3">
                     {(p.image_url || recipe?.image_url) && (
                       <img src={p.image_url || recipe?.image_url || ""} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" loading="lazy" />
                     )}
                     <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-baseline gap-2">
-                        <span className="font-medium text-mauve">{p.name}</span>
+                      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                        <span className="min-w-0 truncate font-medium text-mauve">{p.name}</span>
                         {recipe && (
-                          <span className="text-[10px] uppercase tracking-wider text-rose">
-                            {recipe.name} · {p.sale_mode === "slice" ? "por fatia" : "inteiro"}
+                          <span className="truncate text-[10px] uppercase tracking-wider text-rose">
+                            {recipe.name} · {p.sale_mode === "slice" ? "fatia" : "inteiro"}
                           </span>
                         )}
                       </div>
-                      <div className="mt-1 flex flex-wrap gap-3 text-[11px] text-muted-foreground">
-                        <span>Preço: <strong className="text-mauve">{formatBRL(Number(p.unit_price))}</strong></span>
-                        <span>Custo: <strong className={cost > p.unit_price ? "text-destructive" : "text-mauve"}>{formatBRL(cost)}</strong></span>
-                        <span>Margem: <strong className={margin >= 30 ? "text-success" : margin >= 15 ? "text-warning" : "text-destructive"}>{margin.toFixed(0)}%</strong></span>
-                        <span className={left === 0 && p.planned_qty > 0 ? "text-success font-medium" : ""}>Vendas: {sold}/{p.planned_qty}</span>
+                      <div className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
+                        <span>Preço <strong className="text-mauve">{formatBRL(Number(p.unit_price))}</strong></span>
+                        <span>Custo <strong className={cost > p.unit_price ? "text-destructive" : "text-mauve"}>{formatBRL(cost)}</strong></span>
+                        <span>Margem <strong className={margin >= 30 ? "text-success" : margin >= 15 ? "text-warning" : "text-destructive"}>{margin.toFixed(0)}%</strong></span>
+                        <span className={left === 0 && p.planned_qty > 0 ? "font-medium text-success" : ""}>Vendas {sold}/{p.planned_qty}</span>
                       </div>
                     </div>
-                    <div className="flex flex-col items-end gap-1">
+                    <div className="flex shrink-0 flex-col items-end gap-1">
                       <input
                         disabled={closed}
                         type="number" placeholder="qtd"
                         value={p.planned_qty || ""}
                         onChange={(e) => onUpdate(p.id, { planned_qty: Number(e.target.value) || 0 })}
-                        className="w-16 rounded-lg border border-border bg-background px-2 py-1 text-right text-xs text-mauve disabled:opacity-60"
+                        className="w-14 rounded-lg border border-border bg-background px-1.5 py-1 text-right text-xs text-mauve disabled:opacity-60 sm:w-16 sm:px-2"
                       />
                       <div className="flex gap-0.5">
                         <button disabled={closed} onClick={() => setEditingId(p.id)} className="rounded-lg p-1 text-muted-foreground hover:bg-blush/50 hover:text-mauve disabled:opacity-30" aria-label="Editar">
@@ -963,7 +963,7 @@ function ProductsTab({
       <div className="card-soft overflow-hidden">
         <button
           onClick={() => setShowInsumos(!showInsumos)}
-          className="flex w-full items-center justify-between border-b border-border/60 bg-blush/30 px-5 py-3 md:px-4 md:py-2.5"
+          className="flex w-full items-center justify-between border-b border-border/60 bg-blush/30 px-3 py-2.5 sm:px-4 sm:py-3"
         >
           <div className="flex items-center gap-2">
             <ShoppingBasket className="h-4 w-4 text-mauve" strokeWidth={1.6} />
@@ -974,11 +974,11 @@ function ProductsTab({
         </button>
         {showInsumos && (
           shoppingList.length === 0 ? (
-            <p className="px-5 py-6 text-center text-sm text-muted-foreground">Adicione produtos com receita vinculada e quantidade planejada.</p>
+            <p className="px-4 py-6 text-center text-sm text-muted-foreground">Adicione produtos com receita vinculada e quantidade planejada.</p>
           ) : (
             <ul className="divide-y divide-border/60 md:grid md:grid-cols-2 md:gap-x-6 md:divide-y-0 md:px-4 md:py-2">
               {shoppingList.map((it) => (
-                <li key={it.name} className="flex items-center justify-between px-5 py-2.5 text-sm md:border-b md:border-border/40 md:px-0">
+                <li key={it.name} className="flex items-center justify-between px-3 py-2.5 sm:px-4 text-sm md:border-b md:border-border/40 md:px-0">
                   <span className="text-mauve">{it.name}</span>
                   <span className="text-muted-foreground">{it.qty.toLocaleString("pt-BR", { maximumFractionDigits: 2 })} {it.unit}</span>
                 </li>
@@ -1041,7 +1041,7 @@ function TasksTab({
       </div>
       <div className="card-soft mt-3 overflow-hidden">
         {eventTasks.length === 0 && (
-          <div className="border-b border-border/60 bg-blush/20 px-5 py-3">
+          <div className="border-b border-border/60 bg-blush/20 px-3 py-3 sm:px-4">
             <button onClick={onSeed} className="inline-flex items-center gap-1.5 rounded-xl bg-mauve px-3 py-1.5 text-xs font-medium text-cream hover:opacity-90">
               <Sparkles className="h-3.5 w-3.5" /> Gerar checklist sugerido para {KIND_META[kind].label}
             </button>
@@ -1049,14 +1049,14 @@ function TasksTab({
         )}
         <ul className="divide-y divide-border/60">
           {dayTasks.length === 0 ? (
-            <li className="px-5 py-6 text-center text-sm text-muted-foreground">Sem tarefas neste dia.</li>
+            <li className="px-4 py-6 text-center text-sm text-muted-foreground">Sem tarefas neste dia.</li>
           ) : dayTasks.map((t) => (
-            <li key={t.id} className="flex items-center gap-3 px-5 py-3">
-              <button onClick={() => onToggle(t)} className="flex flex-1 items-center gap-3 text-left">
-                {t.done ? <CheckCircle2 className="h-6 w-6 text-success shrink-0" strokeWidth={1.6} /> : <Circle className="h-6 w-6 text-rose shrink-0" strokeWidth={1.6} />}
-                <span className={`text-sm ${t.done ? "text-muted-foreground line-through" : "text-mauve"}`}>{t.task}</span>
+            <li key={t.id} className="flex items-center gap-2 px-3 py-3 sm:gap-3 sm:px-4">
+              <button onClick={() => onToggle(t)} className="flex min-w-0 flex-1 items-center gap-2 text-left sm:gap-3">
+                {t.done ? <CheckCircle2 className="h-5 w-5 shrink-0 text-success sm:h-6 sm:w-6" strokeWidth={1.6} /> : <Circle className="h-5 w-5 shrink-0 text-rose sm:h-6 sm:w-6" strokeWidth={1.6} />}
+                <span className={`min-w-0 break-words text-sm ${t.done ? "text-muted-foreground line-through" : "text-mauve"}`}>{t.task}</span>
               </button>
-              <button onClick={() => onRemove(t.id)} className="rounded-lg p-1.5 text-destructive hover:bg-destructive/10" aria-label="Excluir"><Trash2 className="h-4 w-4" /></button>
+              <button onClick={() => onRemove(t.id)} className="shrink-0 rounded-lg p-1.5 text-destructive hover:bg-destructive/10" aria-label="Excluir"><Trash2 className="h-4 w-4" /></button>
             </li>
           ))}
         </ul>
@@ -1089,11 +1089,11 @@ function CashboxTab({
 
   return (
     <div className="space-y-4">
-      <div className="card-soft p-5 bg-gradient-to-br from-blush/60 to-card">
+      <div className="card-soft p-4 bg-gradient-to-br from-blush/60 to-card sm:p-5">
         <div className="flex items-start justify-between gap-3">
-          <div>
+          <div className="min-w-0">
             <p className="text-[11px] uppercase tracking-widest text-rose">Caixa do evento {closed && "(fechado)"}</p>
-            <p className="mt-1 text-3xl font-semibold text-mauve">{formatBRL(display.total)}</p>
+            <p className="mt-1 text-2xl font-semibold text-mauve sm:text-3xl">{formatBRL(display.total)}</p>
             <p className="text-xs text-muted-foreground">{display.items_sold} itens vendidos</p>
           </div>
           {closed ? (
@@ -1156,15 +1156,15 @@ function CashboxTab({
 
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="card-soft overflow-hidden">
-          <p className="border-b border-border/60 bg-blush/30 px-5 py-3 text-sm font-medium text-mauve md:px-4 md:py-2.5">Previsto vs vendido</p>
+          <p className="border-b border-border/60 bg-blush/30 px-3 py-3 sm:px-4 text-sm font-medium text-mauve md:px-4 md:py-2.5">Previsto vs vendido</p>
           {cashbox.sobras.length === 0 ? (
-            <p className="px-5 py-6 text-center text-sm text-muted-foreground">Adicione produtos ao evento.</p>
+            <p className="px-4 py-6 text-center text-sm text-muted-foreground">Adicione produtos ao evento.</p>
           ) : (
             <ul className="divide-y divide-border/60">
               {cashbox.sobras.map((s) => {
                 const sobra = s.planned - s.sold;
                 return (
-                  <li key={s.name} className="flex items-center justify-between px-5 py-2.5 text-sm md:px-4">
+                  <li key={s.name} className="flex items-center justify-between px-3 py-2.5 sm:px-4 text-sm md:px-4">
                     <span className="text-mauve">{s.name}</span>
                     <span className="text-xs">
                       <span className="text-success font-medium">{s.sold}</span>
@@ -1179,18 +1179,18 @@ function CashboxTab({
         </div>
 
         <div className="card-soft overflow-hidden">
-          <p className="border-b border-border/60 bg-blush/30 px-5 py-3 text-sm font-medium text-mauve md:px-4 md:py-2.5">Vendas registradas ({sales.length})</p>
+          <p className="border-b border-border/60 bg-blush/30 px-3 py-3 sm:px-4 text-sm font-medium text-mauve md:px-4 md:py-2.5">Vendas registradas ({sales.length})</p>
           {sales.length === 0 ? (
-            <p className="px-5 py-6 text-center text-sm text-muted-foreground">Nenhuma venda. Use o PDV com este evento selecionado.</p>
+            <p className="px-4 py-6 text-center text-sm text-muted-foreground">Nenhuma venda. Use o PDV com este evento selecionado.</p>
           ) : (
             <ul className="divide-y divide-border/60 max-h-64 overflow-y-auto">
               {sales.slice().reverse().map((s) => (
-                <li key={s.id} className="flex items-center justify-between px-5 py-2 text-sm md:px-4">
-                  <div>
-                    <span className="text-mauve">{s.item}</span>
-                    <span className="ml-2 text-[10px] text-muted-foreground">{methodLabel[s.payment_method] ?? s.payment_method}</span>
+                <li key={s.id} className="flex items-center justify-between gap-2 px-3 py-2 text-sm sm:px-4">
+                  <div className="min-w-0 flex-1">
+                    <span className="block truncate text-mauve">{s.item}</span>
+                    <span className="text-[10px] text-muted-foreground">{methodLabel[s.payment_method] ?? s.payment_method}</span>
                   </div>
-                  <span className="font-medium text-mauve">{formatBRL(Number(s.price))}</span>
+                  <span className="shrink-0 font-medium text-mauve">{formatBRL(Number(s.price))}</span>
                 </li>
               ))}
             </ul>

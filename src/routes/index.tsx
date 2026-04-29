@@ -21,6 +21,7 @@ import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { recipeCost, type IngredientLite, type RecipeIngredientLite, type RecipeLite } from "@/lib/costs";
 import { PageContainer } from "@/components/PageContainer";
+import { OnboardingChecklist } from "@/components/OnboardingChecklist";
 import heroCake from "@/assets/hero-cake.jpg";
 
 const formatBRL = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -50,6 +51,8 @@ function Dashboard() {
   const [perfList, setPerfList] = useState<ProductPerf[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [ingredientsCount, setIngredientsCount] = useState(0);
+  const [recipesCount, setRecipesCount] = useState(0);
+  const [storefrontConfigured, setStorefrontConfigured] = useState(false);
   const [pendingOrders, setPendingOrders] = useState(0);
   const [storefrontPending, setStorefrontPending] = useState(0);
   const [nextEvent, setNextEvent] = useState<{ id: string; name: string; date: string } | null>(null);
@@ -72,7 +75,9 @@ function Dashboard() {
       supabase.from("recipes").select("id, name, servings, labor_cost, packaging_cost, waste_pct").eq("shop_id", shopId),
       supabase.from("recipe_ingredients").select("recipe_id, ingredient_id, quantity"),
       supabase.from("ingredients").select("id, package_qty, price_paid").eq("shop_id", shopId),
-    ]).then(([s, r, i, o, ne, lc, sp, allRecipes, recIngs, ings]) => {
+      supabase.from("recipes").select("id", { count: "exact", head: true }).eq("shop_id", shopId),
+      supabase.from("shop_storefront").select("hero_title").eq("shop_id", shopId).maybeSingle(),
+    ]).then(([s, r, i, o, ne, lc, sp, allRecipes, recIngs, ings, rc, sf]) => {
       const sales = (s.data ?? []) as { price: number; qty: number; item: string; product_id: string | null }[];
       const totalRev = sales.reduce((sum, x) => sum + Number(x.price), 0);
       const totalQty = sales.reduce((sum, x) => sum + Number(x.qty ?? 1), 0);
@@ -80,6 +85,8 @@ function Dashboard() {
       setSalesCount(totalQty);
       setRecipes((r.data ?? []) as Recipe[]);
       setIngredientsCount(i.count ?? 0);
+      setRecipesCount(rc.count ?? 0);
+      setStorefrontConfigured(!!sf.data?.hero_title);
       setPendingOrders(o.count ?? 0);
       setNextEvent(ne.data as any);
       setLastClosed(lc.data as any);
@@ -185,6 +192,12 @@ function Dashboard() {
           </div>
         </div>
       </motion.section>
+
+      <OnboardingChecklist
+        ingredientsCount={ingredientsCount}
+        recipesCount={recipesCount}
+        hasStorefront={storefrontConfigured}
+      />
 
       {/* ============ Metric grid ============ */}
       <section className="grid-cards-sm">

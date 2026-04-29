@@ -1,0 +1,122 @@
+import { Link } from "@tanstack/react-router";
+import { CheckCircle2, Circle, Sparkles, X } from "lucide-react";
+import { useEffect, useState } from "react";
+
+type Step = {
+  key: string;
+  label: string;
+  description: string;
+  to: "/insumos" | "/receitas" | "/vitrine";
+  done: boolean;
+};
+
+export function OnboardingChecklist({
+  ingredientsCount,
+  recipesCount,
+  hasStorefront,
+}: {
+  ingredientsCount: number;
+  recipesCount: number;
+  hasStorefront: boolean;
+}) {
+  const [dismissed, setDismissed] = useState(false);
+
+  useEffect(() => {
+    setDismissed(localStorage.getItem("onboarding-dismissed") === "1");
+  }, []);
+
+  const steps: Step[] = [
+    {
+      key: "ingredients",
+      label: "Adicione seu primeiro insumo",
+      description: "Cadastre matérias-primas para calcular custos.",
+      to: "/insumos",
+      done: ingredientsCount > 0,
+    },
+    {
+      key: "recipes",
+      label: "Crie sua primeira receita",
+      description: "Vincule insumos e calcule margem por fatia.",
+      to: "/receitas",
+      done: recipesCount > 0,
+    },
+    {
+      key: "storefront",
+      label: "Personalize sua vitrine",
+      description: "Coloque sua confeitaria online em 1 minuto.",
+      to: "/vitrine",
+      done: hasStorefront,
+    },
+  ];
+
+  const completed = steps.filter((s) => s.done).length;
+  const allDone = completed === steps.length;
+
+  if (dismissed || allDone) return null;
+
+  const dismiss = () => {
+    localStorage.setItem("onboarding-dismissed", "1");
+    setDismissed(true);
+  };
+
+  return (
+    <div className="card-soft relative overflow-hidden bg-gradient-to-br from-blush/50 via-card to-card p-4 sm:p-5">
+      <button
+        onClick={dismiss}
+        className="absolute right-2 top-2 rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-blush/50 hover:text-mauve"
+        aria-label="Dispensar"
+      >
+        <X className="h-4 w-4" />
+      </button>
+      <div className="flex items-center gap-2">
+        <div className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-blush to-rose">
+          <Sparkles className="h-4 w-4 text-mauve" strokeWidth={1.7} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-mauve">Vamos começar</p>
+          <p className="text-[11px] text-muted-foreground">
+            {completed} de {steps.length} passos concluídos
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-card">
+        <div
+          className="h-full rounded-full bg-rose transition-all"
+          style={{ width: `${(completed / steps.length) * 100}%` }}
+        />
+      </div>
+
+      <ul className="mt-3 space-y-1.5">
+        {steps.map((s) => (
+          <li key={s.key}>
+            <Link
+              to={s.to}
+              className={`flex items-start gap-3 rounded-xl border px-3 py-2 transition-colors ${
+                s.done
+                  ? "border-success/30 bg-success/5"
+                  : "border-border bg-card hover:border-rose/40 hover:bg-blush/20"
+              }`}
+            >
+              {s.done ? (
+                <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-success" strokeWidth={1.7} />
+              ) : (
+                <Circle className="mt-0.5 h-5 w-5 shrink-0 text-rose" strokeWidth={1.7} />
+              )}
+              <div className="min-w-0 flex-1">
+                <p
+                  className={`text-sm font-medium ${
+                    s.done ? "text-muted-foreground line-through" : "text-mauve"
+                  }`}
+                >
+                  {s.label}
+                </p>
+                <p className="text-[11px] text-muted-foreground">{s.description}</p>
+              </div>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
