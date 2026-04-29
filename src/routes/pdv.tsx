@@ -326,7 +326,7 @@ function PDVPage() {
             Este evento não tem produtos. Adicione na aba Produtos do evento.
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          <div className="grid-cards-sm">
             {eventProducts.map((p) => {
               const inC = inCart(p.id);
               const left = p.planned_qty > 0 ? Math.max(0, p.planned_qty - p.sold_qty - inC) : Infinity;
@@ -413,13 +413,7 @@ function PDVPage() {
           <button onClick={() => setShowManage(true)} className="mt-3 rounded-xl bg-mauve px-4 py-2 text-sm text-cream">Criar produtos</button>
         </div>
       ) : (
-        <>
-          <div className="flex justify-end">
-            <button onClick={() => setShowManage(true)} className="inline-flex items-center gap-1 rounded-xl bg-blush/50 px-3 py-1.5 text-xs text-mauve hover:bg-blush/80">
-              <Settings2 className="h-3.5 w-3.5" /> Gerenciar
-            </button>
-          </div>
-          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        <div className="grid-cards-sm">
             {products.map((p) => {
               const Icon = iconMap[p.icon] ?? Cake;
               const bg = toneMap[p.tone] ?? toneMap.rose;
