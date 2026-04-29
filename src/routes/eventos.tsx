@@ -1183,7 +1183,7 @@ function CashboxTab({
           {sales.length === 0 ? (
             <p className="px-4 py-6 text-center text-sm text-muted-foreground">Nenhuma venda. Use o PDV com este evento selecionado.</p>
           ) : (
-            <ul className="divide-y divide-border/60 max-h-64 overflow-y-auto">
+            <ul className="divide-y divide-border/60 sm:max-h-64 sm:overflow-y-auto">
               {sales.slice().reverse().map((s) => (
                 <li key={s.id} className="flex items-center justify-between gap-2 px-3 py-2 text-sm sm:px-4">
                   <div className="min-w-0 flex-1">
@@ -1692,7 +1692,7 @@ function ProductForm({
             value={search} onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar receita..." className="input-base mt-1"
           />
-          <div className="mt-2 max-h-64 overflow-y-auto rounded-xl border border-border divide-y divide-border/60">
+          <div className="mt-2 sm:max-h-64 sm:overflow-y-auto rounded-xl border border-border divide-y divide-border/60">
             <button
               type="button"
               onClick={() => handleSelect("")}
