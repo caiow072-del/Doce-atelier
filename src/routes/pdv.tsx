@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Cake, Utensils, Sparkles, Settings2, Plus, Trash2, X, Minus, ShoppingCart, CalendarHeart, Store, Image as ImageIcon, Loader2, Check } from "lucide-react";
+import { Cake, Utensils, Sparkles, Settings2, Plus, Trash2, X, Minus, ShoppingCart, CalendarHeart, Store, Image as ImageIcon, Loader2, Check, Undo2, BadgePercent, Keyboard } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
@@ -23,7 +23,7 @@ export const Route = createFileRoute("/pdv")({
 type Product = { id: string; label: string; price: number; icon: string; tone: string; position: number; active: boolean; image_url: string | null };
 type EventProduct = { id: string; event_id: string; name: string; unit_price: number; planned_qty: number; sold_qty: number; image_url: string | null };
 type EventLite = { id: string; name: string; date: string; closed_at: string | null; recurrence?: string; recurrence_until?: string | null; weekday?: number | null; day_of_month?: number | null };
-type Sale = { id: string; item: string; price: number; sold_at: string; payment_method: string };
+type Sale = { id: string; item: string; price: number; sold_at: string; payment_method: string; refunded_at?: string | null; discount?: number | null };
 type CartItem = { id: string; name: string; price: number; qty: number; source: "pdv" | "event"; product_id: string | null; event_product_id: string | null };
 type PaymentMethod = "cash" | "pix" | "credit" | "debit" | "other";
 
