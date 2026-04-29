@@ -689,6 +689,20 @@ function PDVPage() {
         <ManageProductsSheet shopId={shopId} products={products} onClose={() => setShowManage(false)} onChange={setProducts} />
       )}
 
+      {showAdd && shopId && (
+        <AddProductModal
+          shopId={shopId}
+          mode={usingEvent ? "event" : "shop"}
+          eventId={selectedEventId}
+          eventName={selectedEvent?.name}
+          existingPdvCount={products.length}
+          existingEventCount={eventProducts.length}
+          onClose={() => setShowAdd(false)}
+          onAddedShop={(p) => setProducts((prev) => [...prev, p])}
+          onAddedEvent={(p) => setEventProducts((prev) => [...prev, p])}
+        />
+      )}
+
       {/* FAB carrinho flutuante */}
       <AnimatePresence>
         {cartCount > 0 && !showCart && (
