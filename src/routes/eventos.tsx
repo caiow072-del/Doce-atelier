@@ -949,6 +949,16 @@ function ProductsTab({
           onAdd={(data: Partial<EventProduct>) => { onAdd(data); setShowAdd(false); }}
         />
       )}
+      {editingProduct && (
+        <EditProductModal
+          product={editingProduct}
+          recipes={recipes}
+          ingredients={ingredients}
+          recipeIngs={recipeIngs}
+          onClose={() => setEditingId(null)}
+          onSave={(patch) => { onUpdate(editingProduct.id, patch); setEditingId(null); }}
+        />
+      )}
       {/* Insumos colapsável */}
       <div className="card-soft overflow-hidden">
         <button
