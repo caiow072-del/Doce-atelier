@@ -58,8 +58,8 @@ export function AppShell() {
     end ? location.pathname === to : location.pathname === to || location.pathname.startsWith(to + "/");
 
   return (
-    <div className="min-h-screen floral-bg">
-      <div className="flex">
+    <div className="min-h-screen floral-bg overflow-x-hidden">
+      <div className="flex w-full max-w-full">
         {/* ============ Desktop Sidebar ============ */}
         <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-border/60 bg-card/60 backdrop-blur-xl lg:flex">
           {/* Brand */}
