@@ -587,12 +587,6 @@ function PDVPage() {
             </AnimatePresence>
           </ul>
         )}
-      </div>
-        </div>
-
-        {/* Coluna direita: carrinho fixo no PC */}
-        <div className="hidden lg:block">
-          <div className="sticky top-20">{cartPanel}</div>
         </div>
       </div>
 
