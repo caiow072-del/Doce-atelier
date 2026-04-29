@@ -520,13 +520,56 @@ function StorefrontPage() {
 
       {/* Floating cart button */}
       {cartCount > 0 && !cartOpen && !editing && (
-        <button onClick={() => setCartOpen(true)} className="fixed bottom-5 left-1/2 z-30 flex -translate-x-1/2 items-center gap-3 rounded-full bg-mauve px-6 py-3.5 text-sm font-medium text-cream shadow-2xl">
+        <button onClick={() => setCartOpen(true)} className={`fixed left-1/2 z-30 flex -translate-x-1/2 items-center gap-3 rounded-full bg-mauve px-6 py-3.5 text-sm font-medium text-cream shadow-2xl ${front.bottom_nav_enabled ? "bottom-20 md:bottom-5" : "bottom-5"}`}>
           <ShoppingBag className="h-4 w-4" />
           <span>{cartCount} {cartCount === 1 ? "item" : "itens"}</span>
           <span className="opacity-70">·</span>
           <span>{brl(total)}</span>
           <ChevronRight className="h-4 w-4" />
         </button>
+      )}
+
+      {/* Modal "Mais informações" */}
+      {infoOpen && (
+        <div className="fixed inset-0 z-40 flex items-end justify-center bg-mauve/40 backdrop-blur-sm md:items-center" onClick={() => setInfoOpen(false)}>
+          <div className="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-cream p-5 md:rounded-3xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="font-display text-xl italic text-mauve">{shop.name}</h2>
+              <button onClick={() => setInfoOpen(false)} className="rounded-full p-1.5 hover:bg-rose/30"><X className="h-4 w-4 text-mauve" /></button>
+            </div>
+            {(front.city || front.state) && (
+              <p className="mb-2 flex items-center gap-1.5 text-sm text-mauve"><MapPin className="h-3.5 w-3.5" /> {[front.city, front.state].filter(Boolean).join(" - ")}</p>
+            )}
+            {front.pickup_enabled && front.pickup_address && (
+              <p className="mb-2 flex items-start gap-1.5 text-sm text-mauve/80"><Store className="h-3.5 w-3.5 mt-0.5 shrink-0" /> Retirada: {front.pickup_address}</p>
+            )}
+            {front.delivery_enabled && (
+              <p className="mb-2 flex items-start gap-1.5 text-sm text-mauve/80"><Truck className="h-3.5 w-3.5 mt-0.5 shrink-0" /> Entrega{front.delivery_fee > 0 ? ` · ${brl(front.delivery_fee)}` : " grátis"}{front.delivery_radius_km > 0 ? ` · até ${front.delivery_radius_km} km` : ""}{front.delivery_address ? ` · ${front.delivery_address}` : ""}</p>
+            )}
+            {front.more_info && <p className="mb-3 whitespace-pre-line text-sm text-mauve/80">{front.more_info}</p>}
+            {Object.keys(front.business_hours).length > 0 && (
+              <div className="mt-3 rounded-2xl bg-white p-3">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-mauve/70"><Clock className="inline h-3 w-3 mr-1" /> Horários</p>
+                <ul className="space-y-1 text-sm text-mauve">
+                  {DAY_KEYS.map((d) => {
+                    const it = front.business_hours[d]?.[0];
+                    return (
+                      <li key={d} className="flex items-center justify-between"><span>{DAY_LABELS[d]}</span><span className="text-mauve/70">{it ? `${it[0]} – ${it[1]}` : "Fechado"}</span></li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
+            {shop.whatsapp && (
+              <a href={`https://wa.me/${shop.whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" className="mt-4 flex items-center justify-center gap-2 rounded-full bg-mauve py-3 text-sm text-cream"><MessageCircle className="h-4 w-4" /> WhatsApp</a>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Bottom-nav público (mobile) */}
+      {front.bottom_nav_enabled && !editing && (
+        <BottomNav active={bottomTab} onSelect={handleBottomTab} />
       )}
     </div>
   );
