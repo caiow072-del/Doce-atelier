@@ -410,17 +410,31 @@ function StorefrontPage() {
       {front.sections_config.filter((s) => s.visible).map((s) => {
         switch (s.key) {
           case "hero": return (
-            <Hero
-              key={s.key}
-              shop={shop}
-              front={front}
-              editing={editing}
-              heroTitle={heroTitle}
-              heroSubtitle={heroSubtitle}
-              onTitle={(v) => update("hero_title", v)}
-              onSubtitle={(v) => update("hero_subtitle", v)}
-              onBanner={onUploadBanner}
-            />
+            <div key={s.key} className="mx-auto w-full max-w-3xl px-3 pt-3 sm:px-5 sm:pt-5">
+              <HeroCardapio
+                shopName={shop.name}
+                shopLogo={shop.logo_url}
+                heroTitle={heroTitle}
+                heroSubtitle={heroSubtitle}
+                heroImages={front.hero_images}
+                bannerUrl={front.banner_url}
+                city={front.city}
+                state={front.state}
+                businessHours={front.business_hours}
+                editing={editing}
+                onTitle={(v) => update("hero_title", v)}
+                onSubtitle={(v) => update("hero_subtitle", v)}
+                onMoreInfoClick={() => setInfoOpen(true)}
+                onUploadHero={onUploadHero}
+              />
+              <PickupDeliveryCard
+                pickupEnabled={front.pickup_enabled}
+                deliveryEnabled={front.delivery_enabled}
+                pickupAddress={front.pickup_address}
+                deliveryAddress={front.delivery_address}
+                onClick={() => setInfoOpen(true)}
+              />
+            </div>
           );
           case "about": return (
             <Section key={s.key} title="Sobre">
