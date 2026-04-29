@@ -150,19 +150,21 @@ function PDVPage() {
   const checkout = async () => {
     if (!shopId || cart.length === 0) return;
     const cartId = crypto.randomUUID();
+    const factor = cartTotal > 0 ? cartFinal / cartTotal : 1;
     const rows = cart.flatMap((c) =>
       Array.from({ length: c.qty }).map(() => ({
         shop_id: shopId,
         product_id: c.product_id,
         event_id: selectedEventId,
         item: c.name,
-        price: c.price,
+        price: Math.round(c.price * factor * 100) / 100,
         qty: 1,
         payment_method: payment,
         cart_id: cartId,
+        discount: Math.round(c.price * (1 - factor) * 100) / 100,
       }))
     );
-    const { data, error } = await supabase.from("sales").insert(rows).select("id, item, price, sold_at, payment_method");
+    const { data, error } = await supabase.from("sales").insert(rows).select("id, item, price, sold_at, payment_method, refunded_at, discount");
     if (error) return toast.error("Erro ao registrar venda");
 
     // Atualiza sold_qty dos event_products
@@ -181,9 +183,43 @@ function PDVPage() {
 
     setSales((prev) => [...((data ?? []) as Sale[]).reverse(), ...prev]);
     setCart([]);
+    setDiscountPct(0);
     setShowCart(false);
-    toast.success(`Venda de ${fmtBRL(cartTotal)} registrada`);
+    toast.success(`Venda de ${fmtBRL(cartFinal)} registrada${discountPct > 0 ? ` (${discountPct}% off)` : ""}`);
   };
+
+  const refundSale = async (sale: Sale) => {
+    if (sale.refunded_at) return;
+    if (!confirm(`Estornar venda de ${fmtBRL(Number(sale.price))} (${sale.item})?`)) return;
+    const reason = prompt("Motivo do estorno (opcional):") ?? "";
+    const { error } = await supabase
+      .from("sales")
+      .update({ refunded_at: new Date().toISOString(), refund_reason: reason || null })
+      .eq("id", sale.id);
+    if (error) return toast.error("Não foi possível estornar");
+    setSales((prev) => prev.map((s) => (s.id === sale.id ? { ...s, refunded_at: new Date().toISOString() } : s)));
+    toast.success("Venda estornada");
+  };
+
+  // Atalhos de teclado: D=dinheiro, P=pix, C=crédito, B=débito,
+  // Enter=finalizar, Esc=fechar carrinho, ?=mostrar atalhos
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (e.key === "?" || (e.shiftKey && e.key === "/")) { setShowHotkeys((v) => !v); return; }
+      if (e.key === "Escape") { setShowCart(false); setShowHotkeys(false); return; }
+      if (cart.length === 0) return;
+      const k = e.key.toLowerCase();
+      if (k === "d") setPayment("cash");
+      else if (k === "p") setPayment("pix");
+      else if (k === "c") setPayment("credit");
+      else if (k === "b") setPayment("debit");
+      else if (e.key === "Enter") { e.preventDefault(); checkout(); }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  });
 
   const selectedEvent = events.find((e) => e.id === selectedEventId);
   const usingEvent = !!selectedEventId;
