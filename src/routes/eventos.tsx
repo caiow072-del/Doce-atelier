@@ -1185,12 +1185,12 @@ function CashboxTab({
           ) : (
             <ul className="divide-y divide-border/60 max-h-64 overflow-y-auto">
               {sales.slice().reverse().map((s) => (
-                <li key={s.id} className="flex items-center justify-between px-3 py-2 text-sm sm:px-4">
-                  <div>
-                    <span className="text-mauve">{s.item}</span>
-                    <span className="ml-2 text-[10px] text-muted-foreground">{methodLabel[s.payment_method] ?? s.payment_method}</span>
+                <li key={s.id} className="flex items-center justify-between gap-2 px-3 py-2 text-sm sm:px-4">
+                  <div className="min-w-0 flex-1">
+                    <span className="block truncate text-mauve">{s.item}</span>
+                    <span className="text-[10px] text-muted-foreground">{methodLabel[s.payment_method] ?? s.payment_method}</span>
                   </div>
-                  <span className="font-medium text-mauve">{formatBRL(Number(s.price))}</span>
+                  <span className="shrink-0 font-medium text-mauve">{formatBRL(Number(s.price))}</span>
                 </li>
               ))}
             </ul>
