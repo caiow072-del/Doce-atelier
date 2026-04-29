@@ -893,7 +893,7 @@ function ProductsTab({
               const margin = p.unit_price > 0 ? ((p.unit_price - cost) / p.unit_price) * 100 : 0;
               const recipe = p.recipe_id ? recipes.find((r) => r.id === p.recipe_id) : null;
               return (
-                <li key={p.id} className="px-4 py-3 text-sm">
+                <li key={p.id} className="px-4 py-3 text-sm md:rounded-xl md:border md:border-border/60 md:bg-card md:px-3 md:py-2.5">
                   <div className="flex items-start gap-3">
                     {(p.image_url || recipe?.image_url) && (
                       <img src={p.image_url || recipe?.image_url || ""} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" loading="lazy" />
