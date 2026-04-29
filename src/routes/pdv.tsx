@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Cake, Utensils, Sparkles, Settings2, Plus, Trash2, X, Minus, ShoppingCart, CalendarHeart, Store, Image as ImageIcon, Loader2, Check } from "lucide-react";
+import { Cake, Utensils, Sparkles, Settings2, Plus, Trash2, X, Minus, ShoppingCart, CalendarHeart, Store, Image as ImageIcon, Loader2, Check, Undo2, BadgePercent, Keyboard } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
@@ -23,7 +23,7 @@ export const Route = createFileRoute("/pdv")({
 type Product = { id: string; label: string; price: number; icon: string; tone: string; position: number; active: boolean; image_url: string | null };
 type EventProduct = { id: string; event_id: string; name: string; unit_price: number; planned_qty: number; sold_qty: number; image_url: string | null };
 type EventLite = { id: string; name: string; date: string; closed_at: string | null; recurrence?: string; recurrence_until?: string | null; weekday?: number | null; day_of_month?: number | null };
-type Sale = { id: string; item: string; price: number; sold_at: string; payment_method: string };
+type Sale = { id: string; item: string; price: number; sold_at: string; payment_method: string; refunded_at?: string | null; discount?: number | null };
 type CartItem = { id: string; name: string; price: number; qty: number; source: "pdv" | "event"; product_id: string | null; event_product_id: string | null };
 type PaymentMethod = "cash" | "pix" | "credit" | "debit" | "other";
 
@@ -50,6 +50,8 @@ function PDVPage() {
   const [showManage, setShowManage] = useState(false);
   const [showCart, setShowCart] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [discountPct, setDiscountPct] = useState<number>(0); // 0..100
+  const [showHotkeys, setShowHotkeys] = useState(false);
 
   const periodStart = useMemo(() => {
     const d = new Date();
@@ -96,7 +98,7 @@ function PDVPage() {
   // ============ Load sales (reage ao período) ============
   useEffect(() => {
     if (!shopId) return;
-    let q = supabase.from("sales").select("id, item, price, sold_at, payment_method").eq("shop_id", shopId);
+    let q = supabase.from("sales").select("id, item, price, sold_at, payment_method, refunded_at, discount").eq("shop_id", shopId);
     if (periodStart) q = q.gte("sold_at", periodStart.toISOString());
     q.order("sold_at", { ascending: false }).limit(500).then(({ data }) => {
       setSales((data ?? []) as Sale[]);
@@ -111,9 +113,11 @@ function PDVPage() {
     });
   }, [selectedEventId]);
 
-  const totalToday = sales.reduce((s, x) => s + Number(x.price), 0);
+  const totalToday = sales.reduce((s, x) => s + (x.refunded_at ? 0 : Number(x.price)), 0);
   const cartTotal = useMemo(() => cart.reduce((s, x) => s + x.price * x.qty, 0), [cart]);
   const cartCount = useMemo(() => cart.reduce((s, x) => s + x.qty, 0), [cart]);
+  const discountValue = useMemo(() => Math.round(cartTotal * discountPct) / 100, [cartTotal, discountPct]);
+  const cartFinal = Math.max(0, cartTotal - discountValue);
 
   const inCart = (eventProductId: string) =>
     cart.find((c) => c.event_product_id === eventProductId)?.qty ?? 0;
@@ -146,19 +150,21 @@ function PDVPage() {
   const checkout = async () => {
     if (!shopId || cart.length === 0) return;
     const cartId = crypto.randomUUID();
+    const factor = cartTotal > 0 ? cartFinal / cartTotal : 1;
     const rows = cart.flatMap((c) =>
       Array.from({ length: c.qty }).map(() => ({
         shop_id: shopId,
         product_id: c.product_id,
         event_id: selectedEventId,
         item: c.name,
-        price: c.price,
+        price: Math.round(c.price * factor * 100) / 100,
         qty: 1,
         payment_method: payment,
         cart_id: cartId,
+        discount: Math.round(c.price * (1 - factor) * 100) / 100,
       }))
     );
-    const { data, error } = await supabase.from("sales").insert(rows).select("id, item, price, sold_at, payment_method");
+    const { data, error } = await supabase.from("sales").insert(rows).select("id, item, price, sold_at, payment_method, refunded_at, discount");
     if (error) return toast.error("Erro ao registrar venda");
 
     // Atualiza sold_qty dos event_products
@@ -177,9 +183,43 @@ function PDVPage() {
 
     setSales((prev) => [...((data ?? []) as Sale[]).reverse(), ...prev]);
     setCart([]);
+    setDiscountPct(0);
     setShowCart(false);
-    toast.success(`Venda de ${fmtBRL(cartTotal)} registrada`);
+    toast.success(`Venda de ${fmtBRL(cartFinal)} registrada${discountPct > 0 ? ` (${discountPct}% off)` : ""}`);
   };
+
+  const refundSale = async (sale: Sale) => {
+    if (sale.refunded_at) return;
+    if (!confirm(`Estornar venda de ${fmtBRL(Number(sale.price))} (${sale.item})?`)) return;
+    const reason = prompt("Motivo do estorno (opcional):") ?? "";
+    const { error } = await supabase
+      .from("sales")
+      .update({ refunded_at: new Date().toISOString(), refund_reason: reason || null })
+      .eq("id", sale.id);
+    if (error) return toast.error("Não foi possível estornar");
+    setSales((prev) => prev.map((s) => (s.id === sale.id ? { ...s, refunded_at: new Date().toISOString() } : s)));
+    toast.success("Venda estornada");
+  };
+
+  // Atalhos de teclado: D=dinheiro, P=pix, C=crédito, B=débito,
+  // Enter=finalizar, Esc=fechar carrinho, ?=mostrar atalhos
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (e.key === "?" || (e.shiftKey && e.key === "/")) { setShowHotkeys((v) => !v); return; }
+      if (e.key === "Escape") { setShowCart(false); setShowHotkeys(false); return; }
+      if (cart.length === 0) return;
+      const k = e.key.toLowerCase();
+      if (k === "d") setPayment("cash");
+      else if (k === "p") setPayment("pix");
+      else if (k === "c") setPayment("credit");
+      else if (k === "b") setPayment("debit");
+      else if (e.key === "Enter") { e.preventDefault(); checkout(); }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  });
 
   const selectedEvent = events.find((e) => e.id === selectedEventId);
   const usingEvent = !!selectedEventId;
@@ -231,10 +271,35 @@ function PDVPage() {
             ))}
           </div>
         </div>
-        <div className="rounded-xl bg-blush/40 p-3">
+        <div>
+          <p className="mb-1 flex items-center gap-1 text-[10px] uppercase tracking-widest text-rose"><BadgePercent className="h-3 w-3" /> Cupom (% off)</p>
+          <div className="flex items-center gap-1">
+            {[0, 5, 10, 15, 20].map((p) => (
+              <button key={p} onClick={() => setDiscountPct(p)}
+                className={`flex-1 rounded-lg border px-1 py-1 text-[10px] ${discountPct === p ? "border-rose bg-blush/60 text-mauve font-medium" : "border-border bg-card text-muted-foreground"}`}>
+                {p === 0 ? "—" : `${p}%`}
+              </button>
+            ))}
+            <input type="number" min={0} max={100} value={discountPct || ""} onChange={(e) => setDiscountPct(Math.max(0, Math.min(100, Number(e.target.value) || 0)))}
+              placeholder="0" className="w-12 rounded-lg border border-border bg-card px-1 py-1 text-center text-[10px] text-mauve" />
+          </div>
+        </div>
+        <div className="rounded-xl bg-blush/40 p-3 space-y-1">
+          {discountValue > 0 && (
+            <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+              <span>Subtotal</span>
+              <span className="num line-through">{fmtBRL(cartTotal)}</span>
+            </div>
+          )}
+          {discountValue > 0 && (
+            <div className="flex items-center justify-between text-[11px] text-rose">
+              <span>Desconto {discountPct}%</span>
+              <span className="num">- {fmtBRL(discountValue)}</span>
+            </div>
+          )}
           <div className="flex items-center justify-between">
             <span className="text-xs text-mauve">Total</span>
-            <span className="text-xl font-semibold text-mauve num">{fmtBRL(cartTotal)}</span>
+            <span className="text-xl font-semibold text-mauve num">{fmtBRL(cartFinal)}</span>
           </div>
         </div>
         <button onClick={checkout} disabled={cart.length === 0} className="w-full rounded-xl bg-mauve px-4 py-2.5 text-sm font-medium text-cream hover:opacity-90 disabled:opacity-40">
@@ -251,12 +316,21 @@ function PDVPage() {
         title="Ponto de venda"
         subtitle="Toque, monte o carrinho e cobre."
         actions={
-          <button
-            onClick={() => setShowManage(true)}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-blush/50 px-3 py-2 text-xs font-medium text-mauve hover:bg-blush/80"
-          >
-            <Settings2 className="h-3.5 w-3.5" /> Gerenciar produtos
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowHotkeys(true)}
+              className="hidden lg:inline-flex items-center gap-1.5 rounded-xl bg-blush/40 px-3 py-2 text-xs font-medium text-mauve hover:bg-blush/70"
+              title="Atalhos de teclado (?)"
+            >
+              <Keyboard className="h-3.5 w-3.5" /> Atalhos
+            </button>
+            <button
+              onClick={() => setShowManage(true)}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-blush/50 px-3 py-2 text-xs font-medium text-mauve hover:bg-blush/80"
+            >
+              <Settings2 className="h-3.5 w-3.5" /> Gerenciar produtos
+            </button>
+          </div>
         }
       />
 
@@ -494,16 +568,26 @@ function PDVPage() {
         ) : (
           <ul className="divide-y divide-border/60">
             <AnimatePresence initial={false}>
-              {sales.slice(0, 8).map((s) => (
-                <motion.li key={s.id} layout initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}
-                  className="flex items-center justify-between px-5 py-3 text-sm">
-                  <div>
-                    <span className="text-mauve">{s.item}</span>
-                    <span className="ml-2 text-[10px] text-muted-foreground">{PAY_METHODS.find((m) => m.key === s.payment_method)?.label ?? s.payment_method}</span>
-                  </div>
-                  <span className="font-semibold text-mauve">{fmtBRL(Number(s.price))}</span>
-                </motion.li>
-              ))}
+              {sales.slice(0, 12).map((s) => {
+                const refunded = !!s.refunded_at;
+                return (
+                  <motion.li key={s.id} layout initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}
+                    className={`flex items-center justify-between gap-2 px-5 py-3 text-sm ${refunded ? "opacity-60" : ""}`}>
+                    <div className="min-w-0 flex-1">
+                      <span className={`text-mauve ${refunded ? "line-through" : ""}`}>{s.item}</span>
+                      <span className="ml-2 text-[10px] text-muted-foreground">{PAY_METHODS.find((m) => m.key === s.payment_method)?.label ?? s.payment_method}</span>
+                      {refunded && <span className="ml-2 inline-flex items-center gap-0.5 rounded-full bg-destructive/15 px-1.5 py-0.5 text-[9px] font-medium text-destructive"><Undo2 className="h-2.5 w-2.5" /> Estornada</span>}
+                    </div>
+                    <span className={`shrink-0 font-semibold text-mauve ${refunded ? "line-through" : ""}`}>{fmtBRL(Number(s.price))}</span>
+                    {!refunded && (
+                      <button onClick={() => refundSale(s)} title="Estornar venda"
+                        className="shrink-0 rounded-lg p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
+                        <Undo2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </motion.li>
+                );
+              })}
             </AnimatePresence>
           </ul>
         )}
@@ -561,10 +645,34 @@ function PDVPage() {
                   </div>
                 </div>
 
-                <div className="mt-4 rounded-xl bg-blush/30 p-4">
+                <div className="mt-4">
+                  <p className="mb-2 flex items-center gap-1 text-[10px] uppercase tracking-widest text-rose"><BadgePercent className="h-3 w-3" /> Cupom de desconto</p>
+                  <div className="flex items-center gap-1.5">
+                    {[0, 5, 10, 15, 20].map((p) => (
+                      <button key={p} onClick={() => setDiscountPct(p)}
+                        className={`flex-1 rounded-lg border px-1 py-1.5 text-[11px] ${discountPct === p ? "border-rose bg-blush/60 text-mauve font-medium" : "border-border bg-card text-muted-foreground"}`}>
+                        {p === 0 ? "—" : `${p}%`}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-4 rounded-xl bg-blush/30 p-4 space-y-1">
+                  {discountValue > 0 && (
+                    <>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>Subtotal</span>
+                        <span className="num line-through">{fmtBRL(cartTotal)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-rose">
+                        <span>Desconto {discountPct}%</span>
+                        <span className="num">- {fmtBRL(discountValue)}</span>
+                      </div>
+                    </>
+                  )}
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-mauve">Total</span>
-                    <span className="font-display text-3xl italic text-mauve">{fmtBRL(cartTotal)}</span>
+                    <span className="font-display text-3xl italic text-mauve">{fmtBRL(cartFinal)}</span>
                   </div>
                 </div>
 
@@ -604,10 +712,37 @@ function PDVPage() {
                 {cartCount}
               </motion.span>
             </div>
-            <span className="text-sm font-semibold tabular-nums">{fmtBRL(cartTotal)}</span>
+            <span className="text-sm font-semibold tabular-nums">{fmtBRL(cartFinal)}</span>
           </motion.button>
         )}
       </AnimatePresence>
+
+      {showHotkeys && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-mauve/40 p-4 backdrop-blur-sm" onClick={() => setShowHotkeys(false)}>
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm rounded-2xl bg-card p-5 shadow-petal">
+            <div className="flex items-center justify-between">
+              <h3 className="font-display text-xl italic text-mauve">Atalhos do PDV</h3>
+              <button onClick={() => setShowHotkeys(false)} className="rounded-lg p-1.5 text-muted-foreground"><X className="h-4 w-4" /></button>
+            </div>
+            <ul className="mt-3 space-y-1.5 text-sm text-mauve">
+              {[
+                ["D", "Pagamento em dinheiro"],
+                ["P", "Pagamento Pix"],
+                ["C", "Cartão de crédito"],
+                ["B", "Cartão de débito"],
+                ["Enter", "Finalizar venda"],
+                ["Esc", "Fechar carrinho"],
+                ["?", "Mostrar/ocultar atalhos"],
+              ].map(([k, l]) => (
+                <li key={k} className="flex items-center justify-between rounded-lg bg-blush/30 px-3 py-1.5">
+                  <span>{l}</span>
+                  <kbd className="rounded-md border border-border bg-card px-2 py-0.5 text-xs font-mono text-mauve">{k}</kbd>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
     </PageContainer>
   );
 }

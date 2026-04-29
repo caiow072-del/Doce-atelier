@@ -132,6 +132,44 @@ function StorefrontPage() {
       setTheme(t);
       applyTheme(t);
 
+      // SEO dinâmico: usar dados reais da loja no <title>/<meta>
+      if (typeof document !== "undefined") {
+        document.title = `${shopData.name} — Doces artesanais`;
+        const setMeta = (sel: string, attr: string, content: string) => {
+          let el = document.head.querySelector(sel) as HTMLMetaElement | null;
+          if (!el) {
+            el = document.createElement("meta");
+            const [, key] = sel.match(/\[(.+?)=/) ?? [];
+            const [, val] = sel.match(/="(.+?)"/) ?? [];
+            if (key && val) el.setAttribute(key, val);
+            document.head.appendChild(el);
+          }
+          el.setAttribute(attr, content);
+        };
+        const desc = (shopData.description ?? "").trim() || `Peça os doces de ${shopData.name} pela vitrine online.`;
+        setMeta('meta[name="description"]', "content", desc.slice(0, 160));
+        setMeta('meta[property="og:title"]', "content", shopData.name);
+        setMeta('meta[property="og:description"]', "content", desc.slice(0, 160));
+        if (shopData.logo_url) setMeta('meta[property="og:image"]', "content", shopData.logo_url);
+      }
+
+      // Analytics: registra 1 visita por sessão por loja (anônima)
+      if (typeof window !== "undefined" && !isOwner) {
+        try {
+          const key = `visit:${shopData.id}`;
+          if (!sessionStorage.getItem(key)) {
+            const device = window.matchMedia("(max-width: 640px)").matches ? "mobile" : "desktop";
+            await supabase.from("shop_visits").insert({
+              shop_id: shopData.id,
+              referer: document.referrer || null,
+              device,
+              session_key: crypto.randomUUID(),
+            });
+            sessionStorage.setItem(key, "1");
+          }
+        } catch { /* silencioso */ }
+      }
+
       const [recsRes, sfRes] = await Promise.all([
         supabase.from("recipes")
           .select("id, name, description, image_url, public_price, servings, category, promo_price, is_featured")
