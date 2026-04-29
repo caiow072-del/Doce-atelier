@@ -1127,46 +1127,48 @@ function CashboxTab({
         </div>
       )}
 
-      <div className="card-soft overflow-hidden">
-        <p className="border-b border-border/60 bg-blush/30 px-5 py-3 text-sm font-medium text-mauve">Previsto vs vendido</p>
-        {cashbox.sobras.length === 0 ? (
-          <p className="px-5 py-6 text-center text-sm text-muted-foreground">Adicione produtos ao evento.</p>
-        ) : (
-          <ul className="divide-y divide-border/60">
-            {cashbox.sobras.map((s) => {
-              const sobra = s.planned - s.sold;
-              return (
-                <li key={s.name} className="flex items-center justify-between px-5 py-2.5 text-sm">
-                  <span className="text-mauve">{s.name}</span>
-                  <span className="text-xs">
-                    <span className="text-success font-medium">{s.sold}</span>
-                    <span className="text-muted-foreground"> / {s.planned} planejados</span>
-                    {sobra > 0 && <span className="ml-2 text-warning">{sobra} sobra</span>}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="card-soft overflow-hidden">
+          <p className="border-b border-border/60 bg-blush/30 px-5 py-3 text-sm font-medium text-mauve md:px-4 md:py-2.5">Previsto vs vendido</p>
+          {cashbox.sobras.length === 0 ? (
+            <p className="px-5 py-6 text-center text-sm text-muted-foreground">Adicione produtos ao evento.</p>
+          ) : (
+            <ul className="divide-y divide-border/60">
+              {cashbox.sobras.map((s) => {
+                const sobra = s.planned - s.sold;
+                return (
+                  <li key={s.name} className="flex items-center justify-between px-5 py-2.5 text-sm md:px-4">
+                    <span className="text-mauve">{s.name}</span>
+                    <span className="text-xs">
+                      <span className="text-success font-medium">{s.sold}</span>
+                      <span className="text-muted-foreground"> / {s.planned} planejados</span>
+                      {sobra > 0 && <span className="ml-2 text-warning">{sobra} sobra</span>}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
 
-      <div className="card-soft overflow-hidden">
-        <p className="border-b border-border/60 bg-blush/30 px-5 py-3 text-sm font-medium text-mauve">Vendas registradas ({sales.length})</p>
-        {sales.length === 0 ? (
-          <p className="px-5 py-6 text-center text-sm text-muted-foreground">Nenhuma venda. Use o PDV com este evento selecionado.</p>
-        ) : (
-          <ul className="divide-y divide-border/60 max-h-64 overflow-y-auto">
-            {sales.slice().reverse().map((s) => (
-              <li key={s.id} className="flex items-center justify-between px-5 py-2 text-sm">
-                <div>
-                  <span className="text-mauve">{s.item}</span>
-                  <span className="ml-2 text-[10px] text-muted-foreground">{methodLabel[s.payment_method] ?? s.payment_method}</span>
-                </div>
-                <span className="font-medium text-mauve">{formatBRL(Number(s.price))}</span>
-              </li>
-            ))}
-          </ul>
-        )}
+        <div className="card-soft overflow-hidden">
+          <p className="border-b border-border/60 bg-blush/30 px-5 py-3 text-sm font-medium text-mauve md:px-4 md:py-2.5">Vendas registradas ({sales.length})</p>
+          {sales.length === 0 ? (
+            <p className="px-5 py-6 text-center text-sm text-muted-foreground">Nenhuma venda. Use o PDV com este evento selecionado.</p>
+          ) : (
+            <ul className="divide-y divide-border/60 max-h-64 overflow-y-auto">
+              {sales.slice().reverse().map((s) => (
+                <li key={s.id} className="flex items-center justify-between px-5 py-2 text-sm md:px-4">
+                  <div>
+                    <span className="text-mauve">{s.item}</span>
+                    <span className="ml-2 text-[10px] text-muted-foreground">{methodLabel[s.payment_method] ?? s.payment_method}</span>
+                  </div>
+                  <span className="font-medium text-mauve">{formatBRL(Number(s.price))}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
     </div>
   );
