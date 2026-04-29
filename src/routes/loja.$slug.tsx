@@ -207,7 +207,7 @@ function StorefrontPage() {
         supabase.from("shop_storefront").select("*").eq("shop_id", shopData.id).maybeSingle(),
       ]);
       if (cancelled) return;
-      setRecipes((recsRes.data ?? []) as PublicRecipe[]);
+      setRecipes(((recsRes.data ?? []) as unknown) as PublicRecipe[]);
       const sf = sfRes.data as any;
       if (sf) {
         const sections: SectionConfig[] = Array.isArray(sf.sections_config) && sf.sections_config.length > 0
