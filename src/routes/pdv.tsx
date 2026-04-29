@@ -689,7 +689,7 @@ function PDVPage() {
             exit={{ scale: 0, opacity: 0 }}
             whileTap={{ scale: 0.92 }}
             onClick={() => setShowCart(true)}
-            className="fixed bottom-20 right-4 z-40 inline-flex items-center gap-2 rounded-full bg-mauve px-5 py-3.5 text-cream shadow-petal sm:bottom-6 lg:hidden"
+            className="fixed bottom-20 right-4 z-40 inline-flex items-center gap-2 rounded-full bg-mauve px-5 py-3.5 text-cream shadow-petal sm:bottom-6"
             aria-label={`Abrir carrinho com ${cartCount} itens`}
           >
             <div className="relative">
