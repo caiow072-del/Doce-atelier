@@ -568,16 +568,26 @@ function PDVPage() {
         ) : (
           <ul className="divide-y divide-border/60">
             <AnimatePresence initial={false}>
-              {sales.slice(0, 8).map((s) => (
-                <motion.li key={s.id} layout initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}
-                  className="flex items-center justify-between px-5 py-3 text-sm">
-                  <div>
-                    <span className="text-mauve">{s.item}</span>
-                    <span className="ml-2 text-[10px] text-muted-foreground">{PAY_METHODS.find((m) => m.key === s.payment_method)?.label ?? s.payment_method}</span>
-                  </div>
-                  <span className="font-semibold text-mauve">{fmtBRL(Number(s.price))}</span>
-                </motion.li>
-              ))}
+              {sales.slice(0, 12).map((s) => {
+                const refunded = !!s.refunded_at;
+                return (
+                  <motion.li key={s.id} layout initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}
+                    className={`flex items-center justify-between gap-2 px-5 py-3 text-sm ${refunded ? "opacity-60" : ""}`}>
+                    <div className="min-w-0 flex-1">
+                      <span className={`text-mauve ${refunded ? "line-through" : ""}`}>{s.item}</span>
+                      <span className="ml-2 text-[10px] text-muted-foreground">{PAY_METHODS.find((m) => m.key === s.payment_method)?.label ?? s.payment_method}</span>
+                      {refunded && <span className="ml-2 inline-flex items-center gap-0.5 rounded-full bg-destructive/15 px-1.5 py-0.5 text-[9px] font-medium text-destructive"><Undo2 className="h-2.5 w-2.5" /> Estornada</span>}
+                    </div>
+                    <span className={`shrink-0 font-semibold text-mauve ${refunded ? "line-through" : ""}`}>{fmtBRL(Number(s.price))}</span>
+                    {!refunded && (
+                      <button onClick={() => refundSale(s)} title="Estornar venda"
+                        className="shrink-0 rounded-lg p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
+                        <Undo2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </motion.li>
+                );
+              })}
             </AnimatePresence>
           </ul>
         )}
