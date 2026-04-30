@@ -177,8 +177,8 @@ export function AppShell() {
               <Menu className="h-5 w-5" strokeWidth={1.7} />
             </button>
             <div className="flex items-center gap-2 min-w-0 flex-1 justify-center">
-              <div className="flex h-14 w-full max-w-[200px] items-center justify-center overflow-hidden">
-                <img src="/logo.svg" alt="Doce Atelier" className="h-28 w-auto object-contain scale-125" />
+              <div className="flex h-16 w-full max-w-[200px] items-center justify-center overflow-hidden">
+                <img src="/logo.svg" alt="Doce Atelier" className="h-28 w-auto object-contain scale-110" />
               </div>
             </div>
             <div
@@ -230,8 +230,8 @@ export function AppShell() {
           >
             <div className="flex items-center justify-between">
               <div className="flex flex-col items-center gap-2 mb-6 w-full">
-                <div className="flex h-24 w-full items-center justify-center overflow-hidden">
-                  <img src="/logo.svg" alt="Doce Atelier" className="h-48 w-auto object-contain scale-125" />
+                <div className="flex h-28 w-full items-center justify-center overflow-hidden">
+                  <img src="/logo.svg" alt="Doce Atelier" className="h-48 w-auto object-contain scale-110" />
                 </div>
                 <p className="text-[9px] uppercase tracking-[0.3em] text-muted-foreground font-black">Painel de Gestão</p>
               </div>
