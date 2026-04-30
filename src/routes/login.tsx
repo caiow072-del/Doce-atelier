@@ -75,7 +75,7 @@ function LoginPage() {
           }} />
           <div className="relative flex h-full flex-col">
             <div className="flex flex-col items-center gap-4">
-              <img src="/logo.svg" alt="Doce Atelier" className="h-24 w-auto object-contain" />
+              <img src="/logo.svg" alt="Doce Atelier" className="h-28 w-auto object-contain" />
             </div>
 
             <div className="mt-auto">
@@ -96,7 +96,7 @@ function LoginPage() {
         {/* Form */}
         <div className="p-8 sm:p-12">
           <div className="mb-8 flex flex-col items-center gap-2 lg:hidden">
-            <img src="/logo.svg" alt="Doce Atelier" className="h-20 w-auto object-contain" />
+            <img src="/logo.svg" alt="Doce Atelier" className="h-24 w-auto object-contain" />
           </div>
 
           <h2 className="text-2xl font-semibold tracking-tight text-mauve">
