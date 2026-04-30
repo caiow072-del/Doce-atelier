@@ -74,8 +74,10 @@ function LoginPage() {
               "radial-gradient(circle at 20% 20%, oklch(0.93 0.04 18 / 0.8), transparent 50%), radial-gradient(circle at 80% 80%, oklch(0.78 0.09 15 / 0.6), transparent 50%)",
           }} />
           <div className="relative flex h-full flex-col">
-            <div className="flex flex-col items-center gap-4">
-              <img src="/logo.svg" alt="Doce Atelier" className="h-28 w-auto object-contain" />
+            <div className="flex flex-col items-center justify-center mb-8">
+              <div className="flex h-32 w-full items-center justify-center overflow-hidden">
+                <img src="/logo.svg" alt="Doce Atelier" className="h-64 w-auto object-contain scale-110" />
+              </div>
             </div>
 
             <div className="mt-auto">
@@ -95,8 +97,10 @@ function LoginPage() {
 
         {/* Form */}
         <div className="p-8 sm:p-12">
-          <div className="mb-8 flex flex-col items-center gap-2 lg:hidden">
-            <img src="/logo.svg" alt="Doce Atelier" className="h-24 w-auto object-contain" />
+          <div className="mb-6 flex flex-col items-center justify-center lg:hidden">
+            <div className="flex h-24 w-full items-center justify-center overflow-hidden">
+              <img src="/logo.svg" alt="Doce Atelier" className="h-48 w-auto object-contain scale-110" />
+            </div>
           </div>
 
           <h2 className="text-2xl font-semibold tracking-tight text-mauve">
