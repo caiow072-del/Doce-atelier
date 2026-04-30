@@ -54,7 +54,7 @@ const roleLabel: Record<string, string> = {
 };
 
 export function AppShell() {
-  const { user, currentShop, shops, setCurrentShopId, signOut } = useAuth();
+  const { user, currentShop, shops, isApproved, setCurrentShopId, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -63,8 +63,8 @@ export function AppShell() {
   const isActive = (to: string, end?: boolean) =>
     end ? location.pathname === to : location.pathname === to || location.pathname.startsWith(to + "/");
 
-  // Auth Guard: Block access if shop is not approved
-  if (user && currentShop && currentShop.shops.is_approved === false) {
+  // Auth Guard: Block access if user profile is not approved
+  if (user && isApproved === false) {
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#FCFAFA]/95 backdrop-blur-md p-6">
         <div className="max-w-md w-full bg-card p-8 rounded-3xl border border-border/60 shadow-petal text-center">
@@ -75,7 +75,7 @@ export function AppShell() {
           </div>
           <h2 className="text-2xl font-brand text-mauve mb-4">Aguardando Aprovação</h2>
           <p className="text-muted-foreground text-sm leading-relaxed mb-8">
-            O cadastro no Doce Atelier está temporariamente restrito. Recebemos seus dados e o administrador revisará sua conta para aprovação em breve.
+            Acesso Pendente: Seu cadastro foi recebido e está aguardando a aprovação do administrador do Doce Atelier.
           </p>
           <button 
             onClick={async () => {

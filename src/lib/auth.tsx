@@ -14,7 +14,6 @@ export type ShopMembership = {
     logo_url: string | null;
     theme: any;
     target_margin: number;
-    is_approved: boolean;
   };
 };
 
@@ -22,6 +21,7 @@ type AuthState = {
   loading: boolean;
   session: Session | null;
   user: User | null;
+  isApproved: boolean;
   shops: ShopMembership[];
   currentShop: ShopMembership | null;
   setCurrentShopId: (id: string) => void;
@@ -39,6 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<Session | null>(null);
   const [shops, setShops] = useState<ShopMembership[]>([]);
+  const [isApproved, setIsApproved] = useState(false);
   const [currentShopId, setCurrentShopIdState] = useState<string | null>(null);
 
   const setCurrentShopId = (id: string) => {
@@ -49,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loadShops = async (userId: string, preferredShopId?: string | null) => {
     const { data, error } = await supabase
       .from("shop_members")
-      .select("shop_id, role, shops(id, name, slug, whatsapp, description, logo_url, theme, target_margin, is_approved)")
+      .select("shop_id, role, shops(id, name, slug, whatsapp, description, logo_url, theme, target_margin)")
       .eq("user_id", userId);
     if (error) {
       console.error("loadShops error", error);
@@ -69,6 +70,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     setCurrentShopIdState(nextShopId);
     if (typeof window !== "undefined") localStorage.setItem(STORAGE_KEY, nextShopId);
+  };
+  
+  const loadProfile = async (userId: string) => {
+    const { data } = await supabase.from("profiles").select("is_approved" as any).eq("id", userId).single();
+    if (data) setIsApproved(!!(data as any).is_approved);
   };
 
   useEffect(() => {
@@ -96,6 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (newSession?.user) {
         void loadShops(newSession.user.id, storedShopId);
+        void loadProfile(newSession.user.id);
       } else {
         setShops([]);
         setCurrentShopIdState(null);
@@ -133,6 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loading,
         session,
         user: session?.user ?? null,
+        isApproved,
         shops,
         currentShop,
         setCurrentShopId,
