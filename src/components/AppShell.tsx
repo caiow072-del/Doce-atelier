@@ -70,14 +70,14 @@ export function AppShell() {
         <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-border/60 bg-card/60 backdrop-blur-xl lg:flex">
           {/* Brand */}
           <div className="flex flex-col items-center px-4 pt-6 pb-2">
-            <div className="flex items-center justify-center h-24 w-full overflow-hidden">
+            <div className="flex items-center justify-center h-28 w-full overflow-hidden">
               <img 
                 src="/logo.svg" 
                 alt="Doce Atelier" 
-                className="h-48 w-auto object-contain scale-125" 
+                className="h-52 w-auto object-contain scale-110" 
               />
             </div>
-            <p className="mt-0 text-[10px] uppercase tracking-[0.4em] text-muted-foreground font-black">Painel</p>
+            <p className="mt-1 text-[10px] uppercase tracking-[0.4em] text-muted-foreground font-black">Painel</p>
           </div>
 
           {/* Shop switcher */}
@@ -177,7 +177,9 @@ export function AppShell() {
               <Menu className="h-5 w-5" strokeWidth={1.7} />
             </button>
             <div className="flex items-center gap-2 min-w-0 flex-1 justify-center">
-              <img src="/logo.svg" alt="Doce Atelier" className="h-16 w-auto object-contain" />
+              <div className="flex h-14 w-full max-w-[200px] items-center justify-center overflow-hidden">
+                <img src="/logo.svg" alt="Doce Atelier" className="h-28 w-auto object-contain scale-125" />
+              </div>
             </div>
             <div
               className="grid h-9 w-9 place-items-center rounded-full bg-rose/40 text-sm font-semibold text-mauve"
@@ -227,8 +229,10 @@ export function AppShell() {
             className="flex h-full w-72 flex-col bg-card p-5 shadow-petal"
           >
             <div className="flex items-center justify-between">
-              <div className="flex flex-col items-center gap-2 mb-6">
-                <img src="/logo.svg" alt="Doce Atelier" className="h-16 w-auto object-contain" />
+              <div className="flex flex-col items-center gap-2 mb-6 w-full">
+                <div className="flex h-24 w-full items-center justify-center overflow-hidden">
+                  <img src="/logo.svg" alt="Doce Atelier" className="h-48 w-auto object-contain scale-125" />
+                </div>
                 <p className="text-[9px] uppercase tracking-[0.3em] text-muted-foreground font-black">Painel de Gestão</p>
               </div>
               <button onClick={() => setMobileOpen(false)} className="rounded-lg p-2 text-muted-foreground" aria-label="Fechar">
