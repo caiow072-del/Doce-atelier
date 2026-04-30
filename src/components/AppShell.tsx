@@ -63,6 +63,34 @@ export function AppShell() {
   const isActive = (to: string, end?: boolean) =>
     end ? location.pathname === to : location.pathname === to || location.pathname.startsWith(to + "/");
 
+  // Auth Guard: Block access if shop is not approved
+  if (user && currentShop && currentShop.shops.is_approved === false) {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#FCFAFA]/95 backdrop-blur-md p-6">
+        <div className="max-w-md w-full bg-card p-8 rounded-3xl border border-border/60 shadow-petal text-center">
+          <div className="mb-6 flex justify-center">
+            <div className="p-4 bg-rose/10 rounded-full">
+              <Sparkles className="h-10 w-10 text-rose animate-pulse" />
+            </div>
+          </div>
+          <h2 className="text-2xl font-brand text-mauve mb-4">Aguardando Aprovação</h2>
+          <p className="text-muted-foreground text-sm leading-relaxed mb-8">
+            O cadastro no Doce Atelier está temporariamente restrito. Recebemos seus dados e o administrador revisará sua conta para aprovação em breve.
+          </p>
+          <button 
+            onClick={async () => {
+              await signOut();
+              navigate({ to: "/login" });
+            }}
+            className="flex items-center justify-center gap-2 w-full py-3 bg-blush/60 text-mauve rounded-2xl font-medium hover:bg-blush transition-colors"
+          >
+            <LogOut className="h-4 w-4" /> Sair
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen floral-bg overflow-x-hidden">
       <div className="flex w-full max-w-full">
