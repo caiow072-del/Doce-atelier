@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { ConfirmDialog, type ConfirmConfig } from "@/components/ConfirmDialog";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -94,6 +95,7 @@ function EncomendasPage() {
   const [loading, setLoading] = useState(true);
   const [showNew, setShowNew] = useState(false);
   const [filter, setFilter] = useState<"todos" | "ativos" | "vitrine" | OrderStatus>("ativos");
+  const [confirmCfg, setConfirmCfg] = useState<ConfirmConfig | null>(null);
 
   const loadAll = async () => {
     if (!shopId) return;
@@ -139,11 +141,19 @@ function EncomendasPage() {
     setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status } : o)));
   };
 
-  const remove = async (id: string) => {
-    if (!confirm("Excluir esta encomenda?")) return;
-    const { error } = await supabase.from("orders").delete().eq("id", id);
-    if (error) return toast.error("Erro ao excluir");
-    setOrders((prev) => prev.filter((o) => o.id !== id));
+  const remove = (id: string) => {
+    setConfirmCfg({
+      title: "Excluir encomenda?",
+      description: "Essa ação não pode ser desfeita. O pedido será removido permanentemente.",
+      confirmLabel: "Excluir",
+      variant: "destructive",
+      action: async () => {
+        const { error } = await supabase.from("orders").delete().eq("id", id);
+        if (error) return toast.error("Erro ao excluir");
+        setOrders((prev) => prev.filter((o) => o.id !== id));
+        toast.success("Encomenda excluída");
+      },
+    });
   };
 
   return (
@@ -185,7 +195,7 @@ function EncomendasPage() {
       {loading ? (
         <div className="card-soft p-10 text-center text-sm text-muted-foreground">Carregando...</div>
       ) : visible.length === 0 ? (
-        <div className="card-soft p-10 text-center">
+        <div className="mx-auto max-w-md flex flex-col items-center justify-center rounded-3xl border-2 border-dashed border-border/60 bg-card/40 py-12 px-6 text-center mt-6">
           <ClipboardList className="mx-auto h-10 w-10 text-rose" strokeWidth={1.4} />
           <p className="mt-3 text-sm text-muted-foreground">Nenhuma encomenda neste filtro.</p>
           {customers.length === 0 && (
@@ -199,7 +209,7 @@ function EncomendasPage() {
           )}
         </div>
       ) : (
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           {visible.map((o) => {
             const remaining = o.total_price - o.deposit_paid;
             const wa = o.customer_phone ? digits(o.customer_phone) : "";
@@ -315,6 +325,8 @@ function EncomendasPage() {
           }}
         />
       )}
+
+      <ConfirmDialog config={confirmCfg} onClose={() => setConfirmCfg(null)} />
     </div>
     </PageContainer>
   );

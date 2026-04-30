@@ -47,6 +47,12 @@ const mobileNav = [
   { to: "/pdv", label: "PDV", icon: ShoppingBag },
 ] as const;
 
+const roleLabel: Record<string, string> = {
+  owner: "Proprietário(a)",
+  manager: "Gerente",
+  staff: "Equipe",
+};
+
 export function AppShell() {
   const { user, currentShop, shops, setCurrentShopId, signOut } = useAuth();
   const location = useLocation();
@@ -63,13 +69,12 @@ export function AppShell() {
         {/* ============ Desktop Sidebar ============ */}
         <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-border/60 bg-card/60 backdrop-blur-xl lg:flex">
           {/* Brand */}
-          <div className="flex items-center gap-3 px-5 pt-6">
-            <div className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-blush to-rose shadow-soft">
-              <Sparkles className="h-5 w-5 text-mauve" strokeWidth={1.6} />
-            </div>
-            <div className="leading-tight">
-              <p className="font-brand text-xl text-mauve">Cakes Manager</p>
-              <p className="text-[11px] uppercase tracking-widest text-muted-foreground">Atelier doce</p>
+          <div className="flex flex-col items-center px-4 pt-4 pb-2">
+            <img src="/logo.svg" alt="Doce Atelier" className="h-16 w-auto object-contain" />
+            <div className="mt-1 flex items-center gap-2">
+              <span className="h-px w-4 bg-border/60" />
+              <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-black">Painel</p>
+              <span className="h-px w-4 bg-border/60" />
             </div>
           </div>
 
@@ -83,7 +88,13 @@ export function AppShell() {
                 <Store className="h-4 w-4 shrink-0 text-rose" strokeWidth={1.6} />
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium text-mauve">{currentShop?.shops.name ?? "Sem loja"}</p>
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{currentShop?.role}</p>
+                  <div className="mt-0.5">
+                    {currentShop?.role && (
+                      <span className="inline-flex items-center rounded-full bg-rose/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest text-rose">
+                        {roleLabel[currentShop.role] ?? currentShop.role}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
               <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${shopMenuOpen ? "rotate-180" : ""}`} />
@@ -164,10 +175,7 @@ export function AppShell() {
               <Menu className="h-5 w-5" strokeWidth={1.7} />
             </button>
             <div className="flex items-center gap-2 min-w-0 flex-1 justify-center">
-              <div className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-blush to-rose">
-                <Sparkles className="h-4 w-4 text-mauve" strokeWidth={1.6} />
-              </div>
-              <p className="font-brand text-base text-mauve truncate">{currentShop?.shops.name ?? "Cakes Manager"}</p>
+              <img src="/logo.svg" alt="Doce Atelier" className="h-10 w-auto object-contain" />
             </div>
             <div
               className="grid h-9 w-9 place-items-center rounded-full bg-rose/40 text-sm font-semibold text-mauve"
@@ -217,11 +225,9 @@ export function AppShell() {
             className="flex h-full w-72 flex-col bg-card p-5 shadow-petal"
           >
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-blush to-rose">
-                  <Sparkles className="h-5 w-5 text-mauve" strokeWidth={1.6} />
-                </div>
-                <p className="font-brand text-xl text-mauve">Cakes Manager</p>
+              <div className="flex flex-col items-center gap-2 mb-6">
+                <img src="/logo.svg" alt="Doce Atelier" className="h-14 w-auto object-contain" />
+                <p className="text-[9px] uppercase tracking-[0.3em] text-muted-foreground font-black">Painel de Gestão</p>
               </div>
               <button onClick={() => setMobileOpen(false)} className="rounded-lg p-2 text-muted-foreground" aria-label="Fechar">
                 <X className="h-5 w-5" />
@@ -230,7 +236,14 @@ export function AppShell() {
 
             <div className="mt-6 rounded-xl bg-blush/40 p-3">
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Loja atual</p>
-              <p className="text-sm font-medium text-mauve">{currentShop?.shops.name}</p>
+              <div className="flex items-center gap-2 mt-0.5">
+                <p className="text-sm font-medium text-mauve">{currentShop?.shops.name}</p>
+                {currentShop?.role && (
+                  <span className="inline-flex items-center rounded-full bg-rose/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest text-rose">
+                    {roleLabel[currentShop.role] ?? currentShop.role}
+                  </span>
+                )}
+              </div>
             </div>
 
             <nav className="mt-6 space-y-1 overflow-y-auto">

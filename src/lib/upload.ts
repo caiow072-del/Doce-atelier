@@ -9,7 +9,7 @@ export async function uploadShopImage(
   file: File,
 ): Promise<string> {
   if (!file.type.startsWith("image/")) throw new Error("Selecione uma imagem");
-  if (file.size > 4 * 1024 * 1024) throw new Error("Imagem maior que 4MB");
+  if (file.size > 3 * 1024 * 1024) throw new Error("Imagem maior que 3MB");
   const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
   const path = `${shopId}/${crypto.randomUUID()}.${ext}`;
   const { error } = await supabase.storage.from(bucket).upload(path, file, {

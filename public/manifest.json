@@ -1,0 +1,13 @@
+{
+  "name": "Doce Atelier",
+  "short_name": "Doce Atelier",
+  "description": "Vitrine e PDV de Confeitaria",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FCFAFA",
+  "theme_color": "#5b3a4a",
+  "icons": [
+    { "src": "/ico.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/logo.svg", "sizes": "512x512", "type": "image/svg+xml" }
+  ]
+}

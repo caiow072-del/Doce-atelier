@@ -158,7 +158,7 @@ function Dashboard() {
   const firstName = rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase();
 
   return (
-    <PageContainer width="wide">
+    <PageContainer width="default">
     <div className="space-y-5 lg:space-y-6">
       {/* ============ Hero (compact) ============ */}
       <motion.section
@@ -195,15 +195,15 @@ function Dashboard() {
           </div>
         </div>
       </motion.section>
-
-      <OnboardingChecklist
-        ingredientsCount={ingredientsCount}
-        recipesCount={recipesCount}
-        hasStorefront={storefrontConfigured}
-      />
-
+      <div className="mx-auto max-w-2xl">
+        <OnboardingChecklist
+          ingredientsCount={ingredientsCount}
+          recipesCount={recipesCount}
+          hasStorefront={storefrontConfigured}
+        />
+      </div>
       {/* ============ Metric grid ============ */}
-      <section className="grid-cards-sm">
+      <section className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <Metric
           icon={<TrendingUp className="h-4 w-4" />}
           label="Faturamento"

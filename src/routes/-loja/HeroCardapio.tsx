@@ -12,8 +12,7 @@ type Props = {
   shopLogo: string | null;
   heroTitle: string;
   heroSubtitle: string;
-  heroImages: string[]; // até 4
-  bannerUrl: string | null; // fallback
+  bannerUrl: string | null;
   city: string | null;
   state: string | null;
   businessHours: BusinessHours | null;
@@ -21,62 +20,33 @@ type Props = {
   onTitle: (v: string) => void;
   onSubtitle: (v: string) => void;
   onMoreInfoClick: () => void;
-  onUploadHero: (slot: number, file: File) => void;
-  onRemoveHero?: (slot: number) => void;
+  onUploadBanner: (file: File) => void;
 };
 
 export function HeroCardapio({
-  shopName, shopLogo, heroTitle, heroSubtitle, heroImages, bannerUrl,
+  shopName, shopLogo, heroTitle, heroSubtitle, bannerUrl,
   city, state, businessHours, editing,
-  onTitle, onSubtitle, onMoreInfoClick, onUploadHero,
+  onTitle, onSubtitle, onMoreInfoClick, onUploadBanner,
 }: Props) {
-  // Sempre 4 slots para edição; em visualização mostramos só os preenchidos.
-  const slots = useMemo(() => {
-    const arr = [...heroImages];
-    while (arr.length < 4) arr.push("");
-    return arr.slice(0, 4);
-  }, [heroImages]);
-
-  const visibleImages = heroImages.filter(Boolean);
-  const useBannerFallback = !editing && visibleImages.length === 0 && bannerUrl;
-
   const status = getOpenStatus(businessHours ?? null);
 
   return (
     <header className="relative pb-14">
-      {/* Mosaico de fotos */}
-      <div className="relative overflow-hidden rounded-b-[2rem]">
-        {useBannerFallback ? (
-          <img src={bannerUrl!} alt="" className="h-44 w-full object-cover sm:h-56" loading="eager" />
-        ) : editing ? (
-          <div className="grid h-44 grid-cols-4 gap-1 sm:h-56">
-            {slots.map((src, i) => (
-              <EditableImage
-                key={i}
-                editing={editing}
-                src={src || null}
-                alt=""
-                aspect="h-full w-full"
-                onUpload={(f) => onUploadHero(i, f)}
-                fallback={
-                  <div className="grid h-full w-full place-items-center bg-gradient-to-br from-blush via-cream to-rose/30 text-mauve/40 text-xs">
-                    Foto {i + 1}
-                  </div>
-                }
-              />
-            ))}
-          </div>
-        ) : visibleImages.length > 0 ? (
-          <div className={`grid h-44 gap-1 sm:h-56 ${visibleImages.length === 1 ? "grid-cols-1" : visibleImages.length === 2 ? "grid-cols-2" : visibleImages.length === 3 ? "grid-cols-3" : "grid-cols-4"}`}>
-            {visibleImages.map((src, i) => (
-              <img key={i} src={src} alt="" className="h-full w-full object-cover" loading={i === 0 ? "eager" : "lazy"} />
-            ))}
-          </div>
-        ) : (
-          <div className="grid h-44 w-full place-items-center bg-gradient-to-br from-blush via-cream to-rose/40 sm:h-56">
-            <Cake className="h-12 w-12 text-mauve/30" strokeWidth={1.2} />
-          </div>
-        )}
+      {/* Imagem de Capa (Banner Único) */}
+      <div className="relative overflow-hidden rounded-b-[2rem] h-44 sm:h-56">
+        <EditableImage
+          editing={editing}
+          src={bannerUrl}
+          alt={`Capa da loja ${shopName}`}
+          aspect="h-full w-full object-cover"
+          onUpload={onUploadBanner}
+          fallback={
+            <div className="grid h-full w-full place-items-center bg-gradient-to-br from-blush via-cream to-rose/40">
+              <Cake className="h-12 w-12 text-mauve/30" strokeWidth={1.2} />
+              {editing && <span className="text-xs text-mauve/50 mt-2 font-medium">Adicionar Capa</span>}
+            </div>
+          }
+        />
       </div>
 
       {/* Logo circular sobreposta */}

@@ -8,7 +8,7 @@ import { useAuth } from "@/lib/auth";
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
-      { title: "Entrar — Cakes Manager" },
+      { title: "Entrar — Doce Atelier" },
       { name: "description", content: "Acesse o painel da sua confeitaria." },
     ],
   }),
@@ -74,11 +74,8 @@ function LoginPage() {
               "radial-gradient(circle at 20% 20%, oklch(0.93 0.04 18 / 0.8), transparent 50%), radial-gradient(circle at 80% 80%, oklch(0.78 0.09 15 / 0.6), transparent 50%)",
           }} />
           <div className="relative flex h-full flex-col">
-            <div className="flex items-center gap-3">
-              <div className="grid h-12 w-12 place-items-center rounded-2xl bg-card shadow-soft">
-                <ChefHat className="h-6 w-6 text-mauve" strokeWidth={1.5} />
-              </div>
-              <p className="font-brand text-2xl text-mauve">Cakes Manager</p>
+            <div className="flex flex-col items-center gap-4">
+              <img src="/logo.svg" alt="Doce Atelier" className="h-24 w-auto object-contain" />
             </div>
 
             <div className="mt-auto">
@@ -98,11 +95,8 @@ function LoginPage() {
 
         {/* Form */}
         <div className="p-8 sm:p-12">
-          <div className="mb-6 flex items-center gap-3 lg:hidden">
-            <div className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-blush to-rose">
-              <Sparkles className="h-5 w-5 text-mauve" />
-            </div>
-            <p className="font-brand text-xl text-mauve">Cakes Manager</p>
+          <div className="mb-8 flex flex-col items-center gap-2 lg:hidden">
+            <img src="/logo.svg" alt="Doce Atelier" className="h-20 w-auto object-contain" />
           </div>
 
           <h2 className="text-2xl font-semibold tracking-tight text-mauve">

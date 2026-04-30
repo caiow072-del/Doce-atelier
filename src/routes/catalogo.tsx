@@ -3,6 +3,7 @@
 // imagem, copiar produtos entre vitrine da loja e vitrine de eventos.
 
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { ConfirmDialog, type ConfirmConfig } from "@/components/ConfirmDialog";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Globe, ExternalLink, Eye, EyeOff, ChevronUp, ChevronDown,
@@ -82,6 +83,7 @@ function CatalogoPage() {
   const [editing, setEditing] = useState<Recipe | null>(null);
   const [creating, setCreating] = useState(false);
   const [expandedEvent, setExpandedEvent] = useState<string | null>(null);
+  const [confirmCfg, setConfirmCfg] = useState<ConfirmConfig | null>(null);
 
   const slug = currentShop?.shops.slug;
   const origin = typeof window !== "undefined" ? window.location.origin : "";
@@ -164,12 +166,19 @@ function CatalogoPage() {
     }
   };
 
-  const removeRecipe = async (r: Recipe) => {
-    if (!confirm(`Remover "${r.name}" do catálogo? A receita será apagada.`)) return;
-    const { error } = await supabase.from("recipes").delete().eq("id", r.id);
-    if (error) return toast.error("Erro ao remover");
-    setRecipes((prev) => prev.filter((x) => x.id !== r.id));
-    toast.success("Removido");
+  const removeRecipe = (r: Recipe) => {
+    setConfirmCfg({
+      title: `Remover "${r.name}"?`,
+      description: "A receita será apagada permanentemente do catálogo.",
+      confirmLabel: "Remover",
+      variant: "destructive",
+      action: async () => {
+        const { error } = await supabase.from("recipes").delete().eq("id", r.id);
+        if (error) return toast.error("Erro ao remover");
+        setRecipes((prev) => prev.filter((x) => x.id !== r.id));
+        toast.success("Removido");
+      },
+    });
   };
 
   const copy = async (url: string, key: string) => {
@@ -184,7 +193,7 @@ function CatalogoPage() {
   };
 
   return (
-    <PageContainer width="wide">
+    <PageContainer width="default">
     <div className="space-y-6">
       <PageHeader
         eyebrow="Vitrine pública"
@@ -287,10 +296,10 @@ function CatalogoPage() {
               <Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin" /> Carregando...
             </div>
           ) : filteredRecipes.length === 0 ? (
-            <div className="card-soft p-10 text-center text-sm text-muted-foreground">
+            <div className="mx-auto max-w-md border-dashed border-2 border-border/60 bg-card/40 py-12 px-6 flex flex-col items-center justify-center text-center rounded-3xl mt-6">
               {recipes.length === 0
-                ? <>Nenhum produto ainda. <button onClick={() => setCreating(true)} className="underline text-mauve">Criar o primeiro</button>.</>
-                : "Nenhum produto com esses filtros."}
+                ? <><p className="text-sm text-muted-foreground mb-4">Nenhum produto ainda.</p><button onClick={() => setCreating(true)} className="inline-flex items-center gap-2 rounded-2xl bg-mauve px-5 py-2.5 text-sm font-medium text-cream hover:opacity-90">Criar o primeiro</button></>
+                : <p className="text-sm text-muted-foreground">Nenhum produto com esses filtros.</p>}
             </div>
           ) : (
             <div className="grid w-full grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
@@ -339,6 +348,7 @@ function CatalogoPage() {
 
       {/* Modal QR */}
       {qrTarget && <QrModal target={qrTarget} onClose={() => setQrTarget(null)} />}
+      <ConfirmDialog config={confirmCfg} onClose={() => setConfirmCfg(null)} />
     </div>
     </PageContainer>
   );
@@ -610,6 +620,21 @@ function ToggleRow({ label, icon, checked, onChange }: {
 
 /* ---------- Aba de Eventos ---------- */
 
+function EventCount({ eventId }: { eventId: string }) {
+  const [count, setCount] = useState<number | null>(null);
+  useEffect(() => {
+    supabase.from("event_products").select("*", { count: "exact", head: true }).eq("event_id", eventId)
+      .then(({ count }) => setCount(count));
+  }, [eventId]);
+
+  if (count === null) return null;
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full border border-rose/30 bg-blush/30 px-2 py-0.5 text-[10px] text-mauve">
+      <Globe className="h-2.5 w-2.5" /> {count} {count === 1 ? "produto" : "produtos"}
+    </span>
+  );
+}
+
 function EventsTab({
   events, loading, slug, origin, recipes,
   expandedEvent, setExpandedEvent, copy, copied, openQr, shopId,
@@ -649,17 +674,47 @@ function EventsTab({
         const isOpen = expandedEvent === ev.id;
         return (
           <div key={ev.id} className="card-soft overflow-hidden">
-            <button onClick={() => setExpandedEvent(isOpen ? null : ev.id)}
-              className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-rose/5 transition">
-              <div className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-blush to-rose">
-                <Calendar className="h-4 w-4 text-mauve" />
+            <div className="flex w-full items-center gap-3 px-4 py-3 hover:bg-rose/5 transition group">
+              <button onClick={() => setExpandedEvent(isOpen ? null : ev.id)}
+                className="flex flex-1 items-center gap-3 text-left min-w-0">
+                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-blush to-rose">
+                  <Calendar className="h-4 w-4 text-mauve" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium text-mauve truncate">{ev.name}</p>
+                    <EventCount eventId={ev.id} />
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">{date}{ev.location ? ` · ${ev.location}` : ""}</p>
+                </div>
+              </button>
+
+              <div className="flex items-center gap-1.5 shrink-0">
+                {url && (
+                  <div className="hidden sm:flex items-center gap-1">
+                    <button onClick={(e) => { e.stopPropagation(); copy(url, ev.id); }} title="Copiar link"
+                      className="grid h-8 w-8 place-items-center rounded-lg border border-border bg-white text-mauve hover:border-rose/50">
+                      {copied === ev.id ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
+                    </button>
+                    <button onClick={(e) => { e.stopPropagation(); openQr(url, ev.name); }} title="QR Code"
+                      className="grid h-8 w-8 place-items-center rounded-lg border border-border bg-white text-mauve hover:border-rose/50">
+                      <QrCode className="h-3.5 w-3.5" />
+                    </button>
+                    <Link to="/vitrine" title="Personalizar vitrine" onClick={(e) => e.stopPropagation()}
+                      className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-white px-2.5 text-xs text-mauve hover:border-rose/50">
+                      <Sparkles className="h-3.5 w-3.5 text-rose" /> <span className="hidden md:inline">Personalizar</span>
+                    </Link>
+                    <a href={url} target="_blank" rel="noreferrer" title="Abrir vitrine" onClick={(e) => e.stopPropagation()}
+                      className="inline-flex h-8 items-center gap-1 rounded-lg bg-mauve px-2.5 text-xs text-cream hover:opacity-90">
+                      <ExternalLink className="h-3.5 w-3.5" /> <span className="hidden md:inline">Abrir</span>
+                    </a>
+                  </div>
+                )}
+                <button onClick={() => setExpandedEvent(isOpen ? null : ev.id)} className="p-1">
+                  {isOpen ? <ChevronUp className="h-4 w-4 text-mauve/60" /> : <ChevronDown className="h-4 w-4 text-mauve/60" />}
+                </button>
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-mauve truncate">{ev.name}</p>
-                <p className="text-[11px] text-muted-foreground">{date}{ev.location ? ` · ${ev.location}` : ""}</p>
-              </div>
-              {isOpen ? <ChevronUp className="h-4 w-4 text-mauve/60" /> : <ChevronDown className="h-4 w-4 text-mauve/60" />}
-            </button>
+            </div>
             {isOpen && shopId && (
               <EventProductsPanel
                 eventId={ev.id}
@@ -691,6 +746,7 @@ function EventProductsPanel({ eventId, eventName, eventUrl, shopRecipes, shopId,
   const [creating, setCreating] = useState(false);
   const [search, setSearch] = useState("");
   const [filterCat, setFilterCat] = useState<string>("all");
+  const [epConfirmCfg, setEpConfirmCfg] = useState<ConfirmConfig | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -724,10 +780,17 @@ function EventProductsPanel({ eventId, eventName, eventUrl, shopRecipes, shopId,
     setItems((prev) => prev.map((x) => (x.id === id ? { ...x, ...patch } : x)));
     await supabase.from("event_products").update(patch).eq("id", id);
   };
-  const removeItem = async (p: EventProduct) => {
-    if (!confirm(`Remover "${p.name}" deste evento?`)) return;
-    await supabase.from("event_products").delete().eq("id", p.id);
-    setItems((prev) => prev.filter((x) => x.id !== p.id));
+  const removeItem = (p: EventProduct) => {
+    setEpConfirmCfg({
+      title: `Remover "${p.name}"?`,
+      description: "O produto será removido deste evento.",
+      confirmLabel: "Remover",
+      variant: "destructive",
+      action: async () => {
+        await supabase.from("event_products").delete().eq("id", p.id);
+        setItems((prev) => prev.filter((x) => x.id !== p.id));
+      },
+    });
   };
   const move = async (id: string, dir: -1 | 1) => {
     const idx = items.findIndex((p) => p.id === id);
@@ -755,49 +818,29 @@ function EventProductsPanel({ eventId, eventName, eventUrl, shopRecipes, shopId,
       toast.success(`"${p.name}" agora aparece na vitrine da loja`);
       return;
     }
-    if (!confirm(`Criar "${p.name}" como produto na vitrine da loja?`)) return;
-    const { error } = await supabase.from("recipes").insert({
-      shop_id: shopId, name: p.name, public_price: p.unit_price, promo_price: p.promo_price,
-      description: p.description, category: p.category, image_url: p.image_url,
-      is_featured: p.is_featured, show_in_catalog: true, servings: 1,
-    } as any);
-    if (error) return toast.error("Erro: " + error.message);
-    toast.success("Adicionado à vitrine da loja");
+    if (!p.recipe_id) {
+      setEpConfirmCfg({
+        title: `Criar "${p.name}" na vitrine?`,
+        description: "O produto será criado como novo item na vitrine da loja.",
+        confirmLabel: "Criar",
+        variant: "default",
+        action: async () => {
+          const { error } = await supabase.from("recipes").insert({
+            shop_id: shopId, name: p.name, public_price: p.unit_price, promo_price: p.promo_price,
+            description: p.description, category: p.category, image_url: p.image_url,
+            is_featured: p.is_featured, show_in_catalog: true, servings: 1,
+          } as any);
+          if (error) return toast.error("Erro: " + error.message);
+          toast.success("Adicionado à vitrine da loja");
+        },
+      });
+      return;
+    }
   };
 
   return (
     <div className="border-t border-border/60 bg-cream/20 p-4 space-y-3">
-      {/* Barra compacta de status + ações — espelha a vitrine da loja */}
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border/60 bg-white px-3 py-2 text-sm">
-        <div className="flex items-center gap-2 text-mauve">
-          <Globe className="h-4 w-4 text-rose" />
-          <span className="font-medium">{items.length}</span>
-          <span className="text-mauve/60">{items.length === 1 ? "produto" : "produtos"}</span>
-          {featured > 0 && (
-            <span className="hidden sm:inline text-xs text-mauve/50">· {featured} em destaque</span>
-          )}
-        </div>
-        {eventUrl && (
-          <div className="flex flex-wrap gap-1">
-            <button onClick={() => copy(eventUrl, eventId)} title="Copiar link da vitrine deste evento"
-              className="grid h-8 w-8 place-items-center rounded-lg border border-border bg-white text-mauve hover:border-rose/50">
-              {copied === eventId ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
-            </button>
-            <button onClick={() => openQr(eventUrl, eventName)} title="QR Code"
-              className="grid h-8 w-8 place-items-center rounded-lg border border-border bg-white text-mauve hover:border-rose/50">
-              <QrCode className="h-3.5 w-3.5" />
-            </button>
-            <Link to="/vitrine" title="Personalizar vitrine"
-              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-white px-2.5 text-xs text-mauve hover:border-rose/50">
-              <Sparkles className="h-3.5 w-3.5 text-rose" /> Personalizar vitrine
-            </Link>
-            <a href={eventUrl} target="_blank" rel="noreferrer" title="Abrir vitrine do evento"
-              className="inline-flex h-8 items-center gap-1 rounded-lg bg-mauve px-2.5 text-xs text-cream hover:opacity-90">
-              <ExternalLink className="h-3.5 w-3.5" /> Abrir
-            </a>
-          </div>
-        )}
-      </div>
+      {/* Busca + filtros + Novo produto — mesmo layout da loja */}
 
       {/* Busca + filtros + Novo produto — mesmo layout da loja */}
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -867,6 +910,7 @@ function EventProductsPanel({ eventId, eventName, eventUrl, shopRecipes, shopId,
           onSaved={() => { setEditing(null); setCreating(false); load(); }}
         />
       )}
+      <ConfirmDialog config={epConfirmCfg} onClose={() => setEpConfirmCfg(null)} />
     </div>
   );
 }

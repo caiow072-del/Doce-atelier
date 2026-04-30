@@ -13,17 +13,25 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { title: "Cakes Manager — Gestão completa para confeitarias" },
+      { title: "Doce Atelier — Gestão completa para confeitarias" },
       {
         name: "description",
         content:
           "Painel completo de gestão para confeitarias: receitas, festivais, encomendas, vitrine pública e PDV.",
       },
-      { property: "og:title", content: "Cakes Manager" },
+      { property: "og:title", content: "Doce Atelier" },
       { property: "og:description", content: "Gestão doce, simples e profissional para sua confeitaria." },
       { property: "og:type", content: "website" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "default" },
+      { name: "apple-mobile-web-app-title", content: "Doce Atelier" },
     ],
-    links: [{ rel: "stylesheet", href: appCss }],
+    links: [
+      { rel: "stylesheet", href: appCss },
+      { rel: "icon", type: "image/png", href: "/ico.png" },
+      { rel: "manifest", href: "/manifest.json" },
+      { rel: "apple-touch-icon", href: "/ico.png" },
+    ],
   }),
   shellComponent: RootShell,
   component: RootComponent,

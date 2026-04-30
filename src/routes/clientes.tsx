@@ -168,7 +168,7 @@ function ClientesPage() {
       ) : customers.length === 0 ? (
         <EmptyState onCreate={() => setCreating(true)} />
       ) : (
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           {filtered.map((c) => (
             <CustomerCard
               key={c.id}
@@ -232,7 +232,7 @@ function ClientesPage() {
 
 function EmptyState({ onCreate }: { onCreate: () => void }) {
   return (
-    <div className="grid place-items-center rounded-3xl border-2 border-dashed border-border bg-card/40 p-12 text-center">
+    <div className="mx-auto max-w-md flex flex-col items-center justify-center rounded-3xl border-2 border-dashed border-border/60 bg-card/40 py-12 px-6 text-center mt-6">
       <div className="grid h-16 w-16 place-items-center rounded-2xl bg-blush/60">
         <Users className="h-7 w-7 text-mauve" strokeWidth={1.4} />
       </div>

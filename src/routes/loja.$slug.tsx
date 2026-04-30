@@ -78,7 +78,6 @@ type Storefront = {
   delivery_address: string | null;
   delivery_fee: number;
   delivery_radius_km: number;
-  hero_images: string[];
   bottom_nav_enabled: boolean;
   city: string | null;
   state: string | null;
@@ -105,7 +104,7 @@ const EMPTY_FRONT: Storefront = {
   business_hours: {}, pickup_enabled: true, delivery_enabled: false,
   pickup_address: null, delivery_address: null,
   delivery_fee: 0, delivery_radius_km: 0,
-  hero_images: [], bottom_nav_enabled: true,
+  bottom_nav_enabled: true,
   city: null, state: null, more_info: null,
 };
 
@@ -233,7 +232,6 @@ function StorefrontPage() {
           delivery_address: sf.delivery_address ?? null,
           delivery_fee: Number(sf.delivery_fee ?? 0),
           delivery_radius_km: Number(sf.delivery_radius_km ?? 0),
-          hero_images: Array.isArray(sf.hero_images) ? (sf.hero_images as string[]) : [],
           bottom_nav_enabled: sf.bottom_nav_enabled ?? true,
           city: sf.city ?? null,
           state: sf.state ?? null,
@@ -292,7 +290,6 @@ function StorefrontPage() {
           delivery_address: front.delivery_address,
           delivery_fee: front.delivery_fee,
           delivery_radius_km: front.delivery_radius_km,
-          hero_images: front.hero_images as any,
           bottom_nav_enabled: front.bottom_nav_enabled,
           city: front.city,
           state: front.state,
@@ -326,16 +323,6 @@ function StorefrontPage() {
     } catch (e: any) { toast.error(e?.message ?? "Erro upload"); }
   };
 
-  const onUploadHero = async (slot: number, file: File) => {
-    if (!shop) return;
-    try {
-      const url = await uploadShopImage("storefront-banners", shop.id, file);
-      const next = [...front.hero_images];
-      next[slot] = url;
-      update("hero_images", next.filter(Boolean));
-      toast.success("Foto adicionada — clique em Publicar para salvar.");
-    } catch (e: any) { toast.error(e?.message ?? "Erro upload"); }
-  };
 
   const handleBottomTab = (t: BottomNavTab) => {
     setBottomTab(t);
@@ -416,7 +403,6 @@ function StorefrontPage() {
                 shopLogo={shop.logo_url}
                 heroTitle={heroTitle}
                 heroSubtitle={heroSubtitle}
-                heroImages={front.hero_images}
                 bannerUrl={front.banner_url}
                 city={front.city}
                 state={front.state}
@@ -425,7 +411,7 @@ function StorefrontPage() {
                 onTitle={(v) => update("hero_title", v)}
                 onSubtitle={(v) => update("hero_subtitle", v)}
                 onMoreInfoClick={() => setInfoOpen(true)}
-                onUploadHero={onUploadHero}
+                onUploadBanner={onUploadBanner}
               />
               <PickupDeliveryCard
                 pickupEnabled={front.pickup_enabled}
@@ -629,25 +615,25 @@ function StorefrontPage() {
             className="rounded-full border border-border bg-white px-3 py-1.5 text-xs text-mauve hover:border-rose/50"
             title="Ver vitrine como cliente"
           >
-            <Eye className="inline h-3 w-3 mr-1" /> Ver pública
+            <Eye className="inline h-3 w-3 sm:mr-1" /><span className="hidden sm:inline"> Ver pública</span>
           </button>
           <button
             onClick={() => setShareOpen(true)}
-            className="rounded-full border border-border bg-white px-3 py-1.5 text-xs text-mauve hover:border-rose/50"
+            className="rounded-full border border-border bg-white px-2 py-1.5 text-xs text-mauve hover:border-rose/50 sm:px-3"
             title="Compartilhar com QR Code"
           >
-            <QrCode className="inline h-3 w-3 mr-1" /> Compartilhar
+            <QrCode className="inline h-3 w-3 sm:mr-1" /><span className="hidden sm:inline"> Compartilhar</span>
           </button>
           <Link
             to="/"
-            className="rounded-full border border-border bg-white px-3 py-1.5 text-xs text-mauve hover:border-rose/50"
+            className="rounded-full border border-border bg-white px-2 py-1.5 text-xs text-mauve hover:border-rose/50 sm:px-3"
             title="Voltar ao painel"
           >
-            ← Painel
+            ←<span className="hidden sm:inline"> Painel</span>
           </Link>
-          <button onClick={save} disabled={saving || !dirty} className="inline-flex items-center gap-1.5 rounded-full bg-mauve px-4 py-1.5 text-xs font-semibold text-cream disabled:opacity-50">
+          <button onClick={save} disabled={saving || !dirty} className="inline-flex items-center gap-1 rounded-full bg-mauve px-3 py-1.5 text-xs font-semibold text-cream disabled:opacity-50 sm:gap-1.5 sm:px-4">
             {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-            Publicar
+            <span className="hidden sm:inline">Publicar</span>
           </button>
         </div>
       </header>
@@ -863,53 +849,7 @@ function ContactRow({ icon, children }: { icon: React.ReactNode; children: React
   );
 }
 
-function Hero({
-  shop, front, editing, heroTitle, heroSubtitle, onTitle, onSubtitle, onBanner,
-}: {
-  shop: Shop; front: Storefront; editing: boolean;
-  heroTitle: string; heroSubtitle: string;
-  onTitle: (v: string) => void; onSubtitle: (v: string) => void;
-  onBanner: (f: File) => void;
-}) {
-  return (
-    <header className="relative overflow-hidden">
-      <EditableImage
-        editing={editing}
-        src={front.banner_url}
-        alt=""
-        aspect="aspect-[16/7] sm:aspect-[16/6]"
-        onUpload={onBanner}
-        fallback={<div className="grid h-full w-full place-items-center bg-gradient-to-br from-blush via-cream to-rose/40"><ImagePlus className="h-10 w-10 text-mauve/30" /></div>}
-      />
-      <div className="absolute inset-0 bg-gradient-to-t from-cream via-cream/40 to-transparent pointer-events-none" />
-      <div className="relative -mt-16 mx-auto max-w-5xl px-5">
-        <div className="flex flex-col items-center gap-3 text-center">
-          {shop.logo_url ? (
-            <img src={shop.logo_url} alt={shop.name} className="h-20 w-20 rounded-3xl border-4 border-cream object-cover shadow-lg" />
-          ) : (
-            <div className="grid h-20 w-20 place-items-center rounded-3xl border-4 border-cream bg-rose shadow-lg"><Cake className="h-9 w-9 text-mauve" strokeWidth={1.3} /></div>
-          )}
-          <EditableText
-            editing={editing}
-            value={heroTitle}
-            onChange={onTitle}
-            as="h1"
-            className="font-brand text-4xl text-mauve md:text-5xl"
-            placeholder="Nome da sua loja"
-          />
-          <EditableText
-            editing={editing}
-            value={heroSubtitle}
-            onChange={onSubtitle}
-            as="p"
-            className="max-w-xl text-sm text-mauve/80"
-            placeholder="Uma frase curta sobre você"
-          />
-        </div>
-      </div>
-    </header>
-  );
-}
+
 
 function PromotionsSection({
   promotions, editing, onChange,

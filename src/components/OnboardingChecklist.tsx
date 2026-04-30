@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { CheckCircle2, Circle, Sparkles, X } from "lucide-react";
+import { CheckCircle2, Circle, Sparkles, X, ChevronDown, ChevronUp } from "lucide-react";
 import { useEffect, useState } from "react";
 
 type Step = {
@@ -20,9 +20,13 @@ export function OnboardingChecklist({
   hasStorefront: boolean;
 }) {
   const [dismissed, setDismissed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
 
   useEffect(() => {
     setDismissed(localStorage.getItem("onboarding-dismissed") === "1");
+    const stored = localStorage.getItem("onboarding-collapsed");
+    if (stored !== null) setCollapsed(stored === "1");
+    else setCollapsed(true);
   }, []);
 
   const steps: Step[] = [
@@ -59,15 +63,63 @@ export function OnboardingChecklist({
     setDismissed(true);
   };
 
+  const toggleCollapse = () => {
+    const next = !collapsed;
+    setCollapsed(next);
+    localStorage.setItem("onboarding-collapsed", next ? "1" : "0");
+  };
+
+  const progressPct = (completed / steps.length) * 100;
+
+  // Collapsed: compact inline bar
+  if (collapsed) {
+    return (
+      <button
+        onClick={toggleCollapse}
+        className="card-soft flex w-full items-center gap-3 bg-gradient-to-r from-blush/40 to-card p-3 text-left transition-colors hover:from-blush/60"
+      >
+        <div className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-blush to-rose">
+          <Sparkles className="h-3.5 w-3.5 text-mauve" strokeWidth={1.7} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <p className="text-xs font-medium text-mauve">
+              Primeiros passos — {completed}/{steps.length}
+            </p>
+            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-card">
+              <div
+                className="h-full rounded-full bg-rose transition-all"
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+          </div>
+        </div>
+        <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+      </button>
+    );
+  }
+
+  // Expanded: full checklist
   return (
     <div className="card-soft relative overflow-hidden bg-gradient-to-br from-blush/50 via-card to-card p-4 sm:p-5">
-      <button
-        onClick={dismiss}
-        className="absolute right-2 top-2 rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-blush/50 hover:text-mauve"
-        aria-label="Dispensar"
-      >
-        <X className="h-4 w-4" />
-      </button>
+      <div className="absolute right-2 top-2 flex items-center gap-0.5">
+        <button
+          onClick={toggleCollapse}
+          className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-blush/50 hover:text-mauve"
+          aria-label="Recolher"
+          title="Recolher"
+        >
+          <ChevronUp className="h-4 w-4" />
+        </button>
+        <button
+          onClick={dismiss}
+          className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-blush/50 hover:text-mauve"
+          aria-label="Dispensar"
+          title="Dispensar definitivamente"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
       <div className="flex items-center gap-2">
         <div className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-blush to-rose">
           <Sparkles className="h-4 w-4 text-mauve" strokeWidth={1.7} />
@@ -83,7 +135,7 @@ export function OnboardingChecklist({
       <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-card">
         <div
           className="h-full rounded-full bg-rose transition-all"
-          style={{ width: `${(completed / steps.length) * 100}%` }}
+          style={{ width: `${progressPct}%` }}
         />
       </div>
 

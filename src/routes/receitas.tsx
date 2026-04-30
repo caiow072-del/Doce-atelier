@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { ConfirmDialog, type ConfirmConfig } from "@/components/ConfirmDialog";
 import { useEffect, useMemo, useState } from "react";
 import {
   BookOpen,
@@ -98,6 +99,7 @@ function RecipesPage() {
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<Recipe | null>(null);
   const [creating, setCreating] = useState(false);
+  const [confirmCfg, setConfirmCfg] = useState<ConfirmConfig | null>(null);
   const [viewing, setViewing] = useState<Recipe | null>(null);
 
   const load = async () => {
@@ -132,14 +134,21 @@ function RecipesPage() {
     [recipes, search]
   );
 
-  const remove = async (r: Recipe) => {
-    if (!confirm(`Excluir receita "${r.name}"?`)) return;
-    const { error } = await supabase.from("recipes").delete().eq("id", r.id);
-    if (error) toast.error("Erro ao excluir: " + error.message);
-    else {
-      toast.success("Receita excluída");
-      setRecipes((s) => s.filter((x) => x.id !== r.id));
-    }
+  const remove = (r: Recipe) => {
+    setConfirmCfg({
+      title: `Excluir receita "${r.name}"?`,
+      description: "A receita e sua ficha técnica serão apagadas permanentemente.",
+      confirmLabel: "Excluir",
+      variant: "destructive",
+      action: async () => {
+        const { error } = await supabase.from("recipes").delete().eq("id", r.id);
+        if (error) toast.error("Erro ao excluir: " + error.message);
+        else {
+          toast.success("Receita excluída");
+          setRecipes((s) => s.filter((x) => x.id !== r.id));
+        }
+      },
+    });
   };
 
   return (
@@ -325,13 +334,14 @@ function RecipesPage() {
           }}
         />
       )}
+      <ConfirmDialog config={confirmCfg} onClose={() => setConfirmCfg(null)} />
     </PageContainer>
   );
 }
 
 function EmptyState({ onCreate }: { onCreate: () => void }) {
   return (
-    <div className="grid place-items-center rounded-3xl border-2 border-dashed border-border bg-card/40 p-12 text-center">
+    <div className="mx-auto max-w-md flex flex-col items-center justify-center rounded-3xl border-2 border-dashed border-border/60 bg-card/40 py-12 px-6 text-center mt-6">
       <div className="grid h-16 w-16 place-items-center rounded-2xl bg-blush/60">
         <BookOpen className="h-7 w-7 text-mauve" strokeWidth={1.4} />
       </div>
