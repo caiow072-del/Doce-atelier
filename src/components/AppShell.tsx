@@ -69,13 +69,15 @@ export function AppShell() {
         {/* ============ Desktop Sidebar ============ */}
         <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-border/60 bg-card/60 backdrop-blur-xl lg:flex">
           {/* Brand */}
-          <div className="flex flex-col items-center px-4 pt-10 pb-6">
-            <img src="/logo.svg" alt="Doce Atelier" className="h-32 w-auto object-contain" />
-            <div className="mt-4 flex items-center gap-2">
-              <span className="h-px w-6 bg-border/60" />
-              <p className="text-[11px] uppercase tracking-[0.3em] text-muted-foreground font-black">Painel</p>
-              <span className="h-px w-6 bg-border/60" />
+          <div className="flex flex-col items-center px-4 pt-6 pb-2">
+            <div className="flex items-center justify-center h-24 w-full overflow-hidden">
+              <img 
+                src="/logo.svg" 
+                alt="Doce Atelier" 
+                className="h-48 w-auto object-contain scale-125" 
+              />
             </div>
+            <p className="mt-0 text-[10px] uppercase tracking-[0.4em] text-muted-foreground font-black">Painel</p>
           </div>
 
           {/* Shop switcher */}
