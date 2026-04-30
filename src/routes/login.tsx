@@ -80,7 +80,7 @@ function LoginPage() {
               </div>
             </div>
 
-            <div className="mt-auto">
+            <div className="mt-12">
               <h1 className="font-brand text-5xl leading-tight text-mauve">
                 Sua confeitaria,<br />no seu controle.
               </h1>
