@@ -9,7 +9,12 @@ import { setResponseHeaders } from "@tanstack/react-start/server";
 const securityHeadersMiddleware = createMiddleware({ type: "request" }).server(
   async ({ next }) => {
     const supabaseUrl = process.env.SUPABASE_URL ?? "";
-    const supabaseHost = supabaseUrl ? new URL(supabaseUrl).host : "";
+    let supabaseHost = "";
+    try {
+      if (supabaseUrl) supabaseHost = new URL(supabaseUrl).host;
+    } catch (e) {
+      console.warn("Invalid SUPABASE_URL in environment:", supabaseUrl);
+    }
 
     const csp = [
       "default-src 'self'",
