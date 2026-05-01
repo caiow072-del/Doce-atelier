@@ -39,7 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<Session | null>(null);
   const [shops, setShops] = useState<ShopMembership[]>([]);
-  const [isApproved, setIsApproved] = useState(false);
+  const [isApproved, setIsApproved] = useState<boolean | null>(null);
   const [currentShopId, setCurrentShopIdState] = useState<string | null>(null);
 
   const setCurrentShopId = (id: string) => {
@@ -74,7 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   const loadProfile = async (userId: string) => {
     const { data } = await supabase.from("profiles").select("is_approved" as any).eq("id", userId).single();
-    if (data) setIsApproved(!!(data as any).is_approved);
+    setIsApproved(data ? !!(data as any).is_approved : false);
   };
 
   useEffect(() => {
@@ -140,7 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loading,
         session,
         user: session?.user ?? null,
-        isApproved,
+        isApproved: isApproved ?? true, // Default to true if not yet loaded to avoid flicker
         shops,
         currentShop,
         setCurrentShopId,
