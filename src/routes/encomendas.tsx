@@ -25,6 +25,7 @@ import {
   Mic,
   Loader2,
 } from "lucide-react";
+import { sendToGeminiServer } from "@/lib/gemini-server";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
@@ -771,9 +772,6 @@ interface OrderReady {
 const ORDER_TAG = "[ORDER_READY]";
 
 async function sendToGemini(history: ChatMsg[], customers: Customer[]): Promise<string> {
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-  if (!apiKey) return "⚠️ Chave do Gemini não configurada.";
-
   const todayStr = new Date().toLocaleString("pt-BR", {
     weekday: "long", day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo"
   });
@@ -807,30 +805,12 @@ ${ORDER_TAG}
 
 ATENÇÃO: Só coloque o ${ORDER_TAG} quando o usuário confirmar. Nunca truncar o JSON. O campo "description" deve conter APENAS a lista de itens com emojis — datas e valores já aparecem no card.`;
 
-  const contents = [
-    { role: "user", parts: [{ text: systemPrompt + "\n\n(Aguarde a primeira mensagem do atendente)" }] },
-    { role: "model", parts: [{ text: "Olá! 🎂 Sou a Doce IA! Me conte sobre a encomenda — pode falar o nome do cliente, o que deseja e para quando." }] },
-    ...history.map(m => ({ role: m.role, parts: [{ text: m.text }] })),
-  ];
-
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents,
-        generationConfig: { temperature: 0.7, maxOutputTokens: 1024 },
-      }),
-    }
-  );
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    console.error("Gemini error:", err);
-    return `Erro ao contactar a IA: ${(err as any)?.error?.message ?? res.statusText}`;
+  try {
+    return await sendToGeminiServer({ data: { history, systemPrompt } });
+  } catch (err: any) {
+    console.error("Gemini server function error:", err);
+    return `Erro ao contactar a IA: ${err.message || "Erro desconhecido"}`;
   }
-  const data = await res.json();
-  return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "Resposta vazia da IA.";
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
