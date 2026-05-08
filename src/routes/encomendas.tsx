@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ConfirmDialog, type ConfirmConfig } from "@/components/ConfirmDialog";
 import { Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import {
   ClipboardList,
   Plus,
@@ -779,9 +779,13 @@ function AIAssistantModal({
   const [isRecording, setIsRecording] = useState(false);
   const [isParsing, setIsParsing] = useState(false);
   const hasApiKey = !!import.meta.env.VITE_GEMINI_API_KEY;
+  const recognitionRef = useRef<any>(null);
 
   const toggleRecording = async () => {
     if (isRecording) {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
       setIsRecording(false);
       return;
     }
@@ -800,10 +804,8 @@ function AIAssistantModal({
     }
 
     // Forçar a solicitação de permissão de áudio usando getUserMedia
-    // O webkitSpeechRecognition muitas vezes falha silenciosamente se a permissão não foi pré-concedida.
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      // Para o stream logo após conseguir a permissão, pois o SpeechRecognition gerencia seu próprio stream
       stream.getTracks().forEach(track => track.stop());
     } catch (err) {
       console.error("Erro ao solicitar permissão de microfone via getUserMedia:", err);
@@ -811,24 +813,37 @@ function AIAssistantModal({
     }
 
     const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
     recognition.lang = "pt-BR";
-    recognition.continuous = false;
-    recognition.interimResults = false;
+    recognition.continuous = true;
+    recognition.interimResults = true;
+
+    let finalTranscript = text ? text + " " : "";
 
     recognition.onstart = () => setIsRecording(true);
+    
     recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript;
-      setText(prev => (prev ? prev + " " + transcript : transcript));
+      let interimTranscript = "";
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript;
+        } else {
+          interimTranscript += event.results[i][0].transcript;
+        }
+      }
+      setText(finalTranscript + interimTranscript);
     };
+
     recognition.onerror = (event: any) => {
       console.error("Erro no reconhecimento de voz:", event.error);
       if (event.error === "not-allowed") {
         toast.error("Permissão de microfone negada. Por favor, libere o acesso nas configurações do navegador.");
-      } else {
+      } else if (event.error !== "no-speech" && event.error !== "aborted") {
         toast.error("Erro ao escutar: " + event.error);
       }
       setIsRecording(false);
     };
+
     recognition.onend = () => setIsRecording(false);
 
     recognition.start();

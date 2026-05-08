@@ -93,7 +93,7 @@ export function AppShell() {
 
   return (
     <div className="min-h-screen floral-bg overflow-x-hidden">
-      <div className="flex w-full max-w-full">
+      <div className="flex w-full max-w-full items-start">
         {/* ============ Desktop Sidebar ============ */}
         <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-border/60 bg-card/60 backdrop-blur-xl lg:flex">
           {/* Brand */}

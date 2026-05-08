@@ -256,6 +256,49 @@ function Dashboard() {
       </section>
 
       <div className="flex flex-col xl:flex-row gap-5 items-start w-full">
+        {/* ============ Upcoming Orders (compact list) ============ */}
+        <div className="w-full xl:w-[420px] shrink-0">
+          {upcomingOrders.length > 0 && (
+            <section className="card-soft p-4 sm:p-5">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2 text-rose">
+                  <ClipboardList className="h-4 w-4" />
+                  <p className="text-[11px] uppercase tracking-widest font-semibold">Próximas encomendas</p>
+                </div>
+                <Link to="/encomendas" className="inline-flex items-center gap-1 text-xs text-mauve hover:underline">
+                  Ver todas <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </div>
+              <ul className="space-y-2">
+                {upcomingOrders.slice(0, 5).map((o) => {
+                  const dt = new Date(o.delivery_at);
+                  const diffMs = dt.getTime() - Date.now();
+                  const diffDays = Math.ceil(diffMs / 86_400_000);
+                  const isUrgent = diffDays <= 1;
+                  const isSoon = diffDays <= 3;
+                  const dateStr = dt.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+                  const remaining = o.total_price - o.deposit_paid;
+                  return (
+                    <li key={o.id} className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 ${isUrgent ? "border-destructive/40 bg-destructive/5" : isSoon ? "border-warning/30 bg-warning/5" : "border-border/50 bg-background/40"}`}>
+                      <div className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg text-xs font-bold ${isUrgent ? "bg-destructive/15 text-destructive" : isSoon ? "bg-warning/15 text-warning" : "bg-blush/60 text-mauve"}`}>
+                        {diffDays <= 0 ? "!" : `${diffDays}d`}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-mauve">{o.customer_name}</p>
+                        <p className="truncate text-[11px] text-muted-foreground">{o.description}</p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-xs font-medium text-mauve">{dateStr}</p>
+                        {remaining > 0 && <p className="text-[10px] text-muted-foreground">Falta {formatBRL(remaining)}</p>}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          )}
+        </div>
+
         {/* ============ 🔥 Alerts Panel ============ */}
         <div className="w-full xl:flex-1 space-y-5">
           {hasAlerts && (
@@ -330,49 +373,6 @@ function Dashboard() {
                   </Link>
                 )}
               </div>
-            </section>
-          )}
-        </div>
-
-        {/* ============ Upcoming Orders (compact list) ============ */}
-        <div className="w-full xl:w-[420px] shrink-0">
-          {upcomingOrders.length > 0 && (
-            <section className="card-soft p-4 sm:p-5">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2 text-rose">
-                  <ClipboardList className="h-4 w-4" />
-                  <p className="text-[11px] uppercase tracking-widest font-semibold">Próximas encomendas</p>
-                </div>
-                <Link to="/encomendas" className="inline-flex items-center gap-1 text-xs text-mauve hover:underline">
-                  Ver todas <ArrowRight className="h-3.5 w-3.5" />
-                </Link>
-              </div>
-              <ul className="space-y-2">
-                {upcomingOrders.slice(0, 5).map((o) => {
-                  const dt = new Date(o.delivery_at);
-                  const diffMs = dt.getTime() - Date.now();
-                  const diffDays = Math.ceil(diffMs / 86_400_000);
-                  const isUrgent = diffDays <= 1;
-                  const isSoon = diffDays <= 3;
-                  const dateStr = dt.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
-                  const remaining = o.total_price - o.deposit_paid;
-                  return (
-                    <li key={o.id} className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 ${isUrgent ? "border-destructive/40 bg-destructive/5" : isSoon ? "border-warning/30 bg-warning/5" : "border-border/50 bg-background/40"}`}>
-                      <div className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg text-xs font-bold ${isUrgent ? "bg-destructive/15 text-destructive" : isSoon ? "bg-warning/15 text-warning" : "bg-blush/60 text-mauve"}`}>
-                        {diffDays <= 0 ? "!" : `${diffDays}d`}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-mauve">{o.customer_name}</p>
-                        <p className="truncate text-[11px] text-muted-foreground">{o.description}</p>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-xs font-medium text-mauve">{dateStr}</p>
-                        {remaining > 0 && <p className="text-[10px] text-muted-foreground">Falta {formatBRL(remaining)}</p>}
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
             </section>
           )}
         </div>
