@@ -7,10 +7,12 @@ const ORDER_TAG = "[ORDER_READY]";
 export const sendToGeminiServer = createServerFn({ method: "POST" })
   .validator((d: { history: ChatMsg[]; systemPrompt: string }) => d)
   .handler(async ({ data }) => {
-    const apiKey = process.env.GEMINI_API_KEY;
+    // Em Cloudflare/TanStack Start, buscamos a chave do ambiente do servidor
+    const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+    
     if (!apiKey) {
-      console.error("GEMINI_API_KEY is not defined in server environment");
-      throw new Error("Chave do Gemini não configurada no servidor.");
+      console.error("GEMINI_API_KEY não encontrada no ambiente do servidor");
+      throw new Error("Chave do Gemini não configurada no servidor (Cloudflare/Env).");
     }
 
     const contents = [
