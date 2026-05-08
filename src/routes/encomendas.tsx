@@ -803,7 +803,11 @@ function AIAssistantModal({
     };
     recognition.onerror = (event: any) => {
       console.error("Erro no reconhecimento de voz:", event.error);
-      toast.error("Erro ao escutar: " + event.error);
+      if (event.error === "not-allowed") {
+        toast.error("Permissão de microfone negada. Por favor, libere o acesso nas configurações do navegador.");
+      } else {
+        toast.error("Erro ao escutar: " + event.error);
+      }
       setIsRecording(false);
     };
     recognition.onend = () => setIsRecording(false);

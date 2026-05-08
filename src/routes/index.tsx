@@ -255,122 +255,128 @@ function Dashboard() {
         />
       </section>
 
-      {/* ============ 🔥 Alerts Panel ============ */}
-      {hasAlerts && (
-        <section className="space-y-2">
-          <div className="flex items-center gap-2 text-rose">
-            <AlertTriangle className="h-4 w-4" />
-            <p className="text-[11px] uppercase tracking-widest font-semibold">Atenção</p>
-          </div>
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {ordersToday.length > 0 && (
-              <Link
-                to="/encomendas"
-                className="flex items-center gap-3 rounded-2xl border-2 border-destructive/40 bg-destructive/5 p-3 transition hover:bg-destructive/10"
-              >
-                <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-destructive/15 text-destructive">
-                  <Timer className="h-5 w-5" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs font-bold text-destructive uppercase tracking-wider">Hoje / Atrasado</p>
-                  <p className="text-sm font-medium text-mauve">
-                    {ordersToday.length} {ordersToday.length === 1 ? "encomenda" : "encomendas"}
-                  </p>
-                </div>
-              </Link>
-            )}
-            {orders3Days.length > 0 && (
-              <Link
-                to="/encomendas"
-                className="flex items-center gap-3 rounded-2xl border border-warning/40 bg-warning/5 p-3 transition hover:bg-warning/10"
-              >
-                <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-warning/15 text-warning">
-                  <Clock className="h-5 w-5" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs font-bold text-warning uppercase tracking-wider">Próximos 3 dias</p>
-                  <p className="text-sm font-medium text-mauve">
-                    {orders3Days.length} {orders3Days.length === 1 ? "encomenda" : "encomendas"}
-                  </p>
-                </div>
-              </Link>
-            )}
-            {ordersWeek.length > 0 && (
-              <Link
-                to="/encomendas"
-                className="flex items-center gap-3 rounded-2xl border border-rose/30 bg-blush/30 p-3 transition hover:bg-blush/50"
-              >
-                <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-blush/60 text-mauve">
-                  <CalendarHeart className="h-5 w-5" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs font-bold text-rose uppercase tracking-wider">Esta semana</p>
-                  <p className="text-sm font-medium text-mauve">
-                    {ordersWeek.length} {ordersWeek.length === 1 ? "encomenda" : "encomendas"}
-                  </p>
-                </div>
-              </Link>
-            )}
-            {storefrontPending > 0 && (
-              <Link
-                to="/encomendas"
-                className="flex items-center gap-3 rounded-2xl border border-rose/40 bg-gradient-to-r from-blush/60 to-rose/20 p-3 transition hover:from-blush hover:to-rose/40"
-              >
-                <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-cream text-mauve">
-                  <ShoppingBag className="h-5 w-5" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs font-bold text-rose uppercase tracking-wider">Vitrine</p>
-                  <p className="text-sm font-medium text-mauve">
-                    {storefrontPending} {storefrontPending === 1 ? "pedido aguardando" : "pedidos aguardando"}
-                  </p>
-                </div>
-              </Link>
-            )}
-          </div>
-        </section>
-      )}
+      <div className="flex flex-col xl:flex-row gap-5 items-start w-full">
+        {/* ============ 🔥 Alerts Panel ============ */}
+        <div className="w-full xl:flex-1 space-y-5">
+          {hasAlerts && (
+            <section className="space-y-2">
+              <div className="flex items-center gap-2 text-rose">
+                <AlertTriangle className="h-4 w-4" />
+                <p className="text-[11px] uppercase tracking-widest font-semibold">Atenção</p>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {ordersToday.length > 0 && (
+                  <Link
+                    to="/encomendas"
+                    className="flex items-center gap-3 rounded-2xl border-2 border-destructive/40 bg-destructive/5 p-3 transition hover:bg-destructive/10"
+                  >
+                    <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-destructive/15 text-destructive">
+                      <Timer className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-destructive uppercase tracking-wider">Hoje / Atrasado</p>
+                      <p className="text-sm font-medium text-mauve">
+                        {ordersToday.length} {ordersToday.length === 1 ? "encomenda" : "encomendas"}
+                      </p>
+                    </div>
+                  </Link>
+                )}
+                {orders3Days.length > 0 && (
+                  <Link
+                    to="/encomendas"
+                    className="flex items-center gap-3 rounded-2xl border border-warning/40 bg-warning/5 p-3 transition hover:bg-warning/10"
+                  >
+                    <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-warning/15 text-warning">
+                      <Clock className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-warning uppercase tracking-wider">Próximos 3 dias</p>
+                      <p className="text-sm font-medium text-mauve">
+                        {orders3Days.length} {orders3Days.length === 1 ? "encomenda" : "encomendas"}
+                      </p>
+                    </div>
+                  </Link>
+                )}
+                {ordersWeek.length > 0 && (
+                  <Link
+                    to="/encomendas"
+                    className="flex items-center gap-3 rounded-2xl border border-rose/30 bg-blush/30 p-3 transition hover:bg-blush/50"
+                  >
+                    <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-blush/60 text-mauve">
+                      <CalendarHeart className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-rose uppercase tracking-wider">Esta semana</p>
+                      <p className="text-sm font-medium text-mauve">
+                        {ordersWeek.length} {ordersWeek.length === 1 ? "encomenda" : "encomendas"}
+                      </p>
+                    </div>
+                  </Link>
+                )}
+                {storefrontPending > 0 && (
+                  <Link
+                    to="/encomendas"
+                    className="flex items-center gap-3 rounded-2xl border border-rose/40 bg-gradient-to-r from-blush/60 to-rose/20 p-3 transition hover:from-blush hover:to-rose/40"
+                  >
+                    <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-cream text-mauve">
+                      <ShoppingBag className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-rose uppercase tracking-wider">Vitrine</p>
+                      <p className="text-sm font-medium text-mauve">
+                        {storefrontPending} {storefrontPending === 1 ? "pedido aguardando" : "pedidos aguardando"}
+                      </p>
+                    </div>
+                  </Link>
+                )}
+              </div>
+            </section>
+          )}
+        </div>
 
-      {/* ============ Upcoming Orders (compact list) ============ */}
-      {upcomingOrders.length > 0 && (
-        <section className="card-soft p-4 sm:p-5">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2 text-rose">
-              <ClipboardList className="h-4 w-4" />
-              <p className="text-[11px] uppercase tracking-widest font-semibold">Próximas encomendas</p>
-            </div>
-            <Link to="/encomendas" className="inline-flex items-center gap-1 text-xs text-mauve hover:underline">
-              Ver todas <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </div>
-          <ul className="space-y-2">
-            {upcomingOrders.slice(0, 5).map((o) => {
-              const dt = new Date(o.delivery_at);
-              const diffMs = dt.getTime() - Date.now();
-              const diffDays = Math.ceil(diffMs / 86_400_000);
-              const isUrgent = diffDays <= 1;
-              const isSoon = diffDays <= 3;
-              const dateStr = dt.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
-              const remaining = o.total_price - o.deposit_paid;
-              return (
-                <li key={o.id} className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 ${isUrgent ? "border-destructive/40 bg-destructive/5" : isSoon ? "border-warning/30 bg-warning/5" : "border-border/50 bg-background/40"}`}>
-                  <div className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg text-xs font-bold ${isUrgent ? "bg-destructive/15 text-destructive" : isSoon ? "bg-warning/15 text-warning" : "bg-blush/60 text-mauve"}`}>
-                    {diffDays <= 0 ? "!" : `${diffDays}d`}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-mauve">{o.customer_name}</p>
-                    <p className="truncate text-[11px] text-muted-foreground">{o.description}</p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-xs font-medium text-mauve">{dateStr}</p>
-                    {remaining > 0 && <p className="text-[10px] text-muted-foreground">Falta {formatBRL(remaining)}</p>}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      )}
+        {/* ============ Upcoming Orders (compact list) ============ */}
+        <div className="w-full xl:w-[420px] shrink-0">
+          {upcomingOrders.length > 0 && (
+            <section className="card-soft p-4 sm:p-5">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2 text-rose">
+                  <ClipboardList className="h-4 w-4" />
+                  <p className="text-[11px] uppercase tracking-widest font-semibold">Próximas encomendas</p>
+                </div>
+                <Link to="/encomendas" className="inline-flex items-center gap-1 text-xs text-mauve hover:underline">
+                  Ver todas <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </div>
+              <ul className="space-y-2">
+                {upcomingOrders.slice(0, 5).map((o) => {
+                  const dt = new Date(o.delivery_at);
+                  const diffMs = dt.getTime() - Date.now();
+                  const diffDays = Math.ceil(diffMs / 86_400_000);
+                  const isUrgent = diffDays <= 1;
+                  const isSoon = diffDays <= 3;
+                  const dateStr = dt.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+                  const remaining = o.total_price - o.deposit_paid;
+                  return (
+                    <li key={o.id} className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 ${isUrgent ? "border-destructive/40 bg-destructive/5" : isSoon ? "border-warning/30 bg-warning/5" : "border-border/50 bg-background/40"}`}>
+                      <div className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg text-xs font-bold ${isUrgent ? "bg-destructive/15 text-destructive" : isSoon ? "bg-warning/15 text-warning" : "bg-blush/60 text-mauve"}`}>
+                        {diffDays <= 0 ? "!" : `${diffDays}d`}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-mauve">{o.customer_name}</p>
+                        <p className="truncate text-[11px] text-muted-foreground">{o.description}</p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-xs font-medium text-mauve">{dateStr}</p>
+                        {remaining > 0 && <p className="text-[10px] text-muted-foreground">Falta {formatBRL(remaining)}</p>}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          )}
+        </div>
+      </div>
 
       {/* ============ Lucratividade por produto ============ */}
       {(topProfit.length > 0 || lossMakers.length > 0) && (
