@@ -780,7 +780,7 @@ function AIAssistantModal({
   const [isParsing, setIsParsing] = useState(false);
   const hasApiKey = !!import.meta.env.VITE_GEMINI_API_KEY;
 
-  const toggleRecording = () => {
+  const toggleRecording = async () => {
     if (isRecording) {
       setIsRecording(false);
       return;
@@ -793,6 +793,17 @@ function AIAssistantModal({
 
     if (!window.isSecureContext) {
       return toast.error("O microfone requer conexão segura (HTTPS). Teste no site oficial ou no localhost.");
+    }
+
+    // Forçar a solicitação de permissão de áudio usando getUserMedia
+    // O webkitSpeechRecognition muitas vezes falha silenciosamente se a permissão não foi pré-concedida.
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Para o stream logo após conseguir a permissão, pois o SpeechRecognition gerencia seu próprio stream
+      stream.getTracks().forEach(track => track.stop());
+    } catch (err) {
+      console.error("Erro ao solicitar permissão de microfone via getUserMedia:", err);
+      return toast.error("Permissão de microfone negada. Libere o acesso nas configurações do seu navegador ou dispositivo.");
     }
 
     const recognition = new SpeechRecognition();
