@@ -1005,10 +1005,17 @@ function AIAssistantModal({
             {/* Date */}
             <div className="rounded-xl border border-border bg-background/40 p-3">
               <p className="text-[10px] uppercase tracking-widest text-rose">Data de entrega</p>
-              {draft.deliveryDate ? (
-                <p className="mt-1 text-sm font-medium text-mauve">{fmtDatePreview(draft.deliveryDate)}</p>
-              ) : (
-                <p className="mt-1 text-sm text-warning font-medium">Data não identificada — edite o texto</p>
+              <input
+                type="datetime-local"
+                className="input-base mt-1 w-full text-sm"
+                value={draft.deliveryDate ? new Date(draft.deliveryDate).toISOString().slice(0, 16) : ""}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setDraft(d => d ? { ...d, deliveryDate: val ? new Date(val).toISOString() : null } : d);
+                }}
+              />
+              {!draft.deliveryDate && (
+                <p className="mt-1 text-xs text-warning">Data não identificada — selecione acima</p>
               )}
             </div>
 
