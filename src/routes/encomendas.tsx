@@ -754,6 +754,85 @@ function QuickNewCustomer({
   );
 }
 
+// ─── Chat types ───────────────────────────────────────────────────────────────
+type ChatMsg = { role: "user" | "model"; text: string };
+
+interface OrderReady {
+  customerName: string | null;
+  deliveryDate: string | null;
+  description: string;
+  items: { name: string; qty: number; price: number }[];
+  totalPrice: number;
+  depositPaid: number;
+  notes: string | null;
+  newCustomerPhone?: string | null;
+}
+
+const ORDER_TAG = "[ORDER_READY]";
+
+async function sendToGemini(history: ChatMsg[], customers: Customer[]): Promise<string> {
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  if (!apiKey) return "⚠️ Chave do Gemini não configurada.";
+
+  const today = new Date().toLocaleString("pt-BR", {
+    weekday: "long", day: "2-digit", month: "long", year: "numeric",
+  });
+
+  const systemPrompt = `Você é a Doce IA, assistente de confeitaria da Doce Atelier. Ajude a registrar encomendas conversando naturalmente em português.
+
+Data de hoje: ${today}
+
+Clientes cadastrados:
+${customers.map(c => `- ${c.name} (tel: ${c.phone})`).join("\n") || "Nenhum cliente cadastrado ainda."}
+
+INSTRUÇÕES:
+1. Converse de forma natural e simpática para coletar: nome do cliente, data e hora de entrega, itens com sabor/recheio completo (ex: "Bolo de massa branca com recheio de ninho e amendoim crocante"), valor total e valor de sinal/depósito já pago (pode ser zero).
+2. Se o cliente não estiver na lista acima, pergunte o telefone para cadastrá-lo.
+3. Se faltar informação importante, pergunte de forma direta.
+4. Quando tiver tudo, mostre um resumo e pergunte se confirma.
+5. Ao confirmar, responda com o resumo e NO FINAL da mensagem coloque EXATAMENTE o bloco JSON abaixo (nada depois dele):
+
+${ORDER_TAG}
+{
+  "customerName": "Nome exato como está na lista ou nome novo",
+  "deliveryDate": "2024-05-10T10:00:00Z",
+  "description": "Resumo formatado bonito da encomenda",
+  "items": [{"name": "Bolo de massa branca com ninho e amendoim crocante", "qty": 1, "price": 150}],
+  "totalPrice": 150,
+  "depositPaid": 50,
+  "notes": null,
+  "newCustomerPhone": null
+}
+
+ATENÇÃO: Só coloque o ${ORDER_TAG} quando o usuário confirmar. Nunca truncar o JSON.`;
+
+  const contents = [
+    { role: "user", parts: [{ text: systemPrompt + "\n\n(Aguarde a primeira mensagem do atendente)" }] },
+    { role: "model", parts: [{ text: "Olá! 🎂 Sou a Doce IA! Me conte sobre a encomenda — pode falar o nome do cliente, o que deseja e para quando." }] },
+    ...history.map(m => ({ role: m.role, parts: [{ text: m.text }] })),
+  ];
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents,
+        generationConfig: { temperature: 0.7, maxOutputTokens: 1024 },
+      }),
+    }
+  );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    console.error("Gemini error:", err);
+    return `Erro ao contactar a IA: ${(err as any)?.error?.message ?? res.statusText}`;
+  }
+  const data = await res.json();
+  return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "Resposta vazia da IA.";
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
 function AIAssistantModal({
   shopId,
   customers,
@@ -767,279 +846,313 @@ function AIAssistantModal({
   onCreated: (o: Order) => void;
   onCustomerCreated: (c: Customer) => void;
 }) {
-  const [text, setText] = useState("");
-  const [draft, setDraft] = useState<ReturnType<typeof parseNaturalOrder> | null>(null);
-  const [matchedCustomer, setMatchedCustomer] = useState<Customer | null>(null);
+  const [messages, setMessages] = useState<ChatMsg[]>([
+    { role: "model", text: "Olá! 🎂 Sou a Doce IA! Me conte sobre a encomenda — pode falar o nome do cliente, o que deseja e para quando." },
+  ]);
+  const [input, setInput] = useState("");
+  const [isThinking, setIsThinking] = useState(false);
+  const [orderReady, setOrderReady] = useState<OrderReady | null>(null);
   const [saving, setSaving] = useState(false);
-  const [showQuickNew, setShowQuickNew] = useState(false);
-  const [quickName, setQuickName] = useState("");
+  const [matchedCustomer, setMatchedCustomer] = useState<Customer | null>(null);
   const [quickPhone, setQuickPhone] = useState("");
-  const [quickAddr, setQuickAddr] = useState("");
+  const [showPhoneInput, setShowPhoneInput] = useState(false);
 
   const [isRecording, setIsRecording] = useState(false);
-  const [isParsing, setIsParsing] = useState(false);
-  const hasApiKey = !!import.meta.env.VITE_GEMINI_API_KEY;
   const recognitionRef = useRef<any>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const toggleRecording = async () => {
-    if (isRecording) {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, isThinking]);
+
+  // When orderReady is set, try to match customer
+  useEffect(() => {
+    if (!orderReady) return;
+    if (orderReady.customerName) {
+      const exact = customers.find(
+        c => c.name.toLowerCase() === orderReady.customerName!.toLowerCase()
+      );
+      const partial = customers.find(
+        c => c.name.toLowerCase().startsWith(orderReady.customerName!.split(" ")[0].toLowerCase())
+      );
+      const match = exact ?? partial ?? null;
+      setMatchedCustomer(match);
+      if (!match && orderReady.newCustomerPhone) {
+        setQuickPhone(orderReady.newCustomerPhone);
       }
+      if (!match) setShowPhoneInput(true);
+    }
+  }, [orderReady, customers]);
+
+  const sendMessage = async (text: string) => {
+    if (!text.trim()) return;
+    const userMsg: ChatMsg = { role: "user", text: text.trim() };
+    const newHistory = [...messages, userMsg];
+    setMessages(newHistory);
+    setInput("");
+    setIsThinking(true);
+
+    try {
+      // Only pass actual conversation (skip the initial greeting)
+      const historyToSend = newHistory.filter(m => !(m.role === "model" && m === messages[0]));
+      const reply = await sendToGemini(historyToSend, customers);
+
+      // Check for ORDER_READY tag
+      const tagIdx = reply.indexOf(ORDER_TAG);
+      if (tagIdx !== -1) {
+        const textPart = reply.slice(0, tagIdx).trim();
+        const jsonPart = reply.slice(tagIdx + ORDER_TAG.length).trim();
+        try {
+          const parsed: OrderReady = JSON.parse(jsonPart);
+          setOrderReady(parsed);
+          setMessages(prev => [...prev, { role: "model", text: textPart || "✅ Perfeito! Revise os detalhes abaixo e confirme." }]);
+        } catch {
+          setMessages(prev => [...prev, { role: "model", text: reply }]);
+        }
+      } else {
+        setMessages(prev => [...prev, { role: "model", text: reply }]);
+      }
+    } catch (err) {
+      setMessages(prev => [...prev, { role: "model", text: "Erro ao contactar a IA. Tente novamente." }]);
+    }
+    setIsThinking(false);
+  };
+
+  const toggleRecording = () => {
+    if (isRecording) {
+      recognitionRef.current?.stop();
       setIsRecording(false);
       return;
     }
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SR) return toast.error("Navegador não suporta voz. Use o Chrome.");
+    if (!window.isSecureContext) return toast.error("Microfone requer HTTPS.");
+    if (window.self !== window.top) return toast.error("Microfone bloqueado em iframe.");
 
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      return toast.error("Seu navegador não suporta reconhecimento de voz. Tente usar o Chrome.");
-    }
-
-    if (!window.isSecureContext) {
-      return toast.error("O microfone requer conexão segura (HTTPS). Teste no site oficial ou no localhost.");
-    }
-
-    if (window.self !== window.top) {
-      return toast.error("O site está rodando dentro de um Iframe (Mascaramento de Domínio). O microfone é bloqueado. Acesse a URL original ou configure o domínio via CNAME.");
-    }
-
-
-
-    const recognition = new SpeechRecognition();
-    recognitionRef.current = recognition;
-    recognition.lang = "pt-BR";
-    recognition.continuous = true;
-    recognition.interimResults = true;
-
-    let finalTranscript = text ? text + " " : "";
-
-    recognition.onstart = () => setIsRecording(true);
-    
-    recognition.onresult = (event: any) => {
-      let interimTranscript = "";
-      for (let i = event.resultIndex; i < event.results.length; ++i) {
-        if (event.results[i].isFinal) {
-          finalTranscript += event.results[i][0].transcript;
-        } else {
-          interimTranscript += event.results[i][0].transcript;
-        }
-      }
-      setText(finalTranscript + interimTranscript);
+    const rec = new SR();
+    recognitionRef.current = rec;
+    rec.lang = "pt-BR";
+    rec.continuous = false;
+    rec.interimResults = false;
+    rec.onstart = () => setIsRecording(true);
+    rec.onresult = (e: any) => {
+      const transcript = e.results[0][0].transcript;
+      setInput(prev => (prev ? prev + " " + transcript : transcript));
     };
-
-    recognition.onerror = (event: any) => {
-      console.error("Erro no reconhecimento de voz:", event.error);
-      if (event.error === "not-allowed") {
-        toast.error("Permissão de microfone negada. Por favor, libere o acesso nas configurações do navegador.");
-      } else if (event.error === "no-speech") {
-        toast.error("O navegador não ouviu nada. Verifique se o microfone correto está selecionado no sistema e não está no mudo.");
-      } else if (event.error !== "aborted") {
-        toast.error("Erro ao escutar: " + event.error);
-      }
+    rec.onerror = (e: any) => {
       setIsRecording(false);
+      if (e.error === "no-speech") toast.error("Nada foi ouvido. Tente falar novamente.");
+      else if (e.error !== "aborted") toast.error("Erro de voz: " + e.error);
     };
-
-    recognition.onend = () => setIsRecording(false);
-
-    recognition.start();
+    rec.onend = () => setIsRecording(false);
+    rec.start();
   };
 
-  const interpret = async () => {
-    if (!text.trim()) return toast.error("Digite a descrição da encomenda");
-    setIsParsing(true);
-    const parsed = await parseNaturalOrderWithLLM(text, customers);
-    setIsParsing(false);
-    setDraft(parsed);
-    if (parsed.customerName) {
-      const match = findCustomerMatch(parsed.customerName, customers);
-      const fullMatch = match ? customers.find(c => c.id === match.id) ?? null : null;
-      setMatchedCustomer(fullMatch);
-      if (!match) {
-        setQuickName(parsed.customerName);
-      }
-    }
-  };
-
-  const createQuickCustomer = async () => {
-    if (quickName.trim().length < 2) return toast.error("Nome muito curto");
-    if (quickPhone.replace(/\D/g, "").length < 8) return toast.error("Telefone inválido");
+  const createCustomerAndSubmit = async () => {
+    if (!orderReady) return;
+    if (!orderReady.customerName) return toast.error("Nome do cliente não identificado.");
+    const phone = quickPhone.replace(/\D/g, "");
+    if (phone.length < 8) return toast.error("Informe um WhatsApp válido.");
+    setSaving(true);
     const { data, error } = await supabase
       .from("customers")
-      .insert({ shop_id: shopId, name: quickName.trim(), phone: quickPhone.trim(), address: quickAddr.trim() })
+      .insert({ shop_id: shopId, name: orderReady.customerName.trim(), phone: quickPhone.trim(), address: "" })
       .select("id, name, phone, address")
       .single();
-    if (error) return toast.error("Erro ao criar cliente");
+    if (error) { setSaving(false); return toast.error("Erro ao criar cliente: " + error.message); }
     const c = data as Customer;
     onCustomerCreated(c);
     setMatchedCustomer(c);
-    setShowQuickNew(false);
-    toast.success("Cliente criado!");
+    setShowPhoneInput(false);
+    await submitOrder(c);
   };
 
-  const submit = async () => {
-    if (!draft) return;
-    if (!matchedCustomer) return toast.error("Selecione ou crie o cliente primeiro");
-    if (!draft.deliveryDate) return toast.error("Data de entrega não identificada. Edite o texto.");
+  const submitOrder = async (customer: Customer) => {
+    if (!orderReady) return;
+    if (!orderReady.deliveryDate) return toast.error("Data de entrega inválida.");
     setSaving(true);
-    const itemsTotal = draft.items.reduce((s, it) => s + it.qty * it.price, 0);
     const { data, error } = await supabase
       .from("orders")
       .insert({
         shop_id: shopId,
-        customer_id: matchedCustomer.id,
-        customer_name: matchedCustomer.name,
-        customer_phone: matchedCustomer.phone,
-        description: draft.description,
-        delivery_at: draft.deliveryDate,
-        delivery_address: matchedCustomer.address || null,
-        total_price: itemsTotal,
-        deposit_paid: 0,
-        items: draft.items.filter(it => it.name.trim()),
-        notes: null,
+        customer_id: customer.id,
+        customer_name: customer.name,
+        customer_phone: customer.phone,
+        description: orderReady.description,
+        delivery_at: orderReady.deliveryDate,
+        delivery_address: customer.address || null,
+        total_price: orderReady.totalPrice ?? 0,
+        deposit_paid: orderReady.depositPaid ?? 0,
+        items: orderReady.items?.filter(i => i.name.trim()) ?? [],
+        notes: orderReady.notes ?? null,
       })
       .select("*")
       .single();
     setSaving(false);
     if (error) return toast.error("Erro ao criar: " + error.message);
-    toast.success("Encomenda criada via assistente! ✨");
+    toast.success("Encomenda criada pela Doce IA! ✨");
     onCreated(data as Order);
   };
 
-  const fmtDatePreview = (iso: string) =>
-    new Date(iso).toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" });
+  const handleSubmit = async () => {
+    if (!orderReady) return;
+    if (matchedCustomer) {
+      await submitOrder(matchedCustomer);
+    } else {
+      setShowPhoneInput(true);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 bg-mauve/40 backdrop-blur-sm" onClick={onClose}>
       <div
-        onClick={(e) => e.stopPropagation()}
-        className="absolute right-0 top-0 h-full w-full max-w-md overflow-y-auto bg-card p-6 shadow-petal"
+        onClick={e => e.stopPropagation()}
+        className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col bg-card shadow-petal"
       >
-        <div className="flex items-center justify-between">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
           <div className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-rose" />
-            <h2 className="font-display text-2xl italic text-mauve">Assistente</h2>
+            <h2 className="font-display text-xl italic text-mauve">Doce IA</h2>
+            <span className="rounded-full bg-blush/60 px-2 py-0.5 text-[10px] font-medium text-mauve">Chat</span>
           </div>
-          <button type="button" onClick={onClose} className="rounded-lg p-2 text-muted-foreground" aria-label="Fechar">
+          <button type="button" onClick={onClose} className="rounded-lg p-2 text-muted-foreground hover:bg-blush/30">
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <p className="mt-3 text-xs text-muted-foreground">
-          Descreva a encomenda em texto livre. O assistente vai interpretar cliente, data e itens automaticamente.
-        </p>
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto space-y-3 p-4">
+          {messages.map((m, i) => (
+            <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+              <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap ${
+                m.role === "user"
+                  ? "bg-mauve text-cream rounded-br-sm"
+                  : "bg-blush/50 text-mauve rounded-bl-sm"
+              }`}>
+                {m.text}
+              </div>
+            </div>
+          ))}
+          {isThinking && (
+            <div className="flex justify-start">
+              <div className="flex items-center gap-1.5 rounded-2xl rounded-bl-sm bg-blush/50 px-4 py-3">
+                <span className="h-1.5 w-1.5 rounded-full bg-mauve/50 animate-bounce [animation-delay:0ms]" />
+                <span className="h-1.5 w-1.5 rounded-full bg-mauve/50 animate-bounce [animation-delay:150ms]" />
+                <span className="h-1.5 w-1.5 rounded-full bg-mauve/50 animate-bounce [animation-delay:300ms]" />
+              </div>
+            </div>
+          )}
 
-        <div className="relative mt-3">
-          <textarea
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            rows={4}
-            className="input-base w-full pr-12"
-            placeholder="Ex: Encomenda para dia 10 de maio, do João Francisco, bolo de ninho com chocolate, 50 salgados..."
-          />
-          <button
-            onClick={toggleRecording}
-            className={`absolute bottom-3 right-3 grid h-8 w-8 place-items-center rounded-full transition-all ${
-              isRecording ? "bg-rose animate-pulse text-white" : "bg-blush/80 text-rose hover:bg-rose hover:text-white"
-            }`}
-            title="Ditar encomenda"
-          >
-            <Mic className="h-4 w-4" />
-          </button>
+          {/* Order confirmation card */}
+          {orderReady && (
+            <div className="rounded-2xl border-2 border-rose/30 bg-background/60 p-4 space-y-3 mt-2">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-rose">📋 Encomenda pronta para criar</p>
+
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Cliente</span>
+                  <span className="font-medium text-mauve">{matchedCustomer?.name ?? orderReady.customerName ?? "—"}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Entrega</span>
+                  <span className="font-medium text-mauve">
+                    {orderReady.deliveryDate
+                      ? new Date(orderReady.deliveryDate).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })
+                      : "—"}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Total</span>
+                  <span className="font-medium text-mauve">{fmtBRL(orderReady.totalPrice ?? 0)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Sinal pago</span>
+                  <span className="font-medium text-mauve">{fmtBRL(orderReady.depositPaid ?? 0)}</span>
+                </div>
+                <div className="pt-1 border-t border-border">
+                  {orderReady.items?.map((it, i) => (
+                    <div key={i} className="flex items-center gap-2 py-0.5">
+                      <span className="grid h-5 w-5 place-items-center rounded-md bg-blush/60 text-[10px] font-bold text-mauve">{it.qty}</span>
+                      <span className="text-mauve">{it.name}</span>
+                      {it.price > 0 && <span className="ml-auto text-muted-foreground text-xs">{fmtBRL(it.price)}</span>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {showPhoneInput && !matchedCustomer && (
+                <div className="space-y-2 rounded-xl border border-border bg-blush/20 p-3">
+                  <p className="text-xs text-warning font-medium">
+                    "{orderReady.customerName}" não está cadastrado. Informe o WhatsApp para cadastrar:
+                  </p>
+                  <input
+                    value={quickPhone}
+                    onChange={e => setQuickPhone(e.target.value)}
+                    className="input-base text-xs w-full"
+                    placeholder="WhatsApp"
+                    type="tel"
+                  />
+                  <button
+                    onClick={createCustomerAndSubmit}
+                    disabled={saving}
+                    className="inline-flex w-full items-center justify-center gap-1 rounded-lg bg-mauve py-2 text-xs font-medium text-cream disabled:opacity-60"
+                  >
+                    <UserPlus className="h-3.5 w-3.5" /> {saving ? "Criando..." : "Cadastrar e criar encomenda"}
+                  </button>
+                </div>
+              )}
+
+              {!showPhoneInput && (
+                <button
+                  onClick={handleSubmit}
+                  disabled={saving}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-mauve py-3 text-sm font-medium text-cream hover:opacity-90 disabled:opacity-60"
+                >
+                  <Save className="h-4 w-4" /> {saving ? "Criando..." : "✅ Criar encomenda"}
+                </button>
+              )}
+            </div>
+          )}
+
+          <div ref={bottomRef} />
         </div>
 
-        {!hasApiKey && (
-          <p className="mt-2 text-[10px] text-warning/80">
-            * Chave do Gemini não configurada. Usando inteligência local (básica).
-          </p>
-        )}
-
-        <button
-          onClick={interpret}
-          disabled={isParsing}
-          className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-rose/80 to-blush px-4 py-2.5 text-sm font-medium text-mauve hover:opacity-90 disabled:opacity-70"
-        >
-          {isParsing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-          {isParsing ? "Interpretando..." : "Interpretar"}
-        </button>
-
-        {draft && (
-          <div className="mt-5 space-y-4">
-            {/* Customer */}
-            <div className="rounded-xl border border-border bg-background/40 p-3">
-              <p className="text-[10px] uppercase tracking-widest text-rose">Cliente</p>
-              {matchedCustomer ? (
-                <div className="mt-1 flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-mauve">{matchedCustomer.name}</p>
-                    <p className="text-[11px] text-muted-foreground">{matchedCustomer.phone}</p>
-                  </div>
-                  <button onClick={() => setMatchedCustomer(null)} className="text-xs text-rose hover:underline">Trocar</button>
-                </div>
-              ) : (
-                <div className="mt-1 space-y-2">
-                  <p className="text-sm text-warning font-medium">
-                    {draft.customerName ? `"${draft.customerName}" não encontrado` : "Cliente não identificado"}
-                  </p>
-                  {!showQuickNew && (
-                    <button
-                      onClick={() => setShowQuickNew(true)}
-                      className="inline-flex items-center gap-1 rounded-lg bg-mauve/10 px-2.5 py-1.5 text-xs font-medium text-mauve hover:bg-mauve/20"
-                    >
-                      <UserPlus className="h-3.5 w-3.5" /> {draft.customerName ? `Criar "${draft.customerName}"` : "Cadastrar Cliente Manualmente"}
-                    </button>
-                  )}
-                  {showQuickNew && (
-                    <div className="space-y-2 rounded-xl border border-border bg-blush/20 p-3">
-                      <input value={quickName} onChange={e => setQuickName(e.target.value)} className="input-base text-xs" placeholder="Nome" />
-                      <input value={quickPhone} onChange={e => setQuickPhone(e.target.value)} className="input-base text-xs" placeholder="WhatsApp (obrigatório)" type="tel" />
-                      <input value={quickAddr} onChange={e => setQuickAddr(e.target.value)} className="input-base text-xs" placeholder="Endereço (opcional)" />
-                      <button onClick={createQuickCustomer} className="inline-flex w-full items-center justify-center gap-1 rounded-lg bg-mauve py-2 text-xs font-medium text-cream">
-                        <Save className="h-3.5 w-3.5" /> Cadastrar
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Date */}
-            <div className="rounded-xl border border-border bg-background/40 p-3">
-              <p className="text-[10px] uppercase tracking-widest text-rose">Data de entrega</p>
+        {/* Input bar */}
+        {!orderReady && (
+          <div className="border-t border-border bg-card px-4 py-3">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={toggleRecording}
+                className={`grid h-10 w-10 shrink-0 place-items-center rounded-full transition-all ${
+                  isRecording ? "bg-rose animate-pulse text-white" : "bg-blush/60 text-rose hover:bg-rose hover:text-white"
+                }`}
+                title="Falar"
+              >
+                <Mic className="h-4 w-4" />
+              </button>
               <input
-                type="datetime-local"
-                className="input-base mt-1 w-full text-sm"
-                value={draft.deliveryDate ? new Date(draft.deliveryDate).toISOString().slice(0, 16) : ""}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setDraft(d => d ? { ...d, deliveryDate: val ? new Date(val).toISOString() : null } : d);
-                }}
+                ref={inputRef}
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(input); } }}
+                className="input-base flex-1 py-2 text-sm"
+                placeholder={isRecording ? "Ouvindo..." : "Escreva ou fale sua mensagem..."}
+                disabled={isThinking}
               />
-              {!draft.deliveryDate && (
-                <p className="mt-1 text-xs text-warning">Data não identificada — selecione acima</p>
-              )}
+              <button
+                onClick={() => sendMessage(input)}
+                disabled={!input.trim() || isThinking}
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-mauve text-cream hover:opacity-90 disabled:opacity-40 transition-all"
+              >
+                {isThinking ? <Loader2 className="h-4 w-4 animate-spin" /> : <span className="text-base">↑</span>}
+              </button>
             </div>
-
-            {/* Items */}
-            <div className="rounded-xl border border-border bg-background/40 p-3">
-              <p className="text-[10px] uppercase tracking-widest text-rose mb-2">Itens identificados</p>
-              {draft.items.map((it, i) => (
-                <div key={i} className="flex items-center gap-2 py-1 text-sm">
-                  <span className="grid h-6 w-6 place-items-center rounded-md bg-blush/60 text-xs font-bold text-mauve">{it.qty}</span>
-                  <span className="text-mauve">{it.name || "—"}</span>
-                </div>
-              ))}
-            </div>
-
-            <button
-              onClick={submit}
-              disabled={saving || !matchedCustomer || !draft.deliveryDate}
-              className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-mauve px-4 py-3 text-sm font-medium text-cream hover:opacity-90 disabled:opacity-50"
-            >
-              <Save className="h-4 w-4" /> {saving ? "Salvando..." : "Criar encomenda"}
-            </button>
           </div>
         )}
       </div>
     </div>
   );
 }
+
