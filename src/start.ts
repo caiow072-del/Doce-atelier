@@ -18,7 +18,7 @@ const securityHeadersMiddleware = createMiddleware({ type: "request" }).server(
 
     const csp = [
       "default-src 'self'",
-      `connect-src 'self' https://${supabaseHost} wss://${supabaseHost} https://*.lovable.app https://*.lovableproject.com https://cloudflareinsights.com`,
+      `connect-src 'self' https://${supabaseHost} wss://${supabaseHost} https://*.lovable.app https://*.lovableproject.com https://cloudflareinsights.com https://generativelanguage.googleapis.com`,
       "img-src 'self' data: blob: https:",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' data: https://fonts.gstatic.com",
