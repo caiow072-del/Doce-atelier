@@ -806,7 +806,7 @@ ${ORDER_TAG}
 ATENÇÃO: Só coloque o ${ORDER_TAG} quando o usuário confirmar. Nunca truncar o JSON. O campo "description" deve conter APENAS a lista de itens com emojis — datas e valores já aparecem no card.`;
 
   try {
-    return await sendToGeminiServer({ data: { history, systemPrompt } });
+    return await (sendToGeminiServer as any)({ data: { history, systemPrompt } });
   } catch (err: any) {
     console.error("Gemini server function error:", err);
     return `Erro ao contactar a IA: ${err.message || "Erro desconhecido"}`;

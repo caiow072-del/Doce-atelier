@@ -2,12 +2,9 @@ import { createServerFn } from "@tanstack/react-start";
 
 type ChatMsg = { role: "user" | "model"; text: string };
 
-const ORDER_TAG = "[ORDER_READY]";
-
 export const sendToGeminiServer = createServerFn({ method: "POST" })
-  .validator((d: { history: ChatMsg[]; systemPrompt: string }) => d)
-  .handler(async ({ data }) => {
-    // Em Cloudflare/TanStack Start, buscamos a chave do ambiente do servidor
+  .handler(async (ctx: any) => {
+    const { data } = ctx;
     const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
     
     if (!apiKey) {
@@ -16,9 +13,9 @@ export const sendToGeminiServer = createServerFn({ method: "POST" })
     }
 
     const contents = [
-      { role: "user", parts: [{ text: data.systemPrompt + "\n\n(Aguarde a primeira mensagem do atendente)" }] },
+      { role: "user", parts: [{ text: (data as any).systemPrompt + "\n\n(Aguarde a primeira mensagem do atendente)" }] },
       { role: "model", parts: [{ text: "Olá! 🎂 Sou a Doce IA! Me conte sobre a encomenda — pode falar o nome do cliente, o que deseja e para quando." }] },
-      ...data.history.map(m => ({ role: m.role, parts: [{ text: m.text }] })),
+      ...(data as any).history.map((m: any) => ({ role: m.role, parts: [{ text: m.text }] })),
     ];
 
     const res = await fetch(
