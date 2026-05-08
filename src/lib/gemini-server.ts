@@ -1,15 +1,33 @@
 import { createServerFn } from "@tanstack/react-start";
+import { supabase } from "@/integrations/supabase/client";
 
 type ChatMsg = { role: "user" | "model"; text: string };
 
 export const sendToGeminiServer = createServerFn({ method: "POST" })
   .handler(async (ctx: any) => {
     const { data } = ctx;
-    const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+    let apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
     
     if (!apiKey) {
-      console.error("GEMINI_API_KEY não encontrada no ambiente do servidor");
-      throw new Error("Chave do Gemini não configurada no servidor (Cloudflare/Env).");
+      // Fallback: busca no banco de dados se a Cloudflare apagar a variável
+      try {
+        const { data: secretData } = await (supabase as any)
+          .from('secret_settings')
+          .select('value')
+          .eq('key', 'gemini_api_key')
+          .single();
+        
+        if (secretData?.value) {
+          apiKey = secretData.value;
+        }
+      } catch (e) {
+        console.error("Erro ao buscar chave no Supabase:", e);
+      }
+    }
+    
+    if (!apiKey) {
+      console.error("GEMINI_API_KEY não encontrada no ambiente nem no banco");
+      throw new Error("Chave do Gemini não configurada. Por favor, adicione no painel da Cloudflare ou no banco de dados.");
     }
 
     const contents = [
