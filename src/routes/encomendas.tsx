@@ -803,14 +803,7 @@ function AIAssistantModal({
       return toast.error("O site está rodando dentro de um Iframe (Mascaramento de Domínio). O microfone é bloqueado. Acesse a URL original ou configure o domínio via CNAME.");
     }
 
-    // Forçar a solicitação de permissão de áudio usando getUserMedia
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      stream.getTracks().forEach(track => track.stop());
-    } catch (err) {
-      console.error("Erro ao solicitar permissão de microfone via getUserMedia:", err);
-      return toast.error("Permissão de microfone negada. Libere o acesso nas configurações do seu navegador ou dispositivo.");
-    }
+
 
     const recognition = new SpeechRecognition();
     recognitionRef.current = recognition;
