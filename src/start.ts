@@ -36,7 +36,7 @@ const securityHeadersMiddleware = createMiddleware({ type: "request" }).server(
       "X-Frame-Options": "DENY",
       "X-Content-Type-Options": "nosniff",
       "Referrer-Policy": "strict-origin-when-cross-origin",
-      "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+      "Permissions-Policy": "camera=(), microphone=(self), geolocation=()",
       "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
     });
 
