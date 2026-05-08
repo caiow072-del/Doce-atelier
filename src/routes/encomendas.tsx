@@ -795,6 +795,10 @@ function AIAssistantModal({
       return toast.error("O microfone requer conexão segura (HTTPS). Teste no site oficial ou no localhost.");
     }
 
+    if (window.self !== window.top) {
+      return toast.error("O site está rodando dentro de um Iframe (Mascaramento de Domínio). O microfone é bloqueado. Acesse a URL original ou configure o domínio via CNAME.");
+    }
+
     // Forçar a solicitação de permissão de áudio usando getUserMedia
     // O webkitSpeechRecognition muitas vezes falha silenciosamente se a permissão não foi pré-concedida.
     try {
