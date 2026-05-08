@@ -6,7 +6,3 @@ self.addEventListener('install', (e) => {
 self.addEventListener('activate', (e) => {
   e.waitUntil(self.clients.claim());
 });
-
-self.addEventListener('fetch', (e) => {
-  // Empty fetch handler makes the PWA installable
-});
