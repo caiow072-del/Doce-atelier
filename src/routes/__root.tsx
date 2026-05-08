@@ -39,6 +39,15 @@ export const Route = createRootRoute({
 });
 
 function RootComponent() {
+  // PWA Service Worker Registration
+  useEffect(() => {
+    if ("serviceWorker" in navigator && window.isSecureContext) {
+      navigator.serviceWorker.register("/sw.js").catch((err) => {
+        console.error("Service Worker registration failed:", err);
+      });
+    }
+  }, []);
+
   return (
     <AuthProvider>
       <ThemeBridge />
