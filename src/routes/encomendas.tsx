@@ -791,6 +791,10 @@ function AIAssistantModal({
       return toast.error("Seu navegador não suporta reconhecimento de voz. Tente usar o Chrome.");
     }
 
+    if (!window.isSecureContext) {
+      return toast.error("O microfone requer conexão segura (HTTPS). Teste no site oficial ou no localhost.");
+    }
+
     const recognition = new SpeechRecognition();
     recognition.lang = "pt-BR";
     recognition.continuous = false;
