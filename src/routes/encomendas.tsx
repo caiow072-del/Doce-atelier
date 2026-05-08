@@ -279,9 +279,9 @@ function EncomendasPage() {
                   </span>
                 </div>
                 <p className="mt-2 text-sm text-mauve">{o.description}</p>
-                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground">
-                  <span className="inline-flex items-center gap-1">
-                    <CalIcon className="h-3 w-3" /> {fmtDate(o.delivery_at)}
+                <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-medium text-mauve">
+                  <span className="inline-flex items-center gap-1.5 rounded-lg bg-blush/40 px-2 py-1">
+                    <CalIcon className="h-3.5 w-3.5 text-rose" /> {fmtDate(o.delivery_at)}
                   </span>
                   {o.delivery_method && (
                     <span className="inline-flex items-center gap-1">
@@ -297,9 +297,9 @@ function EncomendasPage() {
                 )}
                 <div className="mt-3 flex items-center justify-between gap-2 text-sm">
                   <div>
-                    <p className="text-mauve font-semibold">{fmtBRL(o.total_price)}</p>
+                    <p className="text-base font-bold text-mauve">{fmtBRL(o.total_price)}</p>
                     {o.deposit_paid > 0 && (
-                      <p className={`text-[11px] ${remaining > 0 ? "text-muted-foreground" : "text-success"}`}>
+                      <p className={`text-xs font-medium ${remaining > 0 ? "text-muted-foreground" : "text-success"}`}>
                         Falta {fmtBRL(remaining)}
                       </p>
                     )}
@@ -774,13 +774,14 @@ async function sendToGemini(history: ChatMsg[], customers: Customer[]): Promise<
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   if (!apiKey) return "⚠️ Chave do Gemini não configurada.";
 
-  const today = new Date().toLocaleString("pt-BR", {
-    weekday: "long", day: "2-digit", month: "long", year: "numeric",
+  const todayStr = new Date().toLocaleString("pt-BR", {
+    weekday: "long", day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo"
   });
 
   const systemPrompt = `Você é a Doce IA, assistente de confeitaria da Doce Atelier. Ajude a registrar encomendas conversando naturalmente em português.
 
-Data de hoje: ${today}
+Data e hora atual (Horário de Brasília, UTC-3): ${todayStr}
+IMPORTANTE: Todas as datas e horas mencionadas pelo usuário referem-se ao fuso de Brasília (UTC-3). Ao gerar o JSON, use o formato ISO com offset -03:00 (ex: "2026-05-10T15:00:00-03:00").
 
 Clientes cadastrados:
 ${customers.map(c => `- ${c.name} (tel: ${c.phone})`).join("\n") || "Nenhum cliente cadastrado ainda."}
@@ -795,16 +796,16 @@ INSTRUÇÕES:
 ${ORDER_TAG}
 {
   "customerName": "Nome exato como está na lista ou nome novo",
-  "deliveryDate": "2024-05-10T10:00:00Z",
-  "description": "Resumo formatado bonito da encomenda",
-  "items": [{"name": "Bolo de massa branca com ninho e amendoim crocante", "qty": 1, "price": 150}],
-  "totalPrice": 150,
+  "deliveryDate": "2026-05-10T15:00:00-03:00",
+  "description": "Lista de itens organizada com emojis (sem datas, valores ou cliente). Use uma linha por item. Ex:\n🎂 1x Bolo de massa branca com ninho e amendoim crocante\n🍬 50x Brigadeiros gourmet",
+  "items": [{"name": "Bolo de massa branca com ninho e amendoim crocante", "qty": 1, "price": 100}],
+  "totalPrice": 100,
   "depositPaid": 50,
   "notes": null,
   "newCustomerPhone": null
 }
 
-ATENÇÃO: Só coloque o ${ORDER_TAG} quando o usuário confirmar. Nunca truncar o JSON.`;
+ATENÇÃO: Só coloque o ${ORDER_TAG} quando o usuário confirmar. Nunca truncar o JSON. O campo "description" deve conter APENAS a lista de itens com emojis — datas e valores já aparecem no card.`;
 
   const contents = [
     { role: "user", parts: [{ text: systemPrompt + "\n\n(Aguarde a primeira mensagem do atendente)" }] },
