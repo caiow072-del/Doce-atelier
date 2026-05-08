@@ -190,22 +190,26 @@ export async function parseNaturalOrderWithLLM(text: string, customers: Customer
   try {
     const today = new Date().toISOString();
     const prompt = `
-Você é um assistente de confeitaria especializado em extrair pedidos de clientes a partir de texto natural.
-Hoje é: ${today}
+Você é um assistente inteligente de confeitaria. O texto a seguir foi ditado por um funcionário.
+Data e hora atual exata: ${today}
 
-Lista de clientes conhecidos:
+Lista de clientes cadastrados (Nome):
 ${customers.map(c => `- ${c.name}`).join("\n") || "Nenhum cliente cadastrado."}
 
-Texto do pedido: "${text}"
+Texto transcrito: "${text}"
 
-Extraia as seguintes informações e retorne EXATAMENTE um JSON válido, sem markdown (\`\`\`json) em volta:
+REGRAS:
+1. NOME DO CLIENTE ("customerName"): Extraia quem é o cliente (ex: "encomenda do Caio", "para Maria"). Se o nome falado existir na lista de cadastrados, retorne exatamente como está na lista. Se for um nome novo, retorne o nome que escutou. Se não houver nome nenhum, retorne null.
+2. DATA DE ENTREGA ("deliveryDate"): Interprete "dia 10", "amanhã", etc. usando a "Data e hora atual exata" como referência. Retorne em formato ISO 8601 (ex: "2024-05-10T10:00:00Z"). Se o dia já passou neste mês, assuma que é para o mês que vem. Se não tiver hora, use 10:00.
+3. DESCRIÇÃO ("description"): Texto formatado e gentil com o resumo.
+4. ITENS ("items"): O "name" DEVE incluir sabor e recheio (ex: "Bolo de chocolate com morango", "Coxinha de frango"). NUNCA abrevie o sabor do bolo/torta.
+
+Retorne EXATAMENTE um JSON, sem blocos de código (sem \`\`\`json):
 {
-  "customerName": "Nome do cliente (tente encontrar na lista acima ou extrair do texto)",
-  "deliveryDate": "Data e hora de entrega no formato ISO 8601 (ex: 2024-05-10T10:00:00Z). Se não houver hora, assuma 10:00. Se a data for incerta, use null",
-  "description": "Texto original corrigido e formatado gentilmente, com correções ortográficas básicas",
-  "items": [
-    { "name": "Nome do item (ex: Bolo de Ninho, Coxinha, Kit Festa)", "qty": quantidade_inteira, "price": 0 }
-  ]
+  "customerName": "Nome do Cliente ou null",
+  "deliveryDate": "2024-05-10T10:00:00Z ou null",
+  "description": "...",
+  "items": [ { "name": "Bolo de chocolate com morango", "qty": 1, "price": 0 } ]
 }
 `;
 

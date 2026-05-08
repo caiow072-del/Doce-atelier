@@ -980,18 +980,18 @@ function AIAssistantModal({
                   <p className="text-sm text-warning font-medium">
                     {draft.customerName ? `"${draft.customerName}" não encontrado` : "Cliente não identificado"}
                   </p>
-                  {draft.customerName && !showQuickNew && (
+                  {!showQuickNew && (
                     <button
                       onClick={() => setShowQuickNew(true)}
                       className="inline-flex items-center gap-1 rounded-lg bg-mauve/10 px-2.5 py-1.5 text-xs font-medium text-mauve hover:bg-mauve/20"
                     >
-                      <UserPlus className="h-3.5 w-3.5" /> Criar "{draft.customerName}"
+                      <UserPlus className="h-3.5 w-3.5" /> {draft.customerName ? `Criar "${draft.customerName}"` : "Cadastrar Cliente Manualmente"}
                     </button>
                   )}
                   {showQuickNew && (
                     <div className="space-y-2 rounded-xl border border-border bg-blush/20 p-3">
                       <input value={quickName} onChange={e => setQuickName(e.target.value)} className="input-base text-xs" placeholder="Nome" />
-                      <input value={quickPhone} onChange={e => setQuickPhone(e.target.value)} className="input-base text-xs" placeholder="WhatsApp" type="tel" />
+                      <input value={quickPhone} onChange={e => setQuickPhone(e.target.value)} className="input-base text-xs" placeholder="WhatsApp (obrigatório)" type="tel" />
                       <input value={quickAddr} onChange={e => setQuickAddr(e.target.value)} className="input-base text-xs" placeholder="Endereço (opcional)" />
                       <button onClick={createQuickCustomer} className="inline-flex w-full items-center justify-center gap-1 rounded-lg bg-mauve py-2 text-xs font-medium text-cream">
                         <Save className="h-3.5 w-3.5" /> Cadastrar
