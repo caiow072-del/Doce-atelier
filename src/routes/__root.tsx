@@ -22,7 +22,7 @@ export const Route = createRootRoute({
       { property: "og:title", content: "Doce Atelier" },
       { property: "og:description", content: "Gestão doce, simples e profissional para sua confeitaria." },
       { property: "og:type", content: "website" },
-      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "default" },
       { name: "apple-mobile-web-app-title", content: "Doce Atelier" },
     ],

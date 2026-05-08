@@ -23,6 +23,7 @@ import {
   ChevronDown,
   Calendar,
   ChevronLeft,
+  ClipboardList,
   ChevronRight,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -106,6 +107,7 @@ function PDVPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [payment, setPayment] = useState<PaymentMethod>("cash");
   const [sales, setSales] = useState<Sale[]>([]);
+  const [orderRevenue, setOrderRevenue] = useState(0);
   const [period, setPeriod] = useState<Period>("today");
   const [showManage, setShowManage] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
@@ -243,6 +245,16 @@ function PDVPage() {
       .then(({ data }) => {
         setSales((data ?? []) as Sale[]);
       });
+
+    let oq = supabase
+      .from("orders")
+      .select("total_price")
+      .eq("shop_id", shopId)
+      .in("status", ["confirmado", "produzindo", "pronto", "entregue"]);
+    if (periodStart) oq = oq.gte("created_at", periodStart.toISOString());
+    oq.then(({ data }) => {
+      setOrderRevenue((data ?? []).reduce((s: number, x: any) => s + Number(x.total_price || 0), 0));
+    });
   }, [shopId, periodStart, selectedEventId]);
 
   // Carrega produtos do evento selecionado
@@ -262,6 +274,7 @@ function PDVPage() {
   }, [selectedEventId]);
 
   const totalToday = sales.reduce((s, x) => s + (x.refunded_at ? 0 : Number(x.price)), 0);
+  const totalGeral = totalToday + orderRevenue;
   const cartTotal = useMemo(() => cart.reduce((s, x) => s + x.price * x.qty, 0), [cart]);
   const cartCount = useMemo(() => cart.reduce((s, x) => s + x.qty, 0), [cart]);
   const discountValue = useMemo(
@@ -630,12 +643,36 @@ function PDVPage() {
               </Popover>
             </div>
 
-            {/* Total Resumido com Filtro de Período */}
-            <div className="card-soft flex items-center gap-3 p-1 pl-3 bg-gradient-to-r from-blush/40 to-white/80 backdrop-blur-sm">
-              <div className="flex flex-col">
-                <p className="text-[9px] uppercase tracking-tighter text-rose font-bold">Total</p>
-                <p className="text-sm font-semibold text-mauve num leading-none">{fmtBRL(totalToday)}</p>
-              </div>
+            {/* Total Resumido (Fluxo de caixa) com Filtro de Período */}
+            <div className="card-soft flex items-center gap-1 p-1 pl-3 bg-gradient-to-r from-blush/40 to-white/80 backdrop-blur-sm">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button className="flex flex-col text-left hover:opacity-80 transition-opacity">
+                    <p className="text-[9px] uppercase tracking-tighter text-rose font-bold flex items-center gap-1">
+                      Fluxo de caixa <ChevronDown className="h-2.5 w-2.5" />
+                    </p>
+                    <p className="text-sm font-semibold text-mauve num leading-none">{fmtBRL(totalGeral)}</p>
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-48 p-3" align="start">
+                  <p className="mb-2 text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Composição</p>
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-mauve flex items-center gap-1.5"><Store className="h-3 w-3 text-rose"/> PDV/Eventos</span>
+                      <span className="font-medium num">{fmtBRL(totalToday)}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-mauve flex items-center gap-1.5"><ClipboardList className="h-3 w-3 text-rose"/> Encomendas</span>
+                      <span className="font-medium num">{fmtBRL(orderRevenue)}</span>
+                    </div>
+                    <div className="my-1 h-px bg-border/60" />
+                    <div className="flex justify-between items-center text-sm font-bold text-mauve">
+                      <span>Total</span>
+                      <span className="num">{fmtBRL(totalGeral)}</span>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
 
               <Select value={period} onValueChange={(v: any) => setPeriod(v)}>
                 <SelectTrigger className="h-8 w-auto gap-1 border-none bg-transparent px-2 text-[11px] font-medium text-mauve hover:bg-rose/10 focus:ring-0">

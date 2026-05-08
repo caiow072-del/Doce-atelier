@@ -18,13 +18,13 @@ const securityHeadersMiddleware = createMiddleware({ type: "request" }).server(
 
     const csp = [
       "default-src 'self'",
-      `connect-src 'self' https://${supabaseHost} wss://${supabaseHost} https://*.lovable.app https://*.lovableproject.com`,
+      `connect-src 'self' https://${supabaseHost} wss://${supabaseHost} https://*.lovable.app https://*.lovableproject.com https://cloudflareinsights.com`,
       "img-src 'self' data: blob: https:",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' data: https://fonts.gstatic.com",
       // 'unsafe-inline' needed for hydration scripts; 'unsafe-eval' for some
       // dev tooling. In a future iteration consider switching to nonces.
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://static.cloudflareinsights.com",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self' https://wa.me",

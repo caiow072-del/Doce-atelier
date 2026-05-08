@@ -19,12 +19,21 @@ import {
   Package,
   Truck,
   Check,
+  Sparkles,
+  MoreVertical,
+  ChevronDown,
+  Mic,
+  Loader2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
 import { PageContainer } from "@/components/PageContainer";
 import { toast } from "sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { OrderItemsEditor, type OrderItem } from "./-encomendas/OrderItemsEditor";
+import { parseNaturalOrder, parseNaturalOrderWithLLM, findCustomerMatch } from "@/lib/ai-order";
 
 export const Route = createFileRoute("/encomendas")({
   head: () => ({
@@ -96,6 +105,7 @@ function EncomendasPage() {
   const [showNew, setShowNew] = useState(false);
   const [filter, setFilter] = useState<"todos" | "ativos" | "vitrine" | OrderStatus>("ativos");
   const [confirmCfg, setConfirmCfg] = useState<ConfirmConfig | null>(null);
+  const [showAI, setShowAI] = useState(false);
 
   const loadAll = async () => {
     if (!shopId) return;
@@ -159,10 +169,29 @@ function EncomendasPage() {
   return (
     <PageContainer width="default">
     <div className="space-y-6">
-      <PageHeader eyebrow="Pedidos personalizados" title="Encomendas" subtitle="Bolos sob medida, com cliente e entrega." />
+      <PageHeader eyebrow="Pedidos personalizados" title="Encomendas" subtitle="Bolos, tortas, salgados, kits e mais — tudo sob medida." />
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap gap-1.5">
+        {/* Mobile: dropdown filter */}
+        <div className="sm:hidden w-full">
+          <Select value={filter} onValueChange={(v: any) => setFilter(v)}>
+            <SelectTrigger className="w-full border-border bg-card text-sm text-mauve">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ativos">Ativos</SelectItem>
+              <SelectItem value="vitrine">🌐 Vitrine{pendingStorefront > 0 ? ` (${pendingStorefront})` : ""}</SelectItem>
+              <SelectItem value="orcamento">Orçamento</SelectItem>
+              <SelectItem value="confirmado">Confirmado</SelectItem>
+              <SelectItem value="produzindo">Produzindo</SelectItem>
+              <SelectItem value="pronto">Pronto</SelectItem>
+              <SelectItem value="entregue">Entregue</SelectItem>
+              <SelectItem value="todos">Todos</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {/* Desktop: pills */}
+        <div className="hidden sm:flex flex-wrap gap-1.5">
           {(["ativos", "vitrine", "orcamento", "confirmado", "produzindo", "pronto", "entregue", "todos"] as const).map((f) => {
             const isVitrine = f === "vitrine";
             return (
@@ -184,12 +213,20 @@ function EncomendasPage() {
             );
           })}
         </div>
-        <button
-          onClick={() => setShowNew(true)}
-          className="inline-flex items-center gap-1.5 rounded-xl bg-mauve px-3 py-2 text-sm font-medium text-cream hover:opacity-90"
-        >
-          <Plus className="h-4 w-4" /> Nova encomenda
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowAI(true)}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-rose/80 to-blush px-3 py-2 text-sm font-medium text-mauve hover:opacity-90"
+          >
+            <Sparkles className="h-4 w-4" /> Assistente
+          </button>
+          <button
+            onClick={() => setShowNew(true)}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-mauve px-3 py-2 text-sm font-medium text-cream hover:opacity-90"
+          >
+            <Plus className="h-4 w-4" /> Nova
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -287,24 +324,33 @@ function EncomendasPage() {
                         <MessageCircle className="h-4 w-4" />
                       </a>
                     )}
-                    <select
-                      value={o.status}
-                      onChange={(e) => updateStatus(o.id, e.target.value as OrderStatus)}
-                      className="rounded-lg border border-border bg-background px-2 py-1 text-xs"
-                    >
-                      {(Object.keys(statusLabel) as OrderStatus[]).map((s) => (
-                        <option key={s} value={s}>
-                          {statusLabel[s]}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      onClick={() => remove(o.id)}
-                      className="rounded-lg p-1.5 text-destructive hover:bg-destructive/10"
-                      aria-label="Excluir"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button className="rounded-lg p-1.5 text-muted-foreground hover:bg-blush/40" aria-label="Ações">
+                          <MoreVertical className="h-4 w-4" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-44 p-1.5" align="end">
+                        <p className="px-2 py-1 text-[10px] uppercase tracking-widest text-muted-foreground">Status</p>
+                        {(Object.keys(statusLabel) as OrderStatus[]).map((s) => (
+                          <button
+                            key={s}
+                            onClick={() => updateStatus(o.id, s)}
+                            className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-left transition ${o.status === s ? "bg-blush/40 font-medium text-mauve" : "text-muted-foreground hover:bg-blush/20 hover:text-mauve"}`}
+                          >
+                            <span className={`h-2 w-2 rounded-full ${statusTone[s].split(" ")[0]}`} />
+                            {statusLabel[s]}
+                          </button>
+                        ))}
+                        <div className="my-1 h-px bg-border/60" />
+                        <button
+                          onClick={() => remove(o.id)}
+                          className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" /> Excluir
+                        </button>
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 </div>
               </div>
@@ -322,6 +368,18 @@ function EncomendasPage() {
           onCreated={(o) => {
             setOrders((prev) => [...prev, o].sort((a, b) => a.delivery_at.localeCompare(b.delivery_at)));
             setShowNew(false);
+          }}
+        />
+      )}
+      {showAI && shopId && (
+        <AIAssistantModal
+          shopId={shopId}
+          customers={customers}
+          onClose={() => setShowAI(false)}
+          onCustomerCreated={(c) => setCustomers((prev) => [...prev, c].sort((a, b) => a.name.localeCompare(b.name)))}
+          onCreated={(o) => {
+            setOrders((prev) => [...prev, o].sort((a, b) => a.delivery_at.localeCompare(b.delivery_at)));
+            setShowAI(false);
           }}
         />
       )}
@@ -491,19 +549,19 @@ function NewOrderSheet({
         <section className="mt-5 space-y-3">
           <p className="text-[10px] uppercase tracking-widest text-rose">Pedido</p>
           <div>
-            <label className="text-[10px] uppercase tracking-widest text-rose">Descrição do bolo *</label>
+            <label className="text-[10px] uppercase tracking-widest text-rose">Descrição do pedido *</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
               maxLength={500}
               className="input-base mt-1"
-              placeholder="Bolo de ninho 3kg, decorado com flores..."
+              placeholder="Ex: Bolo de ninho 3kg decorado, 50 coxinhas, Kit festa..."
             />
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-[10px] uppercase tracking-widest text-rose">Fatias</label>
+              <label className="text-[10px] uppercase tracking-widest text-rose">Quantidade</label>
               <input
                 type="number"
                 inputMode="numeric"
@@ -691,6 +749,256 @@ function QuickNewCustomer({
         >
           <Save className="h-4 w-4" /> {saving ? "Salvando..." : "Cadastrar e usar"}
         </button>
+      </div>
+    </div>
+  );
+}
+
+function AIAssistantModal({
+  shopId,
+  customers,
+  onClose,
+  onCreated,
+  onCustomerCreated,
+}: {
+  shopId: string;
+  customers: Customer[];
+  onClose: () => void;
+  onCreated: (o: Order) => void;
+  onCustomerCreated: (c: Customer) => void;
+}) {
+  const [text, setText] = useState("");
+  const [draft, setDraft] = useState<ReturnType<typeof parseNaturalOrder> | null>(null);
+  const [matchedCustomer, setMatchedCustomer] = useState<Customer | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [showQuickNew, setShowQuickNew] = useState(false);
+  const [quickName, setQuickName] = useState("");
+  const [quickPhone, setQuickPhone] = useState("");
+  const [quickAddr, setQuickAddr] = useState("");
+
+  const [isRecording, setIsRecording] = useState(false);
+  const [isParsing, setIsParsing] = useState(false);
+  const hasApiKey = !!import.meta.env.VITE_GEMINI_API_KEY;
+
+  const toggleRecording = () => {
+    if (isRecording) {
+      setIsRecording(false);
+      return;
+    }
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      return toast.error("Seu navegador não suporta reconhecimento de voz. Tente usar o Chrome.");
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "pt-BR";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onstart = () => setIsRecording(true);
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setText(prev => (prev ? prev + " " + transcript : transcript));
+    };
+    recognition.onerror = (event: any) => {
+      console.error("Erro no reconhecimento de voz:", event.error);
+      toast.error("Erro ao escutar: " + event.error);
+      setIsRecording(false);
+    };
+    recognition.onend = () => setIsRecording(false);
+
+    recognition.start();
+  };
+
+  const interpret = async () => {
+    if (!text.trim()) return toast.error("Digite a descrição da encomenda");
+    setIsParsing(true);
+    const parsed = await parseNaturalOrderWithLLM(text, customers);
+    setIsParsing(false);
+    setDraft(parsed);
+    if (parsed.customerName) {
+      const match = findCustomerMatch(parsed.customerName, customers);
+      const fullMatch = match ? customers.find(c => c.id === match.id) ?? null : null;
+      setMatchedCustomer(fullMatch);
+      if (!match) {
+        setQuickName(parsed.customerName);
+      }
+    }
+  };
+
+  const createQuickCustomer = async () => {
+    if (quickName.trim().length < 2) return toast.error("Nome muito curto");
+    if (quickPhone.replace(/\D/g, "").length < 8) return toast.error("Telefone inválido");
+    const { data, error } = await supabase
+      .from("customers")
+      .insert({ shop_id: shopId, name: quickName.trim(), phone: quickPhone.trim(), address: quickAddr.trim() })
+      .select("id, name, phone, address")
+      .single();
+    if (error) return toast.error("Erro ao criar cliente");
+    const c = data as Customer;
+    onCustomerCreated(c);
+    setMatchedCustomer(c);
+    setShowQuickNew(false);
+    toast.success("Cliente criado!");
+  };
+
+  const submit = async () => {
+    if (!draft) return;
+    if (!matchedCustomer) return toast.error("Selecione ou crie o cliente primeiro");
+    if (!draft.deliveryDate) return toast.error("Data de entrega não identificada. Edite o texto.");
+    setSaving(true);
+    const itemsTotal = draft.items.reduce((s, it) => s + it.qty * it.price, 0);
+    const { data, error } = await supabase
+      .from("orders")
+      .insert({
+        shop_id: shopId,
+        customer_id: matchedCustomer.id,
+        customer_name: matchedCustomer.name,
+        customer_phone: matchedCustomer.phone,
+        description: draft.description,
+        delivery_at: draft.deliveryDate,
+        delivery_address: matchedCustomer.address || null,
+        total_price: itemsTotal,
+        deposit_paid: 0,
+        items: draft.items.filter(it => it.name.trim()),
+        notes: null,
+      })
+      .select("*")
+      .single();
+    setSaving(false);
+    if (error) return toast.error("Erro ao criar: " + error.message);
+    toast.success("Encomenda criada via assistente! ✨");
+    onCreated(data as Order);
+  };
+
+  const fmtDatePreview = (iso: string) =>
+    new Date(iso).toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" });
+
+  return (
+    <div className="fixed inset-0 z-50 bg-mauve/40 backdrop-blur-sm" onClick={onClose}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="absolute right-0 top-0 h-full w-full max-w-md overflow-y-auto bg-card p-6 shadow-petal"
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-rose" />
+            <h2 className="font-display text-2xl italic text-mauve">Assistente</h2>
+          </div>
+          <button type="button" onClick={onClose} className="rounded-lg p-2 text-muted-foreground" aria-label="Fechar">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <p className="mt-3 text-xs text-muted-foreground">
+          Descreva a encomenda em texto livre. O assistente vai interpretar cliente, data e itens automaticamente.
+        </p>
+
+        <div className="relative mt-3">
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            rows={4}
+            className="input-base w-full pr-12"
+            placeholder="Ex: Encomenda para dia 10 de maio, do João Francisco, bolo de ninho com chocolate, 50 salgados..."
+          />
+          <button
+            onClick={toggleRecording}
+            className={`absolute bottom-3 right-3 grid h-8 w-8 place-items-center rounded-full transition-all ${
+              isRecording ? "bg-rose animate-pulse text-white" : "bg-blush/80 text-rose hover:bg-rose hover:text-white"
+            }`}
+            title="Ditar encomenda"
+          >
+            <Mic className="h-4 w-4" />
+          </button>
+        </div>
+
+        {!hasApiKey && (
+          <p className="mt-2 text-[10px] text-warning/80">
+            * Chave do Gemini não configurada. Usando inteligência local (básica).
+          </p>
+        )}
+
+        <button
+          onClick={interpret}
+          disabled={isParsing}
+          className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-rose/80 to-blush px-4 py-2.5 text-sm font-medium text-mauve hover:opacity-90 disabled:opacity-70"
+        >
+          {isParsing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+          {isParsing ? "Interpretando..." : "Interpretar"}
+        </button>
+
+        {draft && (
+          <div className="mt-5 space-y-4">
+            {/* Customer */}
+            <div className="rounded-xl border border-border bg-background/40 p-3">
+              <p className="text-[10px] uppercase tracking-widest text-rose">Cliente</p>
+              {matchedCustomer ? (
+                <div className="mt-1 flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-mauve">{matchedCustomer.name}</p>
+                    <p className="text-[11px] text-muted-foreground">{matchedCustomer.phone}</p>
+                  </div>
+                  <button onClick={() => setMatchedCustomer(null)} className="text-xs text-rose hover:underline">Trocar</button>
+                </div>
+              ) : (
+                <div className="mt-1 space-y-2">
+                  <p className="text-sm text-warning font-medium">
+                    {draft.customerName ? `"${draft.customerName}" não encontrado` : "Cliente não identificado"}
+                  </p>
+                  {draft.customerName && !showQuickNew && (
+                    <button
+                      onClick={() => setShowQuickNew(true)}
+                      className="inline-flex items-center gap-1 rounded-lg bg-mauve/10 px-2.5 py-1.5 text-xs font-medium text-mauve hover:bg-mauve/20"
+                    >
+                      <UserPlus className="h-3.5 w-3.5" /> Criar "{draft.customerName}"
+                    </button>
+                  )}
+                  {showQuickNew && (
+                    <div className="space-y-2 rounded-xl border border-border bg-blush/20 p-3">
+                      <input value={quickName} onChange={e => setQuickName(e.target.value)} className="input-base text-xs" placeholder="Nome" />
+                      <input value={quickPhone} onChange={e => setQuickPhone(e.target.value)} className="input-base text-xs" placeholder="WhatsApp" type="tel" />
+                      <input value={quickAddr} onChange={e => setQuickAddr(e.target.value)} className="input-base text-xs" placeholder="Endereço (opcional)" />
+                      <button onClick={createQuickCustomer} className="inline-flex w-full items-center justify-center gap-1 rounded-lg bg-mauve py-2 text-xs font-medium text-cream">
+                        <Save className="h-3.5 w-3.5" /> Cadastrar
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Date */}
+            <div className="rounded-xl border border-border bg-background/40 p-3">
+              <p className="text-[10px] uppercase tracking-widest text-rose">Data de entrega</p>
+              {draft.deliveryDate ? (
+                <p className="mt-1 text-sm font-medium text-mauve">{fmtDatePreview(draft.deliveryDate)}</p>
+              ) : (
+                <p className="mt-1 text-sm text-warning font-medium">Data não identificada — edite o texto</p>
+              )}
+            </div>
+
+            {/* Items */}
+            <div className="rounded-xl border border-border bg-background/40 p-3">
+              <p className="text-[10px] uppercase tracking-widest text-rose mb-2">Itens identificados</p>
+              {draft.items.map((it, i) => (
+                <div key={i} className="flex items-center gap-2 py-1 text-sm">
+                  <span className="grid h-6 w-6 place-items-center rounded-md bg-blush/60 text-xs font-bold text-mauve">{it.qty}</span>
+                  <span className="text-mauve">{it.name || "—"}</span>
+                </div>
+              ))}
+            </div>
+
+            <button
+              onClick={submit}
+              disabled={saving || !matchedCustomer || !draft.deliveryDate}
+              className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-mauve px-4 py-3 text-sm font-medium text-cream hover:opacity-90 disabled:opacity-50"
+            >
+              <Save className="h-4 w-4" /> {saving ? "Salvando..." : "Criar encomenda"}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
