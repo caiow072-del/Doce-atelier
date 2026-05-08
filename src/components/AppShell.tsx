@@ -95,7 +95,7 @@ export function AppShell() {
     <div className="min-h-screen floral-bg">
       <div className="flex w-full max-w-full items-start">
         {/* ============ Desktop Sidebar ============ */}
-        <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-border/60 bg-card/60 backdrop-blur-xl lg:flex">
+        <aside className="fixed top-0 left-0 z-40 hidden h-screen w-64 flex-col border-r border-border/60 bg-card/60 backdrop-blur-xl lg:flex">
           {/* Brand */}
           <div className="flex flex-col items-center px-4 pt-6 pb-2">
             <div className="flex items-center justify-center h-28 w-full overflow-hidden">
@@ -194,7 +194,7 @@ export function AppShell() {
         </aside>
 
         {/* ============ Main content ============ */}
-        <div className="flex min-h-screen min-w-0 flex-1 flex-col">
+        <div className="flex min-h-screen min-w-0 flex-1 flex-col lg:pl-64">
           {/* Mobile topbar — hamburger opens drawer with full nav */}
           <header className="sticky top-0 z-40 flex items-center justify-between gap-3 border-b border-border/60 bg-card/80 px-4 py-2.5 backdrop-blur-xl lg:hidden">
             <button
