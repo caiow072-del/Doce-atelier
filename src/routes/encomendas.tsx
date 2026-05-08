@@ -831,7 +831,9 @@ function AIAssistantModal({
       console.error("Erro no reconhecimento de voz:", event.error);
       if (event.error === "not-allowed") {
         toast.error("Permissão de microfone negada. Por favor, libere o acesso nas configurações do navegador.");
-      } else if (event.error !== "no-speech" && event.error !== "aborted") {
+      } else if (event.error === "no-speech") {
+        toast.error("O navegador não ouviu nada. Verifique se o microfone correto está selecionado no sistema e não está no mudo.");
+      } else if (event.error !== "aborted") {
         toast.error("Erro ao escutar: " + event.error);
       }
       setIsRecording(false);
