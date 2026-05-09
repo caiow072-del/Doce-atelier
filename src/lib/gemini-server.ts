@@ -11,17 +11,23 @@ export const sendToGeminiServer = createServerFn({ method: "POST" })
     if (!apiKey) {
       // Fallback: busca no banco de dados se a Cloudflare apagar a variável
       try {
-        const { data: secretData } = await (supabase as any)
+        const { data: secretData, error: dbError } = await (supabase as any)
           .from('secret_settings')
           .select('value')
           .eq('key', 'gemini_api_key')
           .single();
         
+        if (dbError) {
+          console.error("Erro detalhado do Supabase:", dbError);
+          throw new Error(`Erro no banco: ${dbError.message}`);
+        }
+
         if (secretData?.value) {
           apiKey = secretData.value;
         }
-      } catch (e) {
+      } catch (e: any) {
         console.error("Erro ao buscar chave no Supabase:", e);
+        throw new Error(`Falha ao buscar chave no banco: ${e.message}`);
       }
     }
     
